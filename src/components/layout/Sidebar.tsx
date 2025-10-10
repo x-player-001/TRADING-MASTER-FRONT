@@ -43,6 +43,13 @@ const Sidebar: React.FC<SidebarProps> = ({
       ]
     },
     {
+      title: '监控中心',
+      items: [
+        { icon: '📊', label: 'OI监控', href: '#oi-monitoring', page: 'oi-monitoring' },
+        { icon: '🔍', label: '系统状态', href: '#system-status', page: 'system-status' }
+      ]
+    },
+    {
       title: '量化交易 🤖',
       items: [
         { icon: '🎯', label: '量化仪表板', href: '#quant', page: 'quant' },
@@ -59,13 +66,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         { icon: '🏪', label: '市场概览', href: '#' },
         { icon: '📈', label: '热门币种', href: '#' },
         { icon: '⚡', label: '实时数据', href: '#' }
-      ]
-    },
-    {
-      title: '监控中心',
-      items: [
-        { icon: '📊', label: 'OI监控', href: '#oi-monitoring', page: 'oi-monitoring' },
-        { icon: '🔍', label: '系统状态', href: '#system-status', page: 'system-status' }
       ]
     },
     {

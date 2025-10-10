@@ -171,6 +171,28 @@ $danger: #ef4444;
   }
 }
 
+.high {
+  font-family: 'Monaco', 'Consolas', monospace;
+  font-size: 0.875rem;
+  color: #10b981;
+  font-weight: 500;
+
+  :global(.dark) & {
+    color: #34d399;
+  }
+}
+
+.low {
+  font-family: 'Monaco', 'Consolas', monospace;
+  font-size: 0.875rem;
+  color: #ef4444;
+  font-weight: 500;
+
+  :global(.dark) & {
+    color: #f87171;
+  }
+}
+
 .sparkline {
   width: 80px;
   height: 40px;
