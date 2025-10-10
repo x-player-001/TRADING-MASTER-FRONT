@@ -1,0 +1,267 @@
+// K线图表页面样式
+
+// 变量 - 与Dashboard保持一致
+$sidebar-width: 15rem;
+$sidebar-width-collapsed: 4rem;
+$header-height: 4rem;
+
+.klinePage {
+  padding: 2rem;
+  min-height: 100%;
+  background: #f9fafb;
+
+  // 暗色主题
+  :global(.dark) & {
+    background: #111827;
+
+    // Ant Design 组件全局暗色适配
+    :global(.ant-select-selector) {
+      background-color: #1f2937 !important;
+      border-color: #374151 !important;
+      color: #f3f4f6 !important;
+    }
+
+    :global(.ant-select-selection-item) {
+      color: #f3f4f6 !important;
+    }
+
+    :global(.ant-select-arrow) {
+      color: #9ca3af !important;
+    }
+
+    :global(.ant-btn-default) {
+      background-color: #1f2937;
+      border-color: #374151;
+      color: #f3f4f6;
+
+      &:hover {
+        background-color: #374151;
+        border-color: #4b5563;
+        color: #f3f4f6;
+      }
+    }
+  }
+
+  // 页面标题区域
+  .lastUpdate {
+    font-size: 13px;
+    color: #6b7280;
+
+    :global(.dark) & {
+      color: #9ca3af;
+    }
+  }
+
+  // 错误提示
+  .errorAlert {
+    margin-bottom: 16px;
+    animation: slideIn 0.3s ease;
+  }
+
+  // 控制栏
+  .controlBar {
+    margin-bottom: 16px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+
+    :global(.dark) & {
+      background: #1f2937;
+      border-color: #374151;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      align-items: center;
+
+      .controlGroup {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        label {
+          font-weight: 500;
+          color: #191919;
+          white-space: nowrap;
+
+          :global(.dark) & {
+            color: #f3f4f6;
+          }
+        }
+      }
+    }
+  }
+
+  // 统计信息概览
+  .statsOverview {
+    margin-bottom: 16px;
+  }
+
+  // 图表卡片
+  .chartCard {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+
+    :global(.dark) & {
+      background: #1f2937;
+      border-color: #374151;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    :global(.ant-card-head) {
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+      border-radius: 8px 8px 0 0;
+
+      :global(.dark) & {
+        background: #1f2937;
+        border-bottom-color: #374151;
+      }
+
+      :global(.ant-card-head-title) {
+        color: #191919;
+        font-weight: 600;
+
+        :global(.dark) & {
+          color: #f3f4f6;
+        }
+      }
+    }
+
+    // 图表标题栏布局
+    .chartHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: 16px;
+
+      .chartTitle {
+        font-size: 16px;
+        font-weight: 600;
+        color: #191919;
+
+        :global(.dark) & {
+          color: #f3f4f6;
+        }
+      }
+
+      .chartToggles {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+      }
+    }
+
+    :global(.ant-card-body) {
+      padding: 16px;
+      background: transparent;
+
+      :global(.dark) & {
+        color: #f3f4f6;
+      }
+    }
+
+    // 加载状态
+    .loadingContainer {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 500px;
+    }
+
+    // 无数据状态
+    .noData {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 500px;
+      color: #8c8c8c;
+
+      :global(.dark) & {
+        color: #9ca3af;
+      }
+
+      p {
+        font-size: 16px;
+        margin-bottom: 16px;
+      }
+    }
+  }
+}
+
+
+// 响应式设计
+@media (max-width: 1024px) {
+  .klinePage {
+    padding: 1rem;
+  }
+}
+
+
+@media (max-width: 768px) {
+  .klinePage {
+    padding: 0.75rem;
+
+    .headerActions {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .controlBar {
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+
+        .controlGroup {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 8px;
+        }
+      }
+    }
+
+    .chartCard {
+      .chartHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+
+        .chartTitle {
+          font-size: 14px;
+        }
+      }
+
+      :global(.ant-card-body) {
+        padding: 8px;
+      }
+
+      .loadingContainer,
+      .noData {
+        min-height: 300px;
+      }
+    }
+  }
+}
+
+// 动画
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,0 +1,125 @@
+// 信号标记样式
+
+.signalMarkers {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none; // 允许鼠标穿透到图表
+  z-index: 10;
+}
+
+.marker {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  pointer-events: all; // 标记本身可点击
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+  &:hover {
+    transform: translate(-50%, -50%) scale(1.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  // 买入标记（绿色向上箭头）
+  &.buyMarker {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: 2px solid #ffffff;
+
+    &:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    }
+
+    :global(.dark) & {
+      border-color: #1f2937;
+    }
+  }
+
+  // 卖出标记（红色向下箭头）
+  &.sellMarker {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    border: 2px solid #ffffff;
+
+    &:hover {
+      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    }
+
+    :global(.dark) & {
+      border-color: #1f2937;
+    }
+  }
+
+  // 强度级别样式
+  &.weak {
+    opacity: 0.6;
+  }
+
+  &.medium {
+    opacity: 0.85;
+  }
+
+  &.strong {
+    opacity: 1;
+    animation: pulse 2s ease-in-out infinite;
+  }
+}
+
+// 脉冲动画（强信号）
+@keyframes pulse {
+  0%,
+  100% {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  50% {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  }
+}
+
+// Tooltip内容样式
+.tooltipContent {
+  .tooltipHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+
+    .tooltipType {
+      font-weight: 700;
+      font-size: 0.875rem;
+    }
+
+    .tooltipStrength {
+      font-size: 0.75rem;
+      opacity: 0.8;
+    }
+  }
+
+  .tooltipPrice {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  .tooltipTime {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    margin-bottom: 0.5rem;
+  }
+
+  .tooltipDesc {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    opacity: 0.9;
+    max-width: 200px;
+  }
+}

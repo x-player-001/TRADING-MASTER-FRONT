@@ -1,0 +1,98 @@
+// 持仓监控页面样式
+.page {
+  padding: 2rem;
+  min-height: 100%;
+  background: #f9fafb;
+  transition: all 0.3s ease;
+
+  :global(.dark) & {
+    background: #111827;
+  }
+
+  &.sidebarCollapsed {
+    // 侧边栏折叠状态
+  }
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.statCard {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  transition: all 0.3s ease;
+
+  :global(.dark) & {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+}
+
+.value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+
+  :global(.dark) & {
+    color: #f9fafb;
+  }
+
+  &.positive { color: #10b981; }
+  &.negative { color: #ef4444; }
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 1.5rem;
+
+  :global(.dark) & {
+    background: #1f2937;
+    border-color: #374151;
+  }
+}
+
+.long { color: #10b981; font-weight: 600; }
+.short { color: #ef4444; font-weight: 600; }
+.positive { color: #10b981; }
+.negative { color: #ef4444; }
+
+// 响应式
+@media (max-width: 1024px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 1rem;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+}

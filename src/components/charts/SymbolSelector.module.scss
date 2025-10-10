@@ -1,0 +1,52 @@
+// 币种选择器样式
+
+.symbolSelector {
+  .select {
+    min-width: 200px;
+
+    // 选择框样式
+    :global(.ant-select-selector) {
+      border-radius: 6px;
+      border-color: var(--border-color, #e1e3eb);
+      background: var(--bg-secondary, #ffffff);
+
+      &:hover {
+        border-color: var(--primary-color, #1890ff);
+      }
+    }
+
+    // 选择框内文字颜色跟随主题
+    :global(.ant-select-selection-item) {
+      color: var(--text-primary, #191919);
+    }
+
+    // 暗色主题
+    :global(.dark) & {
+      :global(.ant-select-selector) {
+        background: var(--bg-secondary, #1f2937);
+        border-color: var(--border-color, #374151);
+      }
+
+      :global(.ant-select-selection-item) {
+        color: var(--text-primary, #f3f4f6);
+      }
+    }
+
+    :global(.ant-select-focused) {
+      :global(.ant-select-selector) {
+        border-color: var(--primary-color, #1890ff);
+        box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+      }
+    }
+  }
+}
+
+
+// 响应式设计
+@media (max-width: 768px) {
+  .symbolSelector {
+    .select {
+      min-width: 150px;
+    }
+  }
+}

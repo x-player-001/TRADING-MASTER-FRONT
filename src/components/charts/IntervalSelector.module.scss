@@ -1,0 +1,82 @@
+// 时间周期选择器样式
+
+.intervalSelector {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+
+  .intervalButton {
+    padding: 8px 16px;
+    border: 1px solid #e1e3eb;
+    background: #ffffff;
+    color: #191919;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    min-width: 70px;
+
+    :global(.dark) & {
+      border-color: #374151;
+      background: #1f2937;
+      color: #f3f4f6;
+    }
+
+    &:hover {
+      background: #f5f5f5;
+      border-color: #1890ff;
+
+      :global(.dark) & {
+        background: #374151;
+        border-color: #1890ff;
+      }
+    }
+
+    &.active {
+      background: #1890ff;
+      color: #ffffff;
+      border-color: #1890ff;
+      box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+
+  // 紧凑模式
+  &.compact {
+    gap: 6px;
+
+    .intervalButton {
+      min-width: 45px;
+      padding: 4px 10px;
+      font-size: 12px;
+      border-radius: 4px;
+    }
+  }
+}
+
+
+// 响应式设计
+@media (max-width: 768px) {
+  .intervalSelector {
+    gap: 6px;
+
+    .intervalButton {
+      padding: 6px 12px;
+      font-size: 13px;
+      min-width: 60px;
+    }
+
+    &.compact {
+      .intervalButton {
+        min-width: 45px;
+        padding: 5px 10px;
+        font-size: 12px;
+      }
+    }
+  }
+}

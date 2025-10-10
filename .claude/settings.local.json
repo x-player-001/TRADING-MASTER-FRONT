@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(rm:*)",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(npm start)",
+      "Bash(grep:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm create:*)",
+      "Bash(mv:*)",
+      "Bash(rmdir:*)",
+      "Bash(npx tailwindcss init:*)",
+      "Bash(npm run dev:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(tasklist)",
+      "Bash(taskkill:*)",
+      "Bash(npx vite:*)",
+      "Bash(dir)",
+      "Bash(dir:*)",
+      "Bash(rd:*)",
+      "Bash(curl:*)",
+      "Bash(cat:*)",
+      "Bash(node -e \"const lc = require(''lightweight-charts''); console.log(Object.keys(lc).filter(k => k.includes(''Series'') || k.includes(''create'')).join(''\\n''))\")",
+      "Read(//d/Code/TradingMaster/**)",
+      "Bash(node:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nInitial commit: Trading Master Frontend\n\n- 基于React 18 + TypeScript的加密货币交易前端系统\n- 集成TradingView K线图表组件\n- 实现币种管理、交易规则、信号监控等核心功能\n- 使用Vite构建工具，支持快速开发和热更新\n- 支持明暗主题切换和响应式布局\n- 集成WebSocket实时数据通信\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(del /f nul)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

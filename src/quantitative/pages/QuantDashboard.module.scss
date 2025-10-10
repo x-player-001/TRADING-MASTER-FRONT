@@ -1,0 +1,428 @@
+// 量化交易仪表板样式
+.page {
+  padding: 2rem;
+  min-height: 100%;
+  background: #f9fafb;
+  transition: all 0.3s ease;
+
+  :global(.dark) & {
+    background: #111827;
+  }
+
+  &.sidebarCollapsed {
+    // 侧边栏折叠状态
+  }
+}
+
+// 统计卡片网格
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.statCard {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+
+  :global(.dark) & {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  &.primary { border-left: 4px solid #3b82f6; }
+  &.success { border-left: 4px solid #10b981; }
+  &.warning { border-left: 4px solid #f59e0b; }
+  &.danger { border-left: 4px solid #ef4444; }
+}
+
+.statIcon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.statValue {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.25rem;
+
+  :global(.dark) & {
+    color: #f9fafb;
+  }
+}
+
+.statLabel {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+}
+
+.statChange {
+  font-size: 0.875rem;
+  color: #9ca3af;
+
+  :global(.dark) & {
+    color: #6b7280;
+  }
+}
+
+// 主网格布局
+.mainGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+
+  :global(.dark) & {
+    background: #1f2937;
+    border-color: #374151;
+  }
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+
+  :global(.dark) & {
+    border-bottom-color: #374151;
+  }
+}
+
+.cardTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+
+  :global(.dark) & {
+    color: #f9fafb;
+  }
+}
+
+.cardContent {
+  padding: 1.5rem;
+  min-height: 300px;
+}
+
+// 按钮样式
+.createBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+}
+
+.linkBtn {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: color 0.3s;
+
+  &:hover {
+    color: #2563eb;
+  }
+}
+
+.primaryBtn {
+  padding: 0.5rem 1rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s;
+
+  &:hover {
+    background: #2563eb;
+  }
+}
+
+.detailBtn {
+  padding: 0.375rem 0.75rem;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.3s;
+
+  :global(.dark) & {
+    background: #374151;
+    border-color: #4b5563;
+    color: #9ca3af;
+  }
+
+  &:hover {
+    background: #e5e7eb;
+    color: #111827;
+
+    :global(.dark) & {
+      background: #4b5563;
+      color: #f9fafb;
+    }
+  }
+}
+
+// 列表样式
+.strategyList, .backtestList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.strategyItem, .backtestItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  transition: background 0.3s;
+
+  :global(.dark) & {
+    background: #111827;
+    border-color: #374151;
+  }
+
+  &:hover {
+    background: #f3f4f6;
+
+    :global(.dark) & {
+      background: #1f2937;
+    }
+  }
+}
+
+.strategyInfo, .backtestInfo {
+  flex: 1;
+}
+
+.strategyName {
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  :global(.dark) & {
+    color: #f9fafb;
+  }
+}
+
+.strategyType {
+  font-size: 0.875rem;
+  color: #6b7280;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  background: #10b981;
+  color: white;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.backtestSymbol {
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.25rem;
+
+  :global(.dark) & {
+    color: #f9fafb;
+  }
+}
+
+.backtestStats {
+  font-size: 0.875rem;
+  color: #6b7280;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+}
+
+.returnBadge {
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.875rem;
+
+  &.positive {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+  }
+
+  &.negative {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+  }
+}
+
+// 空状态
+.empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #6b7280;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+
+  .emptyIcon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  p {
+    margin-bottom: 1rem;
+  }
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #6b7280;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+}
+
+// 快捷操作
+.quickActions {
+  margin-top: 2rem;
+}
+
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 1rem;
+
+  :global(.dark) & {
+    color: #f9fafb;
+  }
+}
+
+.actionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.actionCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem 1rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  :global(.dark) & {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    border-color: #3b82f6;
+  }
+}
+
+.actionIcon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.actionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.5rem;
+
+  :global(.dark) & {
+    color: #f9fafb;
+  }
+}
+
+.actionDesc {
+  font-size: 0.875rem;
+  color: #6b7280;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+}
+
+// 响应式
+@media (max-width: 768px) {
+  .page {
+    padding: 1rem;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .mainGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .actionGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

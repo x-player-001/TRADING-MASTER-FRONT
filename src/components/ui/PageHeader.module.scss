@@ -1,0 +1,83 @@
+// PageHeader 组件样式
+.header {
+  margin-bottom: 2rem;
+  animation: slideInUp 0.5s ease-out;
+
+  .titleRow {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+
+    .icon {
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      @media (max-width: 640px) {
+        font-size: 1.25rem;
+      }
+    }
+  }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+    position: relative;
+    display: inline-block;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #3b82f6, #10b981);
+      animation: underlineExpand 2s ease-out 0.5s forwards;
+    }
+
+    :global(.dark) & {
+      color: #f9fafb;
+    }
+
+    @media (max-width: 640px) {
+      font-size: 1.5rem;
+    }
+  }
+
+  p {
+    color: #6b7280;
+    margin: 0;
+    font-size: 1rem;
+
+    :global(.dark) & {
+      color: #9ca3af;
+    }
+
+    @media (max-width: 640px) {
+      font-size: 0.875rem;
+    }
+  }
+}
+
+// 下划线展开动画
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes underlineExpand {
+  to {
+    width: 100%;
+  }
+}

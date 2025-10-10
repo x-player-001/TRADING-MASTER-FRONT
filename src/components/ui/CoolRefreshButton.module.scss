@@ -1,0 +1,290 @@
+// 酷炫刷新按钮样式
+.coolRefreshButton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 0.75rem;
+  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  outline: none;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+  user-select: none;
+
+  // 发光效果
+  box-shadow:
+    0 4px 15px 0 rgba(102, 126, 234, 0.3),
+    0 2px 4px 0 rgba(0, 0, 0, 0.1);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  :global(.dark) & {
+    background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%);
+    box-shadow:
+      0 4px 15px 0 rgba(67, 56, 202, 0.4),
+      0 2px 4px 0 rgba(0, 0, 0, 0.2);
+  }
+
+  // 只显示图标的变体
+  &.iconOnly {
+    padding: 0.5rem;
+    border-radius: 50%;
+    min-width: auto;
+
+    &.small {
+      padding: 0.375rem;
+      .iconContainer {
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    &.medium {
+      padding: 0.5rem;
+      .iconContainer {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    &.large {
+      padding: 0.625rem;
+      .iconContainer {
+        width: 24px;
+        height: 24px;
+      }
+    }
+  }
+
+  // 尺寸变体
+  &.small:not(.iconOnly) {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    border-radius: 0.5rem;
+
+    .iconContainer {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  &.medium:not(.iconOnly) {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.875rem;
+    border-radius: 0.75rem;
+
+    .iconContainer {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  &.large:not(.iconOnly) {
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+    border-radius: 1rem;
+
+    .iconContainer {
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  // 悬停效果
+  &.hovered {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow:
+      0 8px 25px 0 rgba(102, 126, 234, 0.4),
+      0 4px 8px 0 rgba(0, 0, 0, 0.15);
+
+    &::before {
+      opacity: 1;
+    }
+
+    .iconContainer .icon {
+      transform: rotate(45deg);
+    }
+
+    .ripple {
+      transform: scale(1);
+      opacity: 0.3;
+    }
+
+    :global(.dark) & {
+      box-shadow:
+        0 8px 25px 0 rgba(67, 56, 202, 0.5),
+        0 4px 8px 0 rgba(0, 0, 0, 0.25);
+    }
+  }
+
+  // 按下效果
+  &.pressed {
+    transform: translateY(0) scale(0.98);
+    box-shadow:
+      0 2px 8px 0 rgba(102, 126, 234, 0.3),
+      0 1px 2px 0 rgba(0, 0, 0, 0.1);
+  }
+
+  // 加载状态
+  &.loading {
+    pointer-events: none;
+
+    .iconContainer .icon {
+      opacity: 0.7;
+    }
+
+    .label {
+      opacity: 0.8;
+    }
+  }
+
+  // 禁用状态
+  &.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+
+    &:hover {
+      transform: none;
+      box-shadow:
+        0 4px 15px 0 rgba(102, 126, 234, 0.3),
+        0 2px 4px 0 rgba(0, 0, 0, 0.1);
+    }
+  }
+}
+
+// 图标容器
+.iconContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+// 图标
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.refreshIcon {
+  width: 100%;
+  height: 100%;
+  stroke-width: 2.5;
+}
+
+// 加载旋转器
+.spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.spinnerInner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+// 波纹效果
+.ripple {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120%;
+  height: 120%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+// 标签文本
+.label {
+  font-weight: 600;
+  transition: opacity 0.3s ease;
+  white-space: nowrap;
+}
+
+// 动画关键帧
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+// 响应式设计
+@media (max-width: 768px) {
+  .coolRefreshButton {
+    padding: 0.625rem 1rem;
+    font-size: 0.8125rem;
+
+    &.small {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.75rem;
+    }
+
+    &.large {
+      padding: 0.875rem 1.25rem;
+      font-size: 0.9375rem;
+    }
+  }
+}
+
+// 无障碍支持
+@media (prefers-reduced-motion: reduce) {
+  .coolRefreshButton,
+  .icon,
+  .ripple,
+  .spinnerInner {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+// 高对比度模式支持
+@media (prefers-contrast: high) {
+  .coolRefreshButton {
+    border: 2px solid currentColor;
+    background: ButtonFace;
+    color: ButtonText;
+
+    &:hover {
+      background: Highlight;
+      color: HighlightText;
+    }
+  }
+}

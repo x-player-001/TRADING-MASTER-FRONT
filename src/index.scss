@@ -1,0 +1,68 @@
+// 基础样式重置
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: #f9fafb;
+  transition: background-color 0.2s ease;
+
+  &.dark {
+    background-color: #111827;
+  }
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  overflow: hidden; // 禁止 body 滚动，让 main 处理滚动
+  background-color: #f9fafb;
+  color: #111827;
+  transition: all 0.2s ease;
+
+  &.dark {
+    background-color: #111827;
+    color: #f9fafb;
+  }
+}
+
+// 主内容区域
+main {
+  position: fixed;
+  top: 4rem; // Header 高度
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: auto; // 允许垂直滚动
+  overflow-x: hidden; // 禁止水平滚动
+  margin-left: 15rem; // Sidebar 宽度
+  transition: margin-left 0.3s ease;
+
+  // Sidebar 折叠状态
+  &.sidebarCollapsed {
+    margin-left: 4rem;
+  }
+
+  // 移动端
+  @media (max-width: 1024px) {
+    margin-left: 0;
+
+    &.sidebarCollapsed {
+      margin-left: 0;
+    }
+  }
+}

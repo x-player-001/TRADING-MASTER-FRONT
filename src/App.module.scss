@@ -1,0 +1,11 @@
+@use 'sass:color';
+
+.app {
+  min-height: 100vh;
+  background-color: #f9fafb;
+  transition: background-color 0.3s ease;
+
+  :global(.dark) & {
+    background-color: #111827;
+  }
+}

@@ -1,0 +1,271 @@
+// 策略管理页面样式
+.page {
+  padding: 2rem;
+  min-height: 100%;
+  background: #f9fafb;
+  transition: all 0.3s ease;
+
+  :global(.dark) & {
+    background: #111827;
+  }
+
+  &.sidebarCollapsed {
+    // 侧边栏折叠状态
+  }
+}
+
+.createBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+}
+
+// 策略网格
+.strategyGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.strategyCard {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  transition: all 0.3s ease;
+
+  :global(.dark) & {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+
+  :global(.dark) & {
+    background: #111827;
+    border-bottom-color: #374151;
+  }
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.strategyName {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+
+  :global(.dark) & {
+    color: #f9fafb;
+  }
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  background: #10b981;
+  color: white;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.cardBody {
+  padding: 1.25rem;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.label {
+  font-size: 0.875rem;
+  color: #6b7280;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+}
+
+.value {
+  font-size: 0.875rem;
+  color: #111827;
+  font-weight: 500;
+
+  :global(.dark) & {
+    color: #f9fafb;
+  }
+}
+
+.description {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.5;
+
+  :global(.dark) & {
+    border-top-color: #374151;
+    color: #9ca3af;
+  }
+}
+
+.cardFooter {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+
+  :global(.dark) & {
+    background: #111827;
+    border-top-color: #374151;
+  }
+}
+
+.btn {
+  flex: 1;
+  padding: 0.5rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  color: #111827;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.3s;
+
+  :global(.dark) & {
+    background: #1f2937;
+    border-color: #374151;
+    color: #f9fafb;
+  }
+
+  &:hover {
+    background: #f3f4f6;
+    border-color: #3b82f6;
+    color: #3b82f6;
+
+    :global(.dark) & {
+      background: #374151;
+    }
+  }
+}
+
+.btnDanger {
+  flex: 1;
+  padding: 0.5rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  color: #ef4444;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.3s;
+
+  :global(.dark) & {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: #ef4444;
+  }
+}
+
+.primaryBtn {
+  padding: 0.75rem 1.5rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  transition: background 0.3s;
+
+  &:hover {
+    background: #2563eb;
+  }
+}
+
+// 空状态
+.empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 4rem 1rem;
+  color: #6b7280;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+
+  .emptyIcon {
+    font-size: 4rem;
+    display: block;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  p {
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
+.loading {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 4rem 1rem;
+  color: #6b7280;
+  font-size: 1rem;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+}
+
+// 响应式
+@media (max-width: 768px) {
+  .page {
+    padding: 1rem;
+  }
+
+  .strategyGrid {
+    grid-template-columns: 1fr;
+  }
+}

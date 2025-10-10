@@ -1,0 +1,507 @@
+/**
+ * 缠论分析面板样式
+ * 基于StructurePanel样式，保持UI一致性
+ */
+
+.chanPanel {
+  display: flex;
+  flex-direction: column;
+  min-height: 400px;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+  :global(.dark) & {
+    background-color: #1f2937;
+    border-color: #374151;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* ========== Tab导航 ========== */
+.tabs {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+
+  :global(.dark) & {
+    background-color: #111827;
+    border-bottom-color: #374151;
+  }
+}
+
+.tab {
+  position: relative;
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background-color: transparent;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: #e5e7eb;
+    color: #111827;
+
+    :global(.dark) & {
+      background-color: #374151;
+      color: #f9fafb;
+    }
+  }
+
+  &.active {
+    background-color: #8b5cf6;
+    color: #ffffff;
+
+    :global(.dark) & {
+      background-color: #7c3aed;
+    }
+  }
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: 8px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ========== 内容区域 ========== */
+.content {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+
+  /* 自定义滚动条 */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #e5e7eb;
+    border-radius: 3px;
+
+    &:hover {
+      background-color: #9ca3af;
+    }
+
+    :global(.dark) & {
+      background-color: #374151;
+
+      &:hover {
+        background-color: #4b5563;
+      }
+    }
+  }
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #6b7280;
+  font-size: 14px;
+  gap: 8px;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #9ca3af;
+  font-size: 14px;
+
+  :global(.dark) & {
+    color: #6b7280;
+  }
+}
+
+/* ========== 控制开关 ========== */
+.filter {
+  margin-bottom: 16px;
+  padding: 16px;
+  background-color: #f9fafb;
+  border-radius: 8px;
+
+  :global(.dark) & {
+    background-color: #111827;
+  }
+}
+
+.filterLabel {
+  display: block;
+  margin-bottom: 12px;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 500;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+}
+
+.controlRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e7eb;
+
+  :global(.dark) & {
+    border-bottom-color: #374151;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.controlLabel {
+  color: #374151;
+  font-size: 14px;
+
+  :global(.dark) & {
+    color: #d1d5db;
+  }
+}
+
+/* ========== 列表 ========== */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card {
+  padding: 16px;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  :global(.dark) & {
+    background-color: #111827;
+    border-color: #374151;
+  }
+
+  &:hover {
+    border-color: #8b5cf6;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+
+    :global(.dark) & {
+      border-color: #7c3aed;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+  }
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+/* ========== 分型样式 ========== */
+.fractalType {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+
+  &[data-type='top'] {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+  }
+
+  &[data-type='bottom'] {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+  }
+}
+
+/* ========== 笔样式 ========== */
+.strokeDirection {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+
+  &[data-direction='up'] {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+  }
+
+  &[data-direction='down'] {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+  }
+}
+
+.amplitude {
+  padding: 4px 8px;
+  border-radius: 4px;
+  background-color: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ========== 中枢样式 ========== */
+.centerStatus {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+
+  &[data-active='true'] {
+    background-color: rgba(255, 193, 7, 0.1);
+    color: #ffc107;
+  }
+
+  &[data-active='false'] {
+    background-color: rgba(158, 158, 158, 0.1);
+    color: #9e9e9e;
+  }
+}
+
+.levels {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.level {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid #e5e7eb;
+
+  :global(.dark) & {
+    border-bottom-color: #374151;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.resistance {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.support {
+  color: #10b981;
+  font-weight: 600;
+}
+
+/* ========== 通用元素 ========== */
+.strength {
+  padding: 4px 8px;
+  border-radius: 4px;
+  background-color: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.label {
+  color: #6b7280;
+  font-size: 13px;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+}
+
+.value {
+  color: #111827;
+  font-size: 14px;
+  font-weight: 600;
+
+  :global(.dark) & {
+    color: #f9fafb;
+  }
+}
+
+.priceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+
+  :global(.dark) & {
+    border-top-color: #374151;
+  }
+}
+
+.info {
+  display: flex;
+  gap: 12px;
+}
+
+.infoItem {
+  color: #6b7280;
+  font-size: 12px;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+}
+
+.time {
+  color: #9ca3af;
+  font-size: 12px;
+
+  :global(.dark) & {
+    color: #6b7280;
+  }
+}
+
+.timeRange {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.timeLabel {
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 500;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+}
+
+.timeSeparator {
+  color: #9ca3af;
+  font-size: 12px;
+  margin: 0 2px;
+
+  :global(.dark) & {
+    color: #6b7280;
+  }
+}
+
+/* ========== 统计数据 ========== */
+.statistics {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+.statCard {
+  padding: 16px;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  text-align: center;
+  transition: all 0.2s;
+
+  :global(.dark) & {
+    background-color: #111827;
+    border-color: #374151;
+  }
+
+  &:hover {
+    border-color: #8b5cf6;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+    :global(.dark) & {
+      border-color: #7c3aed;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+  }
+}
+
+.statLabel {
+  margin-bottom: 8px;
+  color: #6b7280;
+  font-size: 13px;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+}
+
+.statValue {
+  color: #111827;
+  font-size: 24px;
+  font-weight: 700;
+
+  :global(.dark) & {
+    color: #f9fafb;
+  }
+
+  &.status {
+    color: #8b5cf6;
+    font-size: 18px;
+  }
+}
+
+.statSubtitle {
+  margin-top: 4px;
+  color: #9ca3af;
+  font-size: 12px;
+
+  :global(.dark) & {
+    color: #6b7280;
+  }
+}
+
+/* ========== 响应式 ========== */
+@media (max-width: 768px) {
+  .tabs {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .tab {
+    flex: none;
+  }
+
+  .statistics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .statValue {
+    font-size: 20px;
+  }
+}
