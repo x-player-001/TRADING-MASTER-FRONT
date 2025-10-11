@@ -26,17 +26,13 @@ export const useBacktest = () => {
   } = useBacktestStore();
 
   // 运行回测
-  const runBacktest = useCallback(async (request: BacktestRequest, signalNames?: string[]) => {
+  const runBacktest = useCallback(async (request: BacktestRequest) => {
     setRunning(true);
     setError(null);
     try {
-      const result = await backtestAPI.runBacktest(request, signalNames);
+      const result = await backtestAPI.runBacktest(request);
       addBacktest(result);
       selectBacktest(result);
-      // 如果result中包含trades，直接设置到store
-      if ((result as any).trades && Array.isArray((result as any).trades)) {
-        setBacktestTrades((result as any).trades);
-      }
       return result;
     } catch (err: any) {
       setError(err.message || '回测执行失败');
@@ -44,7 +40,7 @@ export const useBacktest = () => {
     } finally {
       setRunning(false);
     }
-  }, [addBacktest, selectBacktest, setBacktestTrades, setRunning, setError]);
+  }, [addBacktest, selectBacktest, setRunning, setError]);
 
   // 获取回测列表
   const fetchBacktests = useCallback(async (params?: any) => {
@@ -61,16 +57,12 @@ export const useBacktest = () => {
   }, [setBacktests, setLoading, setError]);
 
   // 获取回测详情
-  const fetchBacktestDetail = useCallback(async (taskId: string) => {
+  const fetchBacktestDetail = useCallback(async (id: number) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await backtestAPI.getBacktestDetail(taskId);
+      const data = await backtestAPI.getBacktestDetail(id);
       selectBacktest(data);
-      // 如果详情中包含交易明细，直接设置
-      if ((data as any).trades && Array.isArray((data as any).trades)) {
-        setBacktestTrades((data as any).trades);
-      }
       return data;
     } catch (err: any) {
       setError(err.message || '获取回测详情失败');
@@ -78,14 +70,14 @@ export const useBacktest = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectBacktest, setBacktestTrades, setLoading, setError]);
+  }, [selectBacktest, setLoading, setError]);
 
   // 获取回测交易明细
-  const fetchBacktestTrades = useCallback(async (taskId: string) => {
+  const fetchBacktestTrades = useCallback(async (id: number) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await backtestAPI.getBacktestTrades(taskId);
+      const data = await backtestAPI.getBacktestTrades(id);
       setBacktestTrades(data);
     } catch (err: any) {
       setError(err.message || '获取交易明细失败');
@@ -94,22 +86,36 @@ export const useBacktest = () => {
     }
   }, [setBacktestTrades, setLoading, setError]);
 
-  // 删除回测（CZSC系统暂不支持）
-  const deleteBacktest = useCallback(async (taskId: string) => {
+  // 获取最佳回测
+  const fetchBestBacktest = useCallback(async (strategyId: number, metric: BestMetric = 'sharpe_ratio') => {
     setLoading(true);
     setError(null);
     try {
-      // CZSC系统暂时不支持删除，这里仅做UI更新
-      console.warn('CZSC系统暂不支持删除回测记录');
-      // 可以从本地状态中移除
-      // removeBacktest(taskId);
+      const data = await backtestAPI.getBestBacktest(strategyId, metric);
+      selectBacktest(data);
+      return data;
+    } catch (err: any) {
+      setError(err.message || '获取最佳回测失败');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [selectBacktest, setLoading, setError]);
+
+  // 删除回测
+  const deleteBacktest = useCallback(async (id: number) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await backtestAPI.deleteBacktest(id);
+      removeBacktest(id);
     } catch (err: any) {
       setError(err.message || '删除回测失败');
       throw err;
     } finally {
       setLoading(false);
     }
-  }, [setLoading, setError]);
+  }, [removeBacktest, setLoading, setError]);
 
   return {
     backtests,
@@ -123,6 +129,7 @@ export const useBacktest = () => {
     fetchBacktests,
     fetchBacktestDetail,
     fetchBacktestTrades,
+    fetchBestBacktest,
     deleteBacktest,
   };
 };

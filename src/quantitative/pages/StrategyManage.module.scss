@@ -48,6 +48,18 @@
   border: 1px solid #e5e7eb;
   overflow: hidden;
   transition: all 0.3s ease;
+  position: relative;
+
+  // 顶部彩色条纹
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+  }
 
   :global(.dark) & {
     background: #1f2937;
@@ -55,8 +67,13 @@
   }
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
+    border-color: #3b82f6;
+
+    :global(.dark) & {
+      box-shadow: 0 8px 24px rgba(59, 130, 246, 0.25);
+    }
   }
 }
 
@@ -65,11 +82,12 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.25rem;
+  padding-top: 1.5rem; // 给顶部彩色条留出空间
   border-bottom: 1px solid #e5e7eb;
-  background: #f9fafb;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
 
   :global(.dark) & {
-    background: #111827;
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
     border-bottom-color: #374151;
   }
 }
@@ -102,6 +120,11 @@
 
 .cardBody {
   padding: 1.25rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(249, 250, 251, 0.5) 100%);
+
+  :global(.dark) & {
+    background: linear-gradient(180deg, rgba(31, 41, 55, 0) 0%, rgba(17, 24, 39, 0.5) 100%);
+  }
 }
 
 .infoRow {
@@ -109,11 +132,23 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(59, 130, 246, 0.05);
+
+    :global(.dark) & {
+      background: rgba(59, 130, 246, 0.1);
+    }
+  }
 }
 
 .label {
   font-size: 0.875rem;
   color: #6b7280;
+  font-weight: 500;
 
   :global(.dark) & {
     color: #9ca3af;
@@ -123,7 +158,7 @@
 .value {
   font-size: 0.875rem;
   color: #111827;
-  font-weight: 500;
+  font-weight: 600;
 
   :global(.dark) & {
     color: #f9fafb;
@@ -132,15 +167,30 @@
 
 .description {
   margin-top: 1rem;
+  padding: 1rem;
   padding-top: 1rem;
   border-top: 1px solid #e5e7eb;
+  border-left: 3px solid transparent;
   font-size: 0.875rem;
   color: #6b7280;
-  line-height: 1.5;
+  line-height: 1.6;
+  background: rgba(59, 130, 246, 0.02);
+  border-radius: 6px;
+  transition: all 0.3s ease;
 
   :global(.dark) & {
     border-top-color: #374151;
     color: #9ca3af;
+    background: rgba(59, 130, 246, 0.05);
+  }
+
+  &:hover {
+    border-left-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.05);
+
+    :global(.dark) & {
+      background: rgba(59, 130, 246, 0.1);
+    }
   }
 }
 
@@ -159,14 +209,32 @@
 
 .btn {
   flex: 1;
-  padding: 0.5rem;
+  padding: 0.5rem 1rem;
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 6px;
   color: #111827;
   cursor: pointer;
   font-size: 0.875rem;
-  transition: all 0.3s;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+    transition: left 0.5s ease;
+  }
+
+  &:hover::before {
+    left: 100%;
+  }
 
   :global(.dark) & {
     background: #1f2937;
@@ -175,26 +243,47 @@
   }
 
   &:hover {
-    background: #f3f4f6;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
     border-color: #3b82f6;
     color: #3b82f6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
 
     :global(.dark) & {
-      background: #374151;
+      background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+      color: #60a5fa;
     }
   }
 }
 
 .btnDanger {
   flex: 1;
-  padding: 0.5rem;
+  padding: 0.5rem 1rem;
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 6px;
   color: #ef4444;
   cursor: pointer;
   font-size: 0.875rem;
-  transition: all 0.3s;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.1), transparent);
+    transition: left 0.5s ease;
+  }
+
+  &:hover::before {
+    left: 100%;
+  }
 
   :global(.dark) & {
     background: #1f2937;
@@ -202,8 +291,14 @@
   }
 
   &:hover {
-    background: rgba(239, 68, 68, 0.1);
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
     border-color: #ef4444;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+
+    :global(.dark) & {
+      background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);
+    }
   }
 }
 

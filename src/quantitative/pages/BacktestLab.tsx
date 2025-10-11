@@ -38,6 +38,7 @@ const BacktestLab: React.FC<BacktestLabProps> = ({ isSidebarCollapsed }) => {
     selectBacktest,
     runBacktest,
     fetchBacktests,
+    fetchBacktestDetail,
     fetchBacktestTrades
   } = useBacktest();
 
@@ -55,8 +56,7 @@ const BacktestLab: React.FC<BacktestLabProps> = ({ isSidebarCollapsed }) => {
       pollingIntervalRef.current = null;
     }
   };
-
-  // 运行回测（异步任务模式）
+// 运行回测（同步模式 - CZSC直接返回结果）
   const handleRunBacktest = async () => {
     try {
       const values = await form.validateFields();
@@ -72,60 +72,21 @@ const BacktestLab: React.FC<BacktestLabProps> = ({ isSidebarCollapsed }) => {
         commission_rate: values.commission_rate,
       };
 
-      // 1. 创建回测任务
-      const taskResponse = await backtestAPI.runBacktest(request);
-      const taskId = taskResponse.task_id;
+      message.loading('正在运行回测...', 0);
 
-      message.info('回测任务已创建，正在执行中...');
-      setTaskProgress(null);
-      setProgressPercent(0);
+      // 直接调用回测API，CZSC系统同步返回结果
+      const result = await runBacktest(request);
 
-      // 2. 开始轮询任务状态
-      pollingIntervalRef.current = setInterval(async () => {
-        try {
-          const task = await backtestAPI.getTaskStatus(taskId);
+      message.destroy();
+      message.success('回测完成！');
 
-          // 更新进度
-          if (task.progress) {
-            setTaskProgress(task.progress);
-            const percent = (task.progress.current_kline / task.progress.total_klines) * 100;
-            setProgressPercent(Math.round(percent));
-          }
-
-          // 任务完成
-          if (task.status === 'completed' && task.result) {
-            stopPolling();
-            selectBacktest(task.result);
-            await fetchBacktestTrades(task.result.id);
-            setShowResults(true);
-            setTaskProgress(null);
-            message.success('回测完成！');
-          }
-
-          // 任务失败
-          if (task.status === 'failed') {
-            stopPolling();
-            setTaskProgress(null);
-            message.error(`回测失败: ${task.error || '未知错误'}`);
-          }
-
-          // 任务取消
-          if (task.status === 'cancelled') {
-            stopPolling();
-            setTaskProgress(null);
-            message.warning('回测已取消');
-          }
-        } catch (pollErr: any) {
-          stopPolling();
-          setTaskProgress(null);
-          message.error(`轮询失败: ${pollErr.message}`);
-        }
-      }, 3000); // 每3秒轮询一次
+      // 显示结果
+      selectBacktest(result);
+      setShowResults(true);
 
     } catch (err: any) {
-      stopPolling();
-      setTaskProgress(null);
-      message.error(err.message || '创建回测任务失败');
+      message.destroy();
+      message.error(err.message || '回测执行失败');
     }
   };
 
@@ -137,10 +98,19 @@ const BacktestLab: React.FC<BacktestLabProps> = ({ isSidebarCollapsed }) => {
 
   // 查看历史回测
   const handleViewBacktest = async (backtest: BacktestResult) => {
-    selectBacktest(backtest);
-    await fetchBacktestTrades(backtest.id);
-    setShowResults(true);
-    setHistoryModalVisible(false);
+    try {
+      // 如果有task_id，通过详情接口获取完整数据
+      if (backtest.task_id) {
+        await fetchBacktestDetail(backtest.task_id);
+      } else {
+        // 降级方案：使用列表数据
+        selectBacktest(backtest);
+      }
+      setShowResults(true);
+      setHistoryModalVisible(false);
+    } catch (error) {
+      message.error('获取回测详情失败');
+    }
   };
 
   // 历史记录表格列
@@ -269,10 +239,10 @@ const BacktestLab: React.FC<BacktestLabProps> = ({ isSidebarCollapsed }) => {
     },
     {
       title: '盈亏',
-      dataIndex: 'pnl',
-      key: 'pnl',
-      render: (pnl: any) => {
-        const value = typeof pnl === 'number' ? pnl : parseFloat(pnl) || 0;
+      dataIndex: 'profit',
+      key: 'profit',
+      render: (profit: any) => {
+        const value = typeof profit === 'number' ? profit : parseFloat(profit) || 0;
         return (
           <span className={value >= 0 ? styles.positive : styles.negative}>
             {formatCurrency(value)}
@@ -282,8 +252,8 @@ const BacktestLab: React.FC<BacktestLabProps> = ({ isSidebarCollapsed }) => {
     },
     {
       title: '盈亏%',
-      dataIndex: 'pnl_percent',
-      key: 'pnl_percent',
+      dataIndex: 'profit_rate',
+      key: 'profit_rate',
       render: (percent: any) => {
         const value = typeof percent === 'number' ? percent : parseFloat(percent) || 0;
         return (

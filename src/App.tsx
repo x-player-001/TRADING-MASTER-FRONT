@@ -14,6 +14,7 @@ import BacktestLab from './quantitative/pages/BacktestLab';
 import TradeAnalysis from './quantitative/pages/TradeAnalysis';
 import PositionMonitor from './quantitative/pages/PositionMonitor';
 import RiskManagement from './quantitative/pages/RiskManagement';
+import SignalMonitor from './quantitative/pages/SignalMonitor';
 
 function App() {
   const [isDark, setIsDark] = useState(false);
@@ -77,6 +78,8 @@ function App() {
         setCurrentPage('quant-positions');
       } else if (hash === 'quant-risk') {
         setCurrentPage('quant-risk');
+      } else if (hash === 'quant-signals') {
+        setCurrentPage('quant-signals');
       } else {
         setCurrentPage('dashboard');
       }
@@ -145,6 +148,8 @@ function App() {
         return <PositionMonitor isSidebarCollapsed={isSidebarCollapsed} />;
       case 'quant-risk':
         return <RiskManagement isSidebarCollapsed={isSidebarCollapsed} />;
+      case 'quant-signals':
+        return <SignalMonitor isSidebarCollapsed={isSidebarCollapsed} />;
       default:
         return <Dashboard />;
     }

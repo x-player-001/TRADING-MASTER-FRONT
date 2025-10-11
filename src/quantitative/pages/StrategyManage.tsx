@@ -3,7 +3,7 @@
  */
 
 import React, { useState } from 'react';
-import { Modal, Form, Input, Select, Switch, InputNumber, message } from 'antd';
+import { Modal, Form, Input, Select, InputNumber, message } from 'antd';
 import PageHeader from '../../components/ui/PageHeader';
 import { useStrategyData } from '../hooks/useStrategyData';
 import {
@@ -32,7 +32,6 @@ const StrategyManage: React.FC<StrategyManageProps> = ({ isSidebarCollapsed }) =
     createStrategy,
     modifyStrategy,
     deleteStrategy,
-    toggleStrategy,
     fetchPerformance
   } = useStrategyData();
 
@@ -94,16 +93,6 @@ const StrategyManage: React.FC<StrategyManageProps> = ({ isSidebarCollapsed }) =
     }
   };
 
-  // 切换策略状态
-  const handleToggle = async (id: number, enabled: boolean) => {
-    try {
-      await toggleStrategy(id, enabled);
-      message.success(enabled ? '策略已启用' : '策略已禁用');
-    } catch (err: any) {
-      message.error(err.message || '操作失败');
-    }
-  };
-
   // 查看性能
   const handleViewPerformance = async (strategy: StrategyConfig) => {
     selectStrategy(strategy);
@@ -124,12 +113,7 @@ const StrategyManage: React.FC<StrategyManageProps> = ({ isSidebarCollapsed }) =
         title="策略管理"
         subtitle="创建、编辑和管理您的量化交易策略"
         icon="📋"
-      >
-        <button className={styles.createBtn} onClick={handleCreate}>
-          <span>➕</span>
-          创建策略
-        </button>
-      </PageHeader>
+      />
 
       {/* 策略列表 */}
       <div className={styles.strategyGrid}>
@@ -149,13 +133,7 @@ const StrategyManage: React.FC<StrategyManageProps> = ({ isSidebarCollapsed }) =
               <div className={styles.cardHeader}>
                 <div className={styles.cardTitle}>
                   <span className={styles.strategyName}>{strategy.name}</span>
-                  {strategy.enabled && <span className={styles.badge}>运行中</span>}
                 </div>
-                <Switch
-                  checked={strategy.enabled}
-                  onChange={(checked) => handleToggle(strategy.id!, checked)}
-                  size="small"
-                />
               </div>
 
               <div className={styles.cardBody}>
@@ -229,10 +207,6 @@ const StrategyManage: React.FC<StrategyManageProps> = ({ isSidebarCollapsed }) =
 
           <Form.Item label="策略描述" name="description">
             <Input.TextArea rows={3} placeholder="简要描述策略的交易逻辑" />
-          </Form.Item>
-
-          <Form.Item label="启用策略" name="enabled" valuePropName="checked">
-            <Switch />
           </Form.Item>
         </Form>
       </Modal>

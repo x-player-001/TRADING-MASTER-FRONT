@@ -1,6 +1,9 @@
 /**
  * 缠论分析API服务
  * 提供分型、笔、中枢数据接口
+ *
+ * ⚠️ 注意：缠论分析功能已迁移到CZSC回测系统
+ * 如需使用CZSC系统的K线分析功能，请使用 czscAnalyzeAPI
  */
 
 import apiClient from './apiClient';

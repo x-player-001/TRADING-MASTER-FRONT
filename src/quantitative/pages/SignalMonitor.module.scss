@@ -1,0 +1,236 @@
+// 信号监控页面样式
+.page {
+  padding: 2rem;
+  min-height: 100%;
+  background: #f9fafb;
+  transition: all 0.3s ease;
+
+  :global(.dark) & {
+    background: #111827;
+  }
+
+  &.sidebarCollapsed {
+    // 侧边栏折叠状态
+  }
+}
+
+// 最新信号区域
+.latestSection {
+  margin-bottom: 2rem;
+
+  // 最新一行高亮
+  .latestRow {
+    :global {
+      td {
+        background: rgba(239, 68, 68, 0.05) !important;
+        font-weight: 500;
+        animation: rowPulse 2s ease-in-out infinite;
+      }
+    }
+
+    :global(.dark) & {
+      td {
+        background: rgba(239, 68, 68, 0.15) !important;
+      }
+    }
+  }
+}
+
+// 分隔线
+.divider {
+  margin: 2rem 0;
+  font-weight: 600;
+  color: #6b7280;
+
+  :global(.dark) & {
+    color: #9ca3af;
+    border-top-color: #374151;
+  }
+}
+
+// 查询区域
+.querySection {
+  .queryCard {
+    margin-bottom: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+
+    :global(.dark) & {
+      background: #1f2937;
+      border-color: #374151;
+    }
+  }
+
+  .queryForm {
+    margin-bottom: 1.5rem;
+
+    .formItem {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      .label {
+        font-weight: 500;
+        color: #374151;
+
+        :global(.dark) & {
+          color: #d1d5db;
+        }
+      }
+    }
+  }
+
+  .queryStats {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+
+    :global(.dark) & {
+      border-top-color: #374151;
+    }
+
+    .summaryInfo {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background: rgba(59, 130, 246, 0.05);
+      border-radius: 6px;
+
+      .infoLabel {
+        font-weight: 500;
+        color: #6b7280;
+        margin-right: 0.5rem;
+
+        :global(.dark) & {
+          color: #9ca3af;
+        }
+      }
+
+      .infoValue {
+        color: #111827;
+        font-weight: 600;
+
+        :global(.dark) & {
+          color: #f9fafb;
+        }
+      }
+    }
+  }
+}
+
+// 表格容器
+.tableContainer {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  :global(.dark) & {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  :global {
+    .ant-table {
+      :global(.dark) & {
+        background: transparent;
+
+        .ant-table-thead > tr > th {
+          background: #111827;
+          color: #f9fafb;
+          border-bottom-color: #374151;
+        }
+
+        .ant-table-tbody > tr > td {
+          border-bottom-color: #374151;
+        }
+
+        .ant-table-tbody > tr:hover > td {
+          background: rgba(59, 130, 246, 0.1);
+        }
+      }
+    }
+
+    .ant-table-thead > tr > th {
+      background: #f9fafb;
+      font-weight: 600;
+      color: #374151;
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    .ant-table-tbody > tr {
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: rgba(59, 130, 246, 0.05);
+      }
+    }
+
+    .ant-pagination {
+      margin-top: 1.5rem;
+
+      :global(.dark) & {
+        .ant-pagination-item {
+          background: #1f2937;
+          border-color: #374151;
+
+          a {
+            color: #d1d5db;
+          }
+
+          &:hover {
+            border-color: #3b82f6;
+
+            a {
+              color: #3b82f6;
+            }
+          }
+
+          &.ant-pagination-item-active {
+            background: #3b82f6;
+            border-color: #3b82f6;
+
+            a {
+              color: white;
+            }
+          }
+        }
+
+        .ant-pagination-prev,
+        .ant-pagination-next {
+          .ant-pagination-item-link {
+            background: #1f2937;
+            border-color: #374151;
+            color: #d1d5db;
+
+            &:hover {
+              border-color: #3b82f6;
+              color: #3b82f6;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// 动画效果
+@keyframes rowPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+// 响应式
+@media (max-width: 768px) {
+  .page {
+    padding: 1rem;
+  }
+
+  .tableContainer {
+    padding: 1rem;
+  }
+}

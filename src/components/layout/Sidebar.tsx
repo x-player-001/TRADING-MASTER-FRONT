@@ -38,15 +38,9 @@ const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { icon: '📊', label: '仪表板', href: '#', page: 'dashboard' },
         { icon: '💹', label: 'K线图表', href: '#kline-chart', page: 'kline-chart' },
-        { icon: '🎯', label: '交易规则', href: '#' },
-        { icon: '📡', label: '信号监控', href: '#' }
-      ]
-    },
-    {
-      title: '监控中心',
-      items: [
         { icon: '📊', label: 'OI监控', href: '#oi-monitoring', page: 'oi-monitoring' },
-        { icon: '🔍', label: '系统状态', href: '#system-status', page: 'system-status' }
+        { icon: '📡', label: '信号监控', href: '#quant-signals', page: 'quant-signals' },
+        { icon: '🎯', label: '交易规则', href: '#' }
       ]
     },
     {
@@ -55,6 +49,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         { icon: '🎯', label: '量化仪表板', href: '#quant', page: 'quant' },
         { icon: '📋', label: '策略管理', href: '#quant-strategies', page: 'quant-strategies' },
         { icon: '🧪', label: '回测实验室', href: '#quant-backtest', page: 'quant-backtest' },
+        { icon: '📡', label: '信号监控', href: '#quant-signals', page: 'quant-signals' },
         { icon: '📈', label: '交易分析', href: '#quant-trades', page: 'quant-trades' },
         { icon: '💼', label: '持仓监控', href: '#quant-positions', page: 'quant-positions' },
         { icon: '⚠️', label: '风险管理', href: '#quant-risk', page: 'quant-risk' }
@@ -72,6 +67,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       title: '系统管理',
       items: [
         { icon: '🪙', label: '币种配置', href: '#symbol-config', page: 'symbol-config' },
+        { icon: '🔍', label: '系统状态', href: '#system-status', page: 'system-status' },
         { icon: '⚙️', label: '系统设置', href: '#' },
         { icon: '👤', label: '账户管理', href: '#' },
         { icon: '📋', label: '操作日志', href: '#' }

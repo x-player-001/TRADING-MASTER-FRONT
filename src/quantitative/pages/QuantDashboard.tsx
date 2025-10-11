@@ -41,7 +41,10 @@ const QuantDashboard: React.FC<QuantDashboardProps> = ({ isSidebarCollapsed }) =
   const activeStrategies = strategies.filter(s => s.enabled).length;
   const totalBacktests = backtests.length;
   const avgSharpe = backtests.length > 0
-    ? backtests.reduce((sum, b) => sum + b.sharpe_ratio, 0) / backtests.length
+    ? backtests.reduce((sum, b) => {
+        const sharpe = typeof b.sharpe_ratio === 'number' ? b.sharpe_ratio : parseFloat(b.sharpe_ratio as any) || 0;
+        return sum + sharpe;
+      }, 0) / backtests.length
     : 0;
 
   const stats = [
@@ -169,12 +172,12 @@ const QuantDashboard: React.FC<QuantDashboardProps> = ({ isSidebarCollapsed }) =
                     <div className={styles.backtestInfo}>
                       <div className={styles.backtestSymbol}>{backtest.symbol}</div>
                       <div className={styles.backtestStats}>
-                        收益: {formatPercent(backtest.total_return)} |
-                        夏普: {backtest.sharpe_ratio.toFixed(2)}
+                        收益: {formatPercent(typeof backtest.total_return === 'number' ? backtest.total_return : parseFloat(backtest.total_return as any) || 0)} |
+                        夏普: {(typeof backtest.sharpe_ratio === 'number' ? backtest.sharpe_ratio : parseFloat(backtest.sharpe_ratio as any) || 0).toFixed(2)}
                       </div>
                     </div>
-                    <div className={`${styles.returnBadge} ${backtest.total_return >= 0 ? styles.positive : styles.negative}`}>
-                      {formatPercent(backtest.total_return)}
+                    <div className={`${styles.returnBadge} ${(typeof backtest.total_return === 'number' ? backtest.total_return : parseFloat(backtest.total_return as any) || 0) >= 0 ? styles.positive : styles.negative}`}>
+                      {formatPercent(typeof backtest.total_return === 'number' ? backtest.total_return : parseFloat(backtest.total_return as any) || 0)}
                     </div>
                   </div>
                 ))}
