@@ -1,0 +1,99 @@
+/**
+ * Operation编辑器样式
+ */
+
+.operationEditor {
+  .empty {
+    text-align: center;
+    padding: 1.5rem;
+  }
+
+  .operationList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .operationCard {
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    margin-left: 1rem; // 缩进显示层级
+
+    &.expanded {
+      border-color: #3b82f6;
+    }
+
+    .operationHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0.75rem;
+      background: #f3f4f6;
+
+      .left {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        .label {
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: #374151;
+        }
+
+        .factorCount {
+          font-size: 0.75rem;
+          color: #6b7280;
+        }
+      }
+
+      .right {
+        display: flex;
+        gap: 0.25rem;
+      }
+    }
+
+    .operationContent {
+      padding: 0.75rem;
+    }
+  }
+
+  .addButton {
+    margin-top: 0.5rem;
+    margin-left: 1rem;
+  }
+
+  .hint {
+    margin-top: 0.75rem;
+    margin-left: 1rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+    line-height: 1.4;
+  }
+}
+
+// 暗色主题
+:global(.dark) {
+  .operationEditor {
+    .operationCard {
+      border-color: #4b5563;
+      background: #1f2937;
+
+      &.expanded {
+        border-color: #60a5fa;
+      }
+
+      .operationHeader {
+        background: #111827;
+
+        .left .label {
+          color: #d1d5db;
+        }
+      }
+    }
+
+    .hint {
+      color: #9ca3af;
+    }
+  }
+}

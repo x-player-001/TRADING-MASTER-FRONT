@@ -1,0 +1,155 @@
+/**
+ * Signal配置编辑器样式
+ */
+
+.signalConfigEditor {
+  .empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6b7280;
+
+    p {
+      margin-bottom: 1rem;
+    }
+  }
+
+  .signalList {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .signalCard {
+    border: 1px solid #e5e7eb;
+
+    .signalHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 0.75rem;
+      margin-bottom: 0.75rem;
+      border-bottom: 1px solid #e5e7eb;
+
+      .index {
+        font-weight: 600;
+        color: #3b82f6;
+        font-size: 0.875rem;
+      }
+    }
+
+    .signalContent {
+      .paramsList {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+
+        .paramItem {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+
+          label {
+            font-size: 0.875rem;
+            color: #374151;
+            white-space: nowrap;
+          }
+        }
+      }
+
+      .noParams {
+        font-size: 0.875rem;
+        color: #9ca3af;
+        font-style: italic;
+        padding: 0.5rem;
+        text-align: center;
+      }
+
+      .preview {
+        margin-top: 1rem;
+        padding: 0.75rem;
+        background: #f9fafb;
+        border-radius: 6px;
+
+        .previewLabel {
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: #6b7280;
+          margin-bottom: 0.5rem;
+        }
+
+        .previewContent {
+          font-size: 0.75rem;
+          color: #9ca3af;
+          line-height: 1.4;
+        }
+      }
+    }
+  }
+
+  .addButton {
+    margin-top: 0.5rem;
+  }
+
+  .hint {
+    margin-top: 1rem;
+    padding: 0.875rem 1rem;
+    background: #eff6ff;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: #1e40af;
+    line-height: 1.5;
+
+    strong {
+      font-weight: 600;
+    }
+  }
+}
+
+// 暗色主题
+:global(.dark) {
+  .signalConfigEditor {
+    .empty {
+      color: #9ca3af;
+    }
+
+    .signalCard {
+      border-color: #374151;
+      background: #1f2937;
+
+      .signalHeader {
+        border-bottom-color: #374151;
+
+        .index {
+          color: #60a5fa;
+        }
+      }
+
+      .signalContent {
+        .paramsList .paramItem label {
+          color: #d1d5db;
+        }
+
+        .noParams {
+          color: #6b7280;
+        }
+
+        .preview {
+          background: #111827;
+
+          .previewLabel {
+            color: #9ca3af;
+          }
+
+          .previewContent {
+            color: #6b7280;
+          }
+        }
+      }
+    }
+
+    .hint {
+      background: #1e3a8a;
+      color: #93c5fd;
+    }
+  }
+}

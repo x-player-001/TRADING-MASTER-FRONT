@@ -1,0 +1,187 @@
+/**
+ * Factor编辑器样式
+ */
+
+.factorEditor {
+  .empty {
+    text-align: center;
+    padding: 1.5rem;
+
+    .hint {
+      margin-top: 0.5rem;
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+  }
+
+  .factorList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .factorCard {
+    border: 1px solid #d1d5db;
+    background: #f9fafb;
+    margin-left: 1rem; // 缩进显示层级
+
+    &.expanded {
+      border-color: #10b981;
+    }
+
+    .factorHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0.75rem;
+      background: #e5e7eb;
+
+      .left {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 1;
+
+        .label {
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: #374151;
+        }
+
+        .summary {
+          font-size: 0.75rem;
+          color: #6b7280;
+        }
+      }
+
+      .right {
+        display: flex;
+        gap: 0.25rem;
+      }
+    }
+
+    .factorContent {
+      padding: 0.75rem;
+
+      .logicGroup {
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        .logicHeader {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.5rem;
+
+          .logicTitle {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #111827;
+          }
+        }
+
+        .signalList {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          min-height: 32px;
+          align-items: center;
+
+          .signalTag {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+          }
+
+          .emptyHint {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            font-style: italic;
+          }
+        }
+      }
+
+      .signalSelectorContainer {
+        margin-top: 1rem;
+        padding: 0.75rem;
+        background: #f3f4f6;
+        border: 2px dashed #d1d5db;
+        border-radius: 6px;
+      }
+    }
+  }
+
+  .addButton {
+    margin-top: 0.5rem;
+    margin-left: 1rem;
+  }
+
+  .hint {
+    margin-top: 0.75rem;
+    margin-left: 1rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+    line-height: 1.4;
+  }
+}
+
+// 暗色主题
+:global(.dark) {
+  .factorEditor {
+    .empty .hint {
+      color: #9ca3af;
+    }
+
+    .factorCard {
+      border-color: #4b5563;
+      background: #111827;
+
+      &.expanded {
+        border-color: #10b981;
+      }
+
+      .factorHeader {
+        background: #1f2937;
+
+        .left {
+          .label {
+            color: #d1d5db;
+          }
+
+          .summary {
+            color: #9ca3af;
+          }
+        }
+      }
+
+      .factorContent {
+        .logicGroup {
+          background: #1f2937;
+          border-color: #374151;
+
+          .logicHeader .logicTitle {
+            color: #f9fafb;
+          }
+        }
+
+        .signalSelectorContainer {
+          background: #111827;
+          border-color: #4b5563;
+        }
+      }
+    }
+
+    .hint {
+      color: #9ca3af;
+    }
+  }
+}

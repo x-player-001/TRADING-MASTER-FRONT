@@ -5,7 +5,8 @@
 /**
  * 格式化金额（带货币符号）
  */
-export const formatCurrency = (value: number, decimals: number = 2): string => {
+export const formatCurrency = (value: number | null | undefined, decimals: number = 2): string => {
+  if (value == null) return '-';
   return `$${value.toLocaleString('en-US', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
@@ -15,7 +16,8 @@ export const formatCurrency = (value: number, decimals: number = 2): string => {
 /**
  * 格式化百分比
  */
-export const formatPercent = (value: number, decimals: number = 2): string => {
+export const formatPercent = (value: number | null | undefined, decimals: number = 2): string => {
+  if (value == null) return '-';
   const sign = value >= 0 ? '+' : '';
   return `${sign}${value.toFixed(decimals)}%`;
 };
@@ -23,7 +25,8 @@ export const formatPercent = (value: number, decimals: number = 2): string => {
 /**
  * 格式化数字（带千分位）
  */
-export const formatNumber = (value: number, decimals: number = 2): string => {
+export const formatNumber = (value: number | null | undefined, decimals: number = 2): string => {
+  if (value == null) return '-';
   return value.toLocaleString('en-US', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,

@@ -8,35 +8,12 @@ import {
   BacktestResult,
   BacktestListParams,
   Trade,
-  CZSCBacktestRequest,
   CZSCBacktestResult,
-  CZSCBacktestListResponse,
   CZSCBacktestListItem,
   CZSCBacktestDetail
 } from '../types';
 
 // ============ 数据转换函数 ============
-
-/**
- * 将前端回测请求转换为CZSC格式
- */
-const convertToCSCBacktestRequest = (request: BacktestRequest, signalNames: string[]): CZSCBacktestRequest => {
-  // 时间戳转ISO 8601字符串
-  const startDate = new Date(request.start_time).toISOString();
-  const endDate = new Date(request.end_time).toISOString();
-
-  return {
-    symbol: request.symbol,
-    freq: request.interval,
-    start_date: startDate,
-    end_date: endDate,
-    signal_config: {
-      signal_names: signalNames,
-      fee_rate: request.commission_rate || 0.0002,
-      initial_cash: request.initial_capital || 100000
-    }
-  };
-};
 
 /**
  * 将CZSC回测结果转换为前端格式
@@ -46,21 +23,22 @@ const convertFromCZSCBacktestResult = (czscResult: CZSCBacktestResult, strategyI
 
   // 计算最终资金
   const initialCapital = 100000; // 默认值
-  const finalCapital = initialCapital * (1 + stats.cumulative_return);
+  const totalReturn = stats.绝对收益 || stats.年化 || 0;
+  const finalCapital = initialCapital * (1 + totalReturn);
 
-  // 转换资金曲线
-  const equityCurve = czscResult.equity_curve.map(point => ({
-    time: new Date(point.dt).getTime(),
-    value: point.equity
+  // 转换资金曲线（兼容新旧格式）
+  const equityCurve = (czscResult.equity_curve || []).map(point => ({
+    time: new Date(point.dt || point.date || '').getTime(),
+    value: point.equity || point.total || initialCapital
   }));
 
-  // 计算回撤曲线（简化版）
+  // 计算回撤曲线
   let maxEquity = initialCapital;
-  const drawdownCurve = czscResult.equity_curve.map(point => {
-    if (point.equity > maxEquity) maxEquity = point.equity;
-    const drawdown = (maxEquity - point.equity) / maxEquity;
+  const drawdownCurve = equityCurve.map(point => {
+    if (point.value > maxEquity) maxEquity = point.value;
+    const drawdown = maxEquity > 0 ? (maxEquity - point.value) / maxEquity : 0;
     return {
-      time: new Date(point.dt).getTime(),
+      time: point.time,
       drawdown: drawdown
     };
   });
@@ -68,8 +46,11 @@ const convertFromCZSCBacktestResult = (czscResult: CZSCBacktestResult, strategyI
   // 计算月度收益（简化版）
   const monthlyReturns: Record<string, number> = {};
 
+  // 获取交易明细（兼容 trade_pairs 和 trades）
+  const trades = czscResult.trade_pairs || czscResult.trades || [];
+
   return {
-    id: 0, // CZSC没有数字ID，使用0占位
+    id: 0,
     strategy_id: strategyId || 0,
     symbol: czscResult.symbol,
     interval: czscResult.freq,
@@ -77,17 +58,17 @@ const convertFromCZSCBacktestResult = (czscResult: CZSCBacktestResult, strategyI
     end_time: czscResult.end_date,
     initial_capital: initialCapital,
     final_capital: finalCapital,
-    total_return: stats.total_return,
-    annual_return: stats.annual_return,
-    sharpe_ratio: stats.sharpe_ratio,
-    max_drawdown: stats.max_drawdown,
-    total_trades: stats.total_trades,
-    win_trades: stats.winning_trades,
-    loss_trades: stats.losing_trades,
-    win_rate: stats.win_rate,
-    avg_win: stats.avg_profit,
-    avg_loss: Math.abs(stats.avg_loss), // 转为正数
-    profit_factor: stats.profit_loss_ratio,
+    total_return: totalReturn,
+    annual_return: stats.年化 || 0,
+    sharpe_ratio: stats.夏普 || 0,
+    max_drawdown: stats.最大回撤 || 0,
+    total_trades: czscResult.trades_count || trades.length,
+    win_trades: Math.round((stats.交易胜率 || 0) * trades.length),
+    loss_trades: Math.round((1 - (stats.交易胜率 || 0)) * trades.length),
+    win_rate: stats.交易胜率 || 0,
+    avg_win: stats.单笔收益 || 0,
+    avg_loss: 0,
+    profit_factor: 0,
     performance_data: {
       equity_curve: equityCurve,
       drawdown_curve: drawdownCurve,
@@ -95,17 +76,18 @@ const convertFromCZSCBacktestResult = (czscResult: CZSCBacktestResult, strategyI
     },
     created_at: czscResult.created_at || new Date().toISOString(),
     task_id: czscResult.task_id,
-    trades: czscResult.trades.map((trade, index) => ({
+    trades: trades.map((trade, index) => ({
       id: index,
       backtest_id: 0,
-      entry_time: trade.entry_time,
-      exit_time: trade.exit_time,
-      entry_price: trade.entry_price,
-      exit_price: trade.exit_price,
+      symbol: czscResult.symbol,
+      entry_time: trade.开仓时间,
+      exit_time: trade.平仓时间,
+      entry_price: trade.开仓价格,
+      exit_price: trade.平仓价格,
       quantity: 1,
-      profit: trade.profit,
-      profit_rate: trade.profit_rate,
-      direction: 'long' as const
+      profit: (trade.盈亏比例 / 10000) * trade.开仓价格, // BP转金额
+      profit_rate: trade.盈亏比例 / 10000, // BP转比例
+      direction: trade.交易方向 === '多头' ? 'long' : 'short'
     }))
   };
 };
@@ -114,19 +96,27 @@ const convertFromCZSCBacktestResult = (czscResult: CZSCBacktestResult, strategyI
 
 export const backtestAPI = {
   /**
-   * 运行回测（CZSC信号回测）
-   * POST /api/v1/backtest/signal
+   * 运行回测（CZSC Position策略回测）
+   * POST /api/v1/backtest/czsc
    * @param request 回测请求参数
-   * @param signalNames 信号函数名称列表
    * @returns 回测结果
    */
-  runBacktest: async (request: BacktestRequest, signalNames?: string[]): Promise<BacktestResult> => {
-    // 如果没有提供信号名称，使用默认的三买三卖信号
-    const defaultSignals = ['cxt_third_bs_V230318'];
-    const signals = signalNames && signalNames.length > 0 ? signalNames : defaultSignals;
+  runBacktest: async (request: BacktestRequest): Promise<BacktestResult> => {
+    // 时间戳转ISO 8601字符串
+    const startDate = new Date(request.start_time).toISOString();
+    const endDate = new Date(request.end_time).toISOString();
 
-    const czscRequest = convertToCSCBacktestRequest(request, signals);
-    const czscResult = await czscApiPost<CZSCBacktestResult>('/api/v1/backtest/signal', czscRequest);
+    // 使用策略ID方式（推荐）
+    // API会从策略库中加载完整的Position和Signal配置
+    const czscRequest = {
+      symbol: request.symbol,
+      freq: request.interval,
+      start_date: startDate,
+      end_date: endDate,
+      strategy_id: request.strategy_id  // 传策略ID，后端自动加载策略配置
+    };
+
+    const czscResult = await czscApiPost<CZSCBacktestResult>('/api/v1/backtest/czsc', czscRequest);
     return convertFromCZSCBacktestResult(czscResult, request.strategy_id);
   },
 

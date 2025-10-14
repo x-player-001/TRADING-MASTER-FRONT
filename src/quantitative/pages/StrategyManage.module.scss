@@ -354,6 +354,105 @@
   }
 }
 
+// 筛选器
+.filters {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+
+  :global(.dark) & {
+    background: #1f2937;
+    border-color: #374151;
+  }
+}
+
+// 详情模态框样式
+.detailContent {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.detailSection {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+
+  :global(.dark) & {
+    border-bottom-color: #374151;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 1rem;
+
+    :global(.dark) & {
+      color: #f9fafb;
+    }
+  }
+}
+
+.detailRow {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  align-items: flex-start;
+
+  .label {
+    min-width: 100px;
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-weight: 500;
+
+    :global(.dark) & {
+      color: #9ca3af;
+    }
+  }
+
+  > span:last-child {
+    flex: 1;
+    font-size: 0.875rem;
+    color: #111827;
+
+    :global(.dark) & {
+      color: #f9fafb;
+    }
+  }
+}
+
+.positionCard,
+.signalCard {
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  background: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+
+  :global(.dark) & {
+    background: #111827;
+    border-color: #374151;
+  }
+}
+
+.positionName,
+.signalName {
+  font-weight: 600;
+  color: #3b82f6;
+  margin-bottom: 0.5rem;
+
+  :global(.dark) & {
+    color: #60a5fa;
+  }
+}
+
 // 响应式
 @media (max-width: 768px) {
   .page {

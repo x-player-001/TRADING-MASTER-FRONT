@@ -1,0 +1,147 @@
+/**
+ * 模板选择器样式
+ */
+
+.templateSelector {
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .templateCard {
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid #e5e7eb;
+
+    &:hover {
+      border-color: #3b82f6;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    }
+
+    &.selected {
+      border-color: #3b82f6;
+      background: #eff6ff;
+
+      :global(.ant-card-body) {
+        background: #eff6ff;
+      }
+    }
+
+    :global(.ant-card-body) {
+      padding: 1.25rem;
+      text-align: center;
+    }
+
+    .icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .name {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 0.5rem;
+    }
+
+    .description {
+      font-size: 0.875rem;
+      color: #6b7280;
+      margin-bottom: 0.75rem;
+      line-height: 1.4;
+      min-height: 2.8em;
+    }
+
+    .info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 0.75rem;
+      border-top: 1px solid #e5e7eb;
+
+      .badge {
+        font-size: 0.75rem;
+        padding: 0.125rem 0.5rem;
+        border-radius: 4px;
+        background: #dbeafe;
+        color: #1e40af;
+        font-weight: 500;
+      }
+
+      .count {
+        font-size: 0.75rem;
+        color: #9ca3af;
+      }
+    }
+  }
+
+  .hint {
+    padding: 0.875rem 1rem;
+    background: #eff6ff;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: #1e40af;
+    line-height: 1.5;
+
+    strong {
+      font-weight: 600;
+    }
+  }
+}
+
+// 暗色主题
+:global(.dark) {
+  .templateSelector {
+    .templateCard {
+      border-color: #374151;
+      background: #1f2937;
+
+      :global(.ant-card-body) {
+        background: #1f2937;
+      }
+
+      &:hover {
+        border-color: #60a5fa;
+        box-shadow: 0 4px 12px rgba(96, 165, 250, 0.15);
+      }
+
+      &.selected {
+        border-color: #60a5fa;
+        background: #1e3a8a;
+
+        :global(.ant-card-body) {
+          background: #1e3a8a;
+        }
+      }
+
+      .name {
+        color: #f9fafb;
+      }
+
+      .description {
+        color: #9ca3af;
+      }
+
+      .info {
+        border-top-color: #374151;
+
+        .badge {
+          background: #1e3a8a;
+          color: #93c5fd;
+        }
+
+        .count {
+          color: #6b7280;
+        }
+      }
+    }
+
+    .hint {
+      background: #1e3a8a;
+      color: #93c5fd;
+    }
+  }
+}

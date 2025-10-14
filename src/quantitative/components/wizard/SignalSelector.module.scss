@@ -1,0 +1,150 @@
+/**
+ * 信号选择器样式
+ */
+
+.signalSelector {
+  border: 2px solid #3b82f6;
+  border-radius: 6px;
+  background: #ffffff;
+  overflow: hidden;
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: #3b82f6;
+    color: #ffffff;
+
+    .title {
+      font-weight: 600;
+      font-size: 0.9375rem;
+    }
+  }
+
+  .filters {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .signalList {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 0.5rem;
+
+    .signalItem {
+      padding: 0.75rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        background: #eff6ff;
+        border-color: #3b82f6;
+        transform: translateX(4px);
+      }
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .signalMain {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.25rem;
+
+        .displayName {
+          font-weight: 500;
+          font-size: 0.875rem;
+          color: #111827;
+        }
+
+        .tags {
+          display: flex;
+          gap: 0.25rem;
+        }
+      }
+
+      .signalName {
+        font-size: 0.75rem;
+        color: #6b7280;
+        font-family: 'Courier New', monospace;
+        word-break: break-all;
+      }
+    }
+  }
+
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+
+    .count {
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+
+    .hint {
+      font-size: 0.75rem;
+      color: #3b82f6;
+    }
+  }
+}
+
+// 暗色主题
+:global(.dark) {
+  .signalSelector {
+    border-color: #60a5fa;
+    background: #1f2937;
+
+    .header {
+      background: #1e40af;
+    }
+
+    .filters {
+      background: #111827;
+      border-bottom-color: #374151;
+    }
+
+    .signalList {
+      .signalItem {
+        border-color: #374151;
+
+        &:hover {
+          background: #1e3a8a;
+          border-color: #60a5fa;
+        }
+
+        .signalMain .displayName {
+          color: #f9fafb;
+        }
+
+        .signalName {
+          color: #9ca3af;
+        }
+      }
+    }
+
+    .footer {
+      background: #111827;
+      border-top-color: #374151;
+
+      .count {
+        color: #9ca3af;
+      }
+
+      .hint {
+        color: #60a5fa;
+      }
+    }
+  }
+}

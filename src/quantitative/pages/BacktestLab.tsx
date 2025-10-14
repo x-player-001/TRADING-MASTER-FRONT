@@ -2,15 +2,19 @@
  * 回测实验室页面
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Form, Select, DatePicker, InputNumber, Button, Table, Modal, Progress, message } from 'antd';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import dayjs from 'dayjs';
 import PageHeader from '../../components/ui/PageHeader';
-import { useStrategyData } from '../hooks/useStrategyData';
+import TradingViewChart from '../../components/charts/TradingViewChart';
 import { useBacktest } from '../hooks/useBacktest';
-import { backtestAPI } from '../services';
-import { BacktestRequest, BacktestResult, TaskProgress } from '../types';
+import { backtestAPI, strategyAPI } from '../services';
+import { klineAPI, klineUtils } from '../../services/klineAPI';
+import { BacktestRequest, BacktestResult, TaskProgress, Trade } from '../types';
+import type { CandlestickData } from '../../types/kline';
+import type { Signal } from '../../services/signalAPI';
+import type { CZSCStrategyListItem } from '../types/strategy';
 import {
   formatCurrency,
   formatPercent,
@@ -29,7 +33,6 @@ interface BacktestLabProps {
 }
 
 const BacktestLab: React.FC<BacktestLabProps> = ({ isSidebarCollapsed }) => {
-  const { strategies } = useStrategyData();
   const {
     backtests,
     selectedBacktest,
@@ -49,6 +52,31 @@ const BacktestLab: React.FC<BacktestLabProps> = ({ isSidebarCollapsed }) => {
   const [progressPercent, setProgressPercent] = useState(0);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // K线图表数据
+  const [klineData, setKlineData] = useState<CandlestickData[]>([]);
+  const [isLoadingKline, setIsLoadingKline] = useState(false);
+
+  // 策略列表
+  const [strategies, setStrategies] = useState<CZSCStrategyListItem[]>([]);
+  const [isLoadingStrategies, setIsLoadingStrategies] = useState(false);
+
+  // 加载策略列表
+  useEffect(() => {
+    const loadStrategies = async () => {
+      try {
+        setIsLoadingStrategies(true);
+        const response = await strategyAPI.getStrategies({ limit: 100 });
+        setStrategies(response.strategies);
+      } catch (error) {
+        console.error('加载策略列表失败:', error);
+      } finally {
+        setIsLoadingStrategies(false);
+      }
+    };
+
+    loadStrategies();
+  }, []);
+
   // 清理轮询
   const stopPolling = () => {
     if (pollingIntervalRef.current) {
@@ -56,14 +84,14 @@ const BacktestLab: React.FC<BacktestLabProps> = ({ isSidebarCollapsed }) => {
       pollingIntervalRef.current = null;
     }
   };
-// 运行回测（同步模式 - CZSC直接返回结果）
+  // 运行回测（同步模式 - CZSC直接返回结果）
   const handleRunBacktest = async () => {
     try {
       const values = await form.validateFields();
       const [startDate, endDate] = values.dateRange;
 
       const request: BacktestRequest = {
-        strategy_id: values.strategy_id,
+        strategy_id: values.strategy_id, // 使用选中的策略ID
         symbol: values.symbol,
         interval: values.interval,
         start_time: startDate.valueOf(),
@@ -84,9 +112,31 @@ const BacktestLab: React.FC<BacktestLabProps> = ({ isSidebarCollapsed }) => {
       selectBacktest(result);
       setShowResults(true);
 
+      // 加载K线数据
+      await loadKlineData(values.symbol, values.interval, startDate.valueOf(), endDate.valueOf());
+
     } catch (err: any) {
       message.destroy();
       message.error(err.message || '回测执行失败');
+    }
+  };
+
+  // 加载K线数据
+  const loadKlineData = async (symbol: string, interval: string, startTime: number, endTime: number) => {
+    try {
+      setIsLoadingKline(true);
+
+      // 使用 getKlinesByRange API按时间范围查询
+      const response = await klineAPI.getKlinesByRange(symbol, interval, startTime, endTime, 2000);
+
+      // 转换为TradingView格式
+      const chartData = klineUtils.convertToTradingViewFormat(response.klines);
+      setKlineData(chartData.candlesticks);
+    } catch (error) {
+      console.error('加载K线数据失败:', error);
+      message.error('加载K线数据失败');
+    } finally {
+      setIsLoadingKline(false);
     }
   };
 
@@ -108,6 +158,11 @@ const BacktestLab: React.FC<BacktestLabProps> = ({ isSidebarCollapsed }) => {
       }
       setShowResults(true);
       setHistoryModalVisible(false);
+
+      // 加载K线数据
+      const startTime = new Date(backtest.start_time).getTime();
+      const endTime = new Date(backtest.end_time).getTime();
+      await loadKlineData(backtest.symbol, backtest.interval, startTime, endTime);
     } catch (error) {
       message.error('获取回测详情失败');
     }
@@ -115,15 +170,6 @@ const BacktestLab: React.FC<BacktestLabProps> = ({ isSidebarCollapsed }) => {
 
   // 历史记录表格列
   const historyColumns = [
-    {
-      title: '策略',
-      dataIndex: 'strategy_id',
-      key: 'strategy_id',
-      render: (id: number) => {
-        const strategy = strategies.find(s => s.id === id);
-        return strategy?.name || `策略${id}`;
-      }
-    },
     {
       title: '币种',
       dataIndex: 'symbol',
@@ -202,6 +248,45 @@ const BacktestLab: React.FC<BacktestLabProps> = ({ isSidebarCollapsed }) => {
       }))
     : [];
 
+  // 将交易明细转换为K线图标记格式
+  const tradeMarkers = useMemo(() => {
+    if (!backtestTrades || backtestTrades.length === 0) {
+      return [];
+    }
+
+    const markers: Signal[] = [];
+
+    backtestTrades.forEach((trade) => {
+      // 开仓标记
+      markers.push({
+        id: `entry_${trade.id}`,
+        symbol: trade.symbol,
+        signal_type: trade.direction === 'long' ? 'BUY' : 'SELL',
+        signal_name: '开仓',
+        timestamp: new Date(trade.entry_time).getTime(),
+        price: trade.entry_price,
+        strength: 'HIGH',
+        confidence: 100,
+        metadata: { trade_id: trade.id }
+      });
+
+      // 平仓标记
+      markers.push({
+        id: `exit_${trade.id}`,
+        symbol: trade.symbol,
+        signal_type: trade.direction === 'long' ? 'SELL' : 'BUY',
+        signal_name: '平仓',
+        timestamp: new Date(trade.exit_time).getTime(),
+        price: trade.exit_price,
+        strength: 'MEDIUM',
+        confidence: 100,
+        metadata: { trade_id: trade.id, profit: trade.profit }
+      });
+    });
+
+    return markers;
+  }, [backtestTrades]);
+
   // 交易表格列
   const columns = [
     {
@@ -211,11 +296,11 @@ const BacktestLab: React.FC<BacktestLabProps> = ({ isSidebarCollapsed }) => {
     },
     {
       title: '方向',
-      dataIndex: 'side',
-      key: 'side',
-      render: (side: string) => (
-        <span className={side === 'LONG' ? styles.long : styles.short}>
-          {side === 'LONG' ? '做多' : '做空'}
+      dataIndex: 'direction',
+      key: 'direction',
+      render: (direction: string) => (
+        <span className={direction === 'long' ? styles.long : styles.short}>
+          {direction === 'long' ? '做多' : '做空'}
         </span>
       ),
     },
@@ -301,16 +386,18 @@ const BacktestLab: React.FC<BacktestLabProps> = ({ isSidebarCollapsed }) => {
       </Modal>
 
       <div className={styles.mainGrid}>
-        {/* 左侧：回测配置 */}
+        {/* 回测配置 */}
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>回测配置</h2>
           </div>
-          <div className={styles.cardBody}>
+          <div className={`${styles.cardBody} ${styles.configForm}`}>
             <Form
               form={form}
               layout="vertical"
               initialValues={{
+                strategy_id: undefined,
+                symbol: 'BTCUSDT',
                 interval: '15m',
                 initial_capital: DEFAULT_BACKTEST_CONFIG.initial_capital,
                 commission_rate: DEFAULT_BACKTEST_CONFIG.commission_rate,
@@ -322,10 +409,15 @@ const BacktestLab: React.FC<BacktestLabProps> = ({ isSidebarCollapsed }) => {
                 name="strategy_id"
                 rules={[{ required: true, message: '请选择策略' }]}
               >
-                <Select placeholder="选择要测试的策略">
-                  {strategies.map((s) => (
-                    <Select.Option key={s.id} value={s.id}>
-                      {s.name}
+                <Select
+                  placeholder="选择要回测的策略"
+                  loading={isLoadingStrategies}
+                  showSearch
+                  optionFilterProp="children"
+                >
+                  {strategies.map((strategy) => (
+                    <Select.Option key={strategy.strategy_id} value={strategy.strategy_id}>
+                      {strategy.name} ({strategy.category})
                     </Select.Option>
                   ))}
                 </Select>
@@ -351,14 +443,6 @@ const BacktestLab: React.FC<BacktestLabProps> = ({ isSidebarCollapsed }) => {
                 rules={[{ required: true, message: '请选择时间周期' }]}
               >
                 <Select options={INTERVALS} />
-              </Form.Item>
-
-              <Form.Item
-                label="回测时间范围"
-                name="dateRange"
-                rules={[{ required: true, message: '请选择时间范围' }]}
-              >
-                <RangePicker style={{ width: '100%' }} />
               </Form.Item>
 
               <Form.Item
@@ -388,40 +472,51 @@ const BacktestLab: React.FC<BacktestLabProps> = ({ isSidebarCollapsed }) => {
                 />
               </Form.Item>
 
-              <Button
-                type="primary"
-                size="large"
-                block
-                loading={isRunning || !!taskProgress}
-                onClick={handleRunBacktest}
+              <Form.Item
+                label="回测时间范围"
+                name="dateRange"
+                className="ant-form-item-time-range"
+                rules={[{ required: true, message: '请选择时间范围' }]}
               >
-                {taskProgress ? '回测中...' : '🚀 开始回测'}
-              </Button>
+                <RangePicker style={{ width: '100%' }} />
+              </Form.Item>
 
-              {/* 进度条 */}
-              {taskProgress && (
-                <div style={{ marginTop: '1.5rem' }}>
-                  <Progress
-                    percent={progressPercent}
-                    status="active"
-                    strokeColor={{
-                      '0%': '#3b82f6',
-                      '100%': '#10b981',
-                    }}
-                  />
-                  <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
-                    <div>K线进度: {taskProgress.current_kline} / {taskProgress.total_klines}</div>
-                    <div>交易数量: {taskProgress.trades_count}</div>
-                    <div>已用时间: {taskProgress.elapsed_seconds}秒</div>
+              <Form.Item className="ant-form-item-submit">
+                <Button
+                  type="primary"
+                  size="large"
+                  block
+                  loading={isRunning || !!taskProgress}
+                  onClick={handleRunBacktest}
+                >
+                  {taskProgress ? '回测中...' : '🚀 开始回测'}
+                </Button>
+
+                {/* 进度条 */}
+                {taskProgress && (
+                  <div style={{ marginTop: '1rem' }}>
+                    <Progress
+                      percent={progressPercent}
+                      status="active"
+                      strokeColor={{
+                        '0%': '#3b82f6',
+                        '100%': '#10b981',
+                      }}
+                    />
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                      <div>K线进度: {taskProgress.current_kline} / {taskProgress.total_klines}</div>
+                      <div>交易数量: {taskProgress.trades_count}</div>
+                      <div>已用时间: {taskProgress.elapsed_seconds}秒</div>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </Form.Item>
             </Form>
           </div>
         </div>
 
-        {/* 右侧：回测结果 */}
-        <div className={styles.resultsPanel}>
+        {/* 回测结果 */}
+        <div>
           {!showResults || !selectedBacktest ? (
             <div className={styles.placeholder}>
               <span className={styles.icon}>🧪</span>
@@ -511,7 +606,7 @@ const BacktestLab: React.FC<BacktestLabProps> = ({ isSidebarCollapsed }) => {
               {/* 交易明细 */}
               <div className={styles.card}>
                 <div className={styles.cardHeader}>
-                  <h3 className={styles.cardTitle}>交易明细</h3>
+                  <h3 className={styles.cardTitle}>交易明细（{backtestTrades.length} 笔交易，{tradeMarkers.length} 个标记）</h3>
                 </div>
                 <Table
                   dataSource={backtestTrades}
@@ -519,6 +614,33 @@ const BacktestLab: React.FC<BacktestLabProps> = ({ isSidebarCollapsed }) => {
                   rowKey="id"
                   pagination={{ pageSize: 10 }}
                 />
+              </div>
+
+              {/* K线图表（带交易标记） */}
+              <div className={styles.card}>
+                <div className={styles.cardHeader}>
+                  <h3 className={styles.cardTitle}>
+                    K线图表与交易标记
+                    {isLoadingKline && <span style={{ marginLeft: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>加载中...</span>}
+                    {!isLoadingKline && klineData.length === 0 && <span style={{ marginLeft: '1rem', fontSize: '0.875rem', color: '#ef4444' }}>K线数据加载失败</span>}
+                    {!isLoadingKline && klineData.length > 0 && <span style={{ marginLeft: '1rem', fontSize: '0.875rem', color: '#10b981' }}>已加载 {klineData.length} 根K线</span>}
+                  </h3>
+                </div>
+                <div className={styles.chartContainer}>
+                  {klineData.length > 0 ? (
+                    <TradingViewChart
+                      candlestickData={klineData}
+                      signals={tradeMarkers}
+                      height={500}
+                      showVolume={true}
+                      theme="dark"
+                    />
+                  ) : (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
+                      {isLoadingKline ? '正在加载K线数据...' : '暂无K线数据'}
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           )}

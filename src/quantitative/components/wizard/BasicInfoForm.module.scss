@@ -1,0 +1,15 @@
+/**
+ * 基本信息表单样式
+ */
+
+.basicInfoForm {
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+
+    .col {
+      margin-bottom: 0;
+    }
+  }
+}

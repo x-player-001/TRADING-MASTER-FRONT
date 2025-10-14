@@ -44,9 +44,9 @@
 }
 
 .mainGrid {
-  display: grid;
-  grid-template-columns: 400px 1fr;
-  gap: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
   margin-top: 2rem;
 }
 
@@ -86,6 +86,42 @@
 
 .cardBody {
   padding: 1.5rem;
+}
+
+// 配置表单横向布局
+.configForm {
+  :global(.ant-form) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    align-items: start;
+  }
+
+  :global(.ant-form-item) {
+    margin-bottom: 0;
+  }
+
+  // 时间范围占两列
+  :global(.ant-form-item-time-range) {
+    grid-column: span 2;
+  }
+
+  // 按钮占满宽度
+  :global(.ant-form-item-submit) {
+    grid-column: 1 / -1;
+    margin-top: 1rem;
+  }
+}
+
+// 小屏幕单列布局
+@media (max-width: 768px) {
+  .configForm :global(.ant-form) {
+    grid-template-columns: 1fr;
+  }
+
+  .configForm :global(.ant-form-item-time-range) {
+    grid-column: auto;
+  }
 }
 
 .resultsPanel {
@@ -196,10 +232,6 @@
 
 // 响应式
 @media (max-width: 1024px) {
-  .mainGrid {
-    grid-template-columns: 1fr;
-  }
-
   .metricsGrid {
     grid-template-columns: repeat(2, 1fr);
   }

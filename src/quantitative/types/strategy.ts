@@ -1,188 +1,125 @@
 /**
- * 量化交易 - 策略相关类型定义
- *
- * ⚠️ 注意：已迁移到CZSC回测系统
- * 本文件保留旧版类型定义以保持向后兼容
- * 新增CZSC相关类型定义
+ * 量化交易 - 策略相关类型定义（重构版）
+ * 完全对接CZSC Position策略系统
  */
 
-// 策略类型枚举
-export type StrategyType = 'breakout' | 'trend_following' | 'grid' | 'custom';
-
-// 策略模式枚举
-export type StrategyMode = 'backtest' | 'paper' | 'live';
-
-// 策略配置
-export interface StrategyConfig {
-  id?: number;
-  name: string;
-  type: StrategyType;
-  description: string;
-  parameters: Record<string, any>; // 策略参数（动态结构）
-  enabled: boolean;
-  mode: StrategyMode;
-  created_at?: string;
-  updated_at?: string;
-}
-
-// 策略性能统计
-export interface StrategyPerformance {
-  strategy_id: number;
-  total_backtests: number;
-  total_trades: number;
-  win_trades: number;
-  loss_trades: number;
-  win_rate: number;
-  avg_return: number;
-  avg_sharpe: number;
-  avg_max_drawdown: number;
-}
-
-// 突破策略参数
-export interface BreakoutStrategyParams {
-  lookback_period: number;
-  min_range_touches: number;
-  min_confidence: number;
-  min_strength: number;
-  stop_loss_percent: number;
-  take_profit_percent: number;
-  position_size_percent: number;
-}
-
-// 趋势跟踪策略参数
-export interface TrendFollowingParams {
-  fast_ma_period: number;
-  slow_ma_period: number;
-  trend_ma_period: number;
-  rsi_period: number;
-  stop_loss_percent: number;
-  take_profit_percent: number;
-  position_size_percent: number;
-}
-
-// 策略列表响应
-export interface StrategiesResponse {
-  success: boolean;
-  data: StrategyConfig[];
-  count: number;
-}
-
-// 策略切换请求
-export interface ToggleStrategyRequest {
-  enabled: boolean;
-}
-
-// ==================== CZSC策略类型定义 ====================
+// ==================== CZSC Position 策略类型 ====================
 
 /**
- * CZSC策略信号配置
+ * Factor 信号组合
  */
-export interface CZSCStrategySignal {
-  name: string;          // 信号函数名
-  freq: string;          // 周期
+export interface CZSCFactor {
+  name?: string;                    // Factor名称（可选）
+  signals_all?: string[];           // 所有信号必须同时满足（AND逻辑）
+  signals_any?: string[];           // 任意信号满足即可（OR逻辑）
+  signals_not?: string[];           // 不能出现的信号（NOT逻辑）
 }
 
 /**
- * CZSC策略条件类型
+ * 开仓/平仓操作
  */
-export type CZSCConditionType = 'signal_match' | 'stop_loss' | 'take_profit' | 'holding_bars';
-
-/**
- * CZSC策略条件
- */
-export interface CZSCStrategyCondition {
-  type: CZSCConditionType;
-  signal_pattern?: string;    // 信号模式（signal_match类型）
-  value?: number;             // 数值（其他类型）
-  description?: string;       // 条件描述
+export interface CZSCOperation {
+  operate: 'LO' | 'LE' | 'SO' | 'SE';  // LO开多 LE平多 SO开空 SE平空
+  factors: CZSCFactor[];                // 信号组合条件
 }
 
 /**
- * CZSC策略规则
+ * Position 配置
  */
-export interface CZSCStrategyRules {
-  operator: 'AND' | 'OR';
-  conditions: CZSCStrategyCondition[];
+export interface CZSCPositionConfig {
+  name: string;                         // 仓位名称
+  symbol?: string;                      // 标的代码（可选，回测时会被覆盖）
+  opens: CZSCOperation[];               // 开仓操作列表
+  exits: CZSCOperation[];               // 平仓操作列表
+  interval?: number;                    // 开仓间隔（K线数），0表示无限制
+  timeout?: number;                     // 超时平仓（K线数）
+  stop_loss?: number;                   // 止损（BP），1BP=0.01%
+  T0?: boolean;                         // 是否支持T+0交易
 }
 
 /**
- * CZSC仓位管理
+ * 信号配置
  */
-export interface CZSCPositionSizing {
-  type: 'fixed' | 'percentage' | 'kelly';
-  value: number;
+export interface CZSCSignalConfig {
+  name: string;                         // 信号函数名
+  freq: string;                         // 周期（如15m、1h）
+  [key: string]: any;                   // 其他信号参数（如bi_init_length等）
+}
+
+/**
+ * 创建策略请求
+ */
+export interface CZSCStrategyCreate {
+  strategy_id: string;                  // 策略唯一标识
+  name: string;                         // 策略名称
+  description?: string;                 // 策略描述
+  category?: string;                    // 策略分类（trend/reversal/arbitrage等）
+  positions_config: CZSCPositionConfig[]; // Position配置列表
+  signals_config: CZSCSignalConfig[];   // 信号配置列表
+  ensemble_method?: 'mean' | 'vote';    // 集成方法（默认mean）
+  fee_rate?: number;                    // 手续费率（默认0.0002）
+  version?: string;                     // 版本号
+  author?: string;                      // 作者
+  tags?: string[];                      // 标签
+}
+
+/**
+ * 更新策略请求
+ */
+export interface CZSCStrategyUpdate {
+  name?: string;
   description?: string;
+  is_active?: boolean;
+  positions_config?: CZSCPositionConfig[];
+  signals_config?: CZSCSignalConfig[];
+  ensemble_method?: 'mean' | 'vote';
+  fee_rate?: number;
+  tags?: string[];
 }
 
 /**
- * CZSC风控设置
- */
-export interface CZSCRiskManagement {
-  max_position?: number;
-  max_loss_per_trade?: number;
-  max_daily_loss?: number;
-}
-
-/**
- * CZSC策略完整配置
+ * 策略详情
  */
 export interface CZSCStrategy {
   strategy_id: string;
   name: string;
   description?: string;
+  category?: string;
+  positions_config: CZSCPositionConfig[];
+  signals_config: CZSCSignalConfig[];
+  ensemble_method?: string;
+  fee_rate?: number;
+  version?: string;
   author?: string;
-  version: string;
-  is_active: boolean;
+  tags?: string[];
+  use_count: number;                    // 使用次数
+  avg_return: number;                   // 平均收益率
+  avg_sharpe: number;                   // 平均夏普比
+  is_active: boolean;                   // 是否活跃
   created_at: string;
   updated_at: string;
-  signals: CZSCStrategySignal[];
-  entry_rules: CZSCStrategyRules;
-  exit_rules: CZSCStrategyRules;
-  position_sizing?: CZSCPositionSizing;
-  risk_management?: CZSCRiskManagement;
 }
 
 /**
- * CZSC策略列表项
+ * 策略列表项
  */
 export interface CZSCStrategyListItem {
   strategy_id: string;
   name: string;
-  description?: string;
+  category?: string;
+  version?: string;
   author?: string;
-  version: string;
+  use_count: number;
+  avg_return: number;
+  avg_sharpe: number;
   is_active: boolean;
   created_at: string;
-  updated_at: string;
 }
 
 /**
- * CZSC策略列表响应
+ * 策略列表响应
  */
 export interface CZSCStrategyListResponse {
   total: number;
   strategies: CZSCStrategyListItem[];
-  limit: number;
-  offset: number;
-}
-
-/**
- * CZSC策略回测历史项
- */
-export interface CZSCBacktestHistoryItem {
-  backtest_task_id: string;
-  backtest_time: string;
-  total_return: number;
-  max_drawdown: number;
-  sharpe_ratio: number;
-  trades_count: number;
-}
-
-/**
- * CZSC策略回测历史响应
- */
-export interface CZSCStrategyBacktestHistory {
-  strategy_id: string;
-  total: number;
-  backtests: CZSCBacktestHistoryItem[];
 }

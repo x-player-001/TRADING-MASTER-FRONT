@@ -1,0 +1,84 @@
+/**
+ * 回测参数表单样式
+ */
+
+.backtestParamsForm {
+  .row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+
+    .col {
+      margin-bottom: 0;
+    }
+  }
+
+  .info {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: #f9fafb;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+
+    .infoTitle {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 0.75rem;
+    }
+
+    .infoList {
+      margin: 0;
+      padding-left: 1.25rem;
+      font-size: 0.875rem;
+      color: #374151;
+      line-height: 1.6;
+
+      li {
+        margin-bottom: 0.75rem;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        strong {
+          color: #111827;
+        }
+
+        ul {
+          margin-top: 0.25rem;
+          padding-left: 1.25rem;
+          color: #6b7280;
+        }
+      }
+    }
+  }
+}
+
+// 暗色主题
+:global(.dark) {
+  .backtestParamsForm {
+    .info {
+      background: #111827;
+      border-color: #374151;
+
+      .infoTitle {
+        color: #f9fafb;
+      }
+
+      .infoList {
+        color: #d1d5db;
+
+        li {
+          strong {
+            color: #f9fafb;
+          }
+
+          ul {
+            color: #9ca3af;
+          }
+        }
+      }
+    }
+  }
+}

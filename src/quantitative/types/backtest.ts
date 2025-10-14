@@ -110,6 +110,7 @@ export interface TaskListParams {
 export interface Trade {
   id: number;
   backtest_id: number;
+  symbol: string;
   entry_time: string;
   exit_time: string;
   entry_price: number;
@@ -138,47 +139,44 @@ export interface CZSCBacktestRequest {
   signal_config: CZSCSignalConfig;
 }
 
-// CZSC 回测统计数据
-// CZSC 回测统计数据
+// CZSC 回测统计数据（后端返回中文字段）
 export interface CZSCBacktestStats {
-  total_return: number;           // 总收益率
-  annual_return: number;          // 年化收益率
-  cumulative_return: number;      // 累计收益率
-  max_drawdown: number;           // 最大回撤
-  sharpe_ratio: number;           // 夏普比率
-  calmar_ratio: number;           // 卡玛比率
-  sortino_ratio: number;          // 索提诺比率
-  volatility: number;             // 波动率
-  total_trades: number;           // 交易次数
-  winning_trades: number;         // 盈利次数
-  losing_trades: number;          // 亏损次数
-  win_rate: number;               // 交易胜率
-  avg_profit: number;             // 平均盈利
-  avg_loss: number;               // 平均亏损
-  profit_loss_ratio: number;      // 盈亏比
-  avg_holding_bars: number;       // 平均持仓K线数
-  max_holding_bars: number;       // 最大持仓K线数
-  break_even_point: number;       // 盈亏平衡点
-  avg_profit_per_trade: number;   // 单笔平均收益
+  开始日期?: string;
+  结束日期?: string;
+  绝对收益?: number;
+  年化?: number;              // 年化收益率
+  夏普?: number;              // 夏普比率
+  最大回撤?: number;          // 最大回撤
+  卡玛?: number;              // 卡玛比率
+  索提诺?: number;            // 索提诺比率
+  盈亏平衡点?: number;        // 盈亏平衡点
+  日胜率?: number;
+  非零覆盖?: number;
+  交易胜率?: number;          // 交易胜率
+  单笔收益?: number;          // 单笔平均收益（BP）
+  日收益?: number;
+  日收益std?: number;
+  [key: string]: any;         // 支持其他动态字段
 }
 
-// CZSC 交易记录
+// CZSC 交易记录（后端返回中文字段）
 export interface CZSCTrade {
-  entry_time: string;           // 开仓时间
-  exit_time: string;            // 平仓时间
-  entry_price: number;          // 开仓价格
-  exit_price: number;           // 平仓价格
-  profit: number;               // 盈亏金额
-  profit_rate: number;          // 盈亏比例
-  entry_signal: string;         // 开仓信号
-  exit_signal: string;          // 平仓信号
+  开仓时间: string;
+  平仓时间: string;
+  交易方向: string;            // "多头" | "空头"
+  开仓价格: number;
+  平仓价格: number;
+  盈亏比例: number;            // BP单位
+  持仓K线数: number;
 }
 
 // CZSC 资金曲线点
 export interface CZSCEquityPoint {
-  dt: string;                   // 时间
-  equity: number;               // 权益
-  price: number;                // 价格
+  dt?: string;                  // 时间（旧格式）
+  date?: string;                // 时间（新格式）
+  equity?: number;              // 权益（旧格式）
+  total?: number;               // 权益（新格式）
+  price?: number;               // 价格
 }
 
 // CZSC 回测结果
@@ -188,11 +186,12 @@ export interface CZSCBacktestResult {
   freq: string;
   start_date: string;
   end_date: string;
-  status: 'completed' | 'failed';
+  status?: 'completed' | 'failed';
   stats: CZSCBacktestStats;
-  trades: CZSCTrade[];
-  trades_count: number;
-  equity_curve: CZSCEquityPoint[];
+  trade_pairs?: CZSCTrade[];      // 注意：字段名是 trade_pairs
+  trades?: CZSCTrade[];           // 兼容旧字段名
+  trades_count?: number;
+  equity_curve?: CZSCEquityPoint[];
   created_at?: string;
 }
 
