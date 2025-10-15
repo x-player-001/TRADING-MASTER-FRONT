@@ -7,12 +7,13 @@
 
 /**
  * Factor 信号组合
+ * 注意：后端要求三个信号字段必须存在，即使为空数组
  */
 export interface CZSCFactor {
   name?: string;                    // Factor名称（可选）
-  signals_all?: string[];           // 所有信号必须同时满足（AND逻辑）
-  signals_any?: string[];           // 任意信号满足即可（OR逻辑）
-  signals_not?: string[];           // 不能出现的信号（NOT逻辑）
+  signals_all: string[];            // 所有信号必须同时满足（AND逻辑）- 必需字段
+  signals_any: string[];            // 任意信号满足即可（OR逻辑）- 必需字段
+  signals_not: string[];            // 不能出现的信号（NOT逻辑）- 必需字段
 }
 
 /**

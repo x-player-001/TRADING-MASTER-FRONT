@@ -25,14 +25,18 @@ export const strategyTemplates: Record<string, StrategyTemplate> = {
         operate: 'LO',
         factors: [{
           name: '笔向上',
-          signals_all: ['15m_D0BL9_V230228_向上_任意_任意_任意_0']
+          signals_all: ['15m_D0BL9_V230228_向上_任意_任意_任意_0'],
+          signals_any: [],
+          signals_not: []
         }]
       }],
       exits: [{
         operate: 'LE',
         factors: [{
           name: '笔向下',
-          signals_all: ['15m_D0BL9_V230228_向下_任意_任意_任意_0']
+          signals_all: ['15m_D0BL9_V230228_向下_任意_任意_任意_0'],
+          signals_any: [],
+          signals_not: []
         }]
       }],
       interval: 10,
@@ -59,14 +63,18 @@ export const strategyTemplates: Record<string, StrategyTemplate> = {
           operate: 'LO',
           factors: [{
             name: '笔向上开多',
-            signals_all: ['15m_D0BL9_V230228_向上_任意_任意_任意_0']
+            signals_all: ['15m_D0BL9_V230228_向上_任意_任意_任意_0'],
+            signals_any: [],
+            signals_not: []
           }]
         },
         {
           operate: 'SO',
           factors: [{
             name: '笔向下开空',
-            signals_all: ['15m_D0BL9_V230228_向下_任意_任意_任意_0']
+            signals_all: ['15m_D0BL9_V230228_向下_任意_任意_任意_0'],
+            signals_any: [],
+            signals_not: []
           }]
         }
       ],
@@ -75,14 +83,18 @@ export const strategyTemplates: Record<string, StrategyTemplate> = {
           operate: 'LE',
           factors: [{
             name: '笔向下平多',
-            signals_all: ['15m_D0BL9_V230228_向下_任意_任意_任意_0']
+            signals_all: ['15m_D0BL9_V230228_向下_任意_任意_任意_0'],
+            signals_any: [],
+            signals_not: []
           }]
         },
         {
           operate: 'SE',
           factors: [{
             name: '笔向上平空',
-            signals_all: ['15m_D0BL9_V230228_向上_任意_任意_任意_0']
+            signals_all: ['15m_D0BL9_V230228_向上_任意_任意_任意_0'],
+            signals_any: [],
+            signals_not: []
           }]
         }
       ],
@@ -109,22 +121,26 @@ export const strategyTemplates: Record<string, StrategyTemplate> = {
         operate: 'LO',
         factors: [{
           name: '任一买点',
+          signals_all: [],
           signals_any: [
             '15m_D1BS_一买_任意_任意_任意_0',
             '15m_D2BS_二买_任意_任意_任意_0',
             '15m_D3BS_三买_任意_任意_任意_0'
-          ]
+          ],
+          signals_not: []
         }]
       }],
       exits: [{
         operate: 'LE',
         factors: [{
           name: '任一卖点',
+          signals_all: [],
           signals_any: [
             '15m_D1SS_一卖_任意_任意_任意_0',
             '15m_D2SS_二卖_任意_任意_任意_0',
             '15m_D3SS_三卖_任意_任意_任意_0'
-          ]
+          ],
+          signals_not: []
         }]
       }],
       interval: 20,
@@ -163,6 +179,7 @@ export const strategyTemplates: Record<string, StrategyTemplate> = {
             '15m_D0BL9_V230228_向上_任意_任意_任意_0',
             '15m_MACD_金叉_任意_任意_任意_0'
           ],
+          signals_any: [],
           signals_not: [
             '15m_VOL_缩量_任意_任意_任意_0'
           ]
@@ -173,11 +190,15 @@ export const strategyTemplates: Record<string, StrategyTemplate> = {
         factors: [
           {
             name: '笔转向',
-            signals_all: ['15m_D0BL9_V230228_向下_任意_任意_任意_0']
+            signals_all: ['15m_D0BL9_V230228_向下_任意_任意_任意_0'],
+            signals_any: [],
+            signals_not: []
           },
           {
             name: 'MACD死叉',
-            signals_all: ['15m_MACD_死叉_任意_任意_任意_0']
+            signals_all: ['15m_MACD_死叉_任意_任意_任意_0'],
+            signals_any: [],
+            signals_not: []
           }
         ]
       }],

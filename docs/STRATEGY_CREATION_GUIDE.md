@@ -76,8 +76,8 @@ Position (策略) = Opens + Exits + 风控参数
             {
               "name": "因子名称",
               "signals_all": ["必须同时满足的信号列表"],
-              "signals_any": ["满足任一即可的信号列表"],
-              "signals_not": ["不能出现的信号列表"]
+        "signals_any": ["满足任一即可的信号列表"],
+        "signals_not": ["不能出现的信号列表"]
             }
           ]
         }
@@ -134,9 +134,24 @@ Position (策略) = Opens + Exits + 风控参数
 - `SE`: Short Exit - 平空仓
 
 #### Factor 逻辑
+
+**⚠️ 重要：Factor 必须包含以下三个字段（即使为空数组）**
+
+```json
+{
+  "name": "因子名称",
+  "signals_all": [],  // 必填：所有信号必须同时满足（AND 逻辑）
+  "signals_any": [],  // 必填：任意信号满足即可（OR 逻辑）
+  "signals_not": []   // 必填：不能出现的信号（NOT 逻辑）
+}
+```
+
+**字段说明**：
 - `signals_all`: 所有信号必须同时满足（AND 逻辑）
 - `signals_any`: 任意信号满足即可（OR 逻辑）
 - `signals_not`: 不能出现的信号（NOT 逻辑）
+- 三个字段**必须全部存在**，不使用时设为空数组 `[]`
+- 缺少任何一个字段会导致创建或回测失败
 
 #### 风控参数
 - `interval`: 开仓间隔（K线数），0表示无限制
@@ -227,7 +242,9 @@ POST /api/v1/backtest/czsc
       "operate": "LO",
       "factors": [{
         "name": "笔向上",
-        "signals_all": ["15m_D0BL9_V230228_向上_任意_任意_任意_0"]
+        "signals_all": ["15m_D0BL9_V230228_向上_任意_任意_任意_0"],
+        "signals_any": [],
+        "signals_not": []
       }]
     }],
 
@@ -235,7 +252,9 @@ POST /api/v1/backtest/czsc
       "operate": "LE",
       "factors": [{
         "name": "笔向下",
-        "signals_all": ["15m_D0BL9_V230228_向下_任意_任意_任意_0"]
+        "signals_all": ["15m_D0BL9_V230228_向下_任意_任意_任意_0"],
+        "signals_any": [],
+        "signals_not": []
       }]
     }],
 
@@ -279,15 +298,19 @@ POST /api/v1/backtest/czsc
         "operate": "LO",
         "factors": [{
           "name": "笔向上开多",
-          "signals_all": ["15m_D0BL9_V230228_向上_任意_任意_任意_0"]
-        }]
+          "signals_all": ["15m_D0BL9_V230228_向上_任意_任意_任意_0"],
+        "signals_any": [],
+        "signals_not": []
+      }]
       },
       {
         "operate": "SO",
         "factors": [{
           "name": "笔向下开空",
-          "signals_all": ["15m_D0BL9_V230228_向下_任意_任意_任意_0"]
-        }]
+          "signals_all": ["15m_D0BL9_V230228_向下_任意_任意_任意_0"],
+        "signals_any": [],
+        "signals_not": []
+      }]
       }
     ],
 
@@ -296,15 +319,19 @@ POST /api/v1/backtest/czsc
         "operate": "LE",
         "factors": [{
           "name": "笔向下平多",
-          "signals_all": ["15m_D0BL9_V230228_向下_任意_任意_任意_0"]
-        }]
+          "signals_all": ["15m_D0BL9_V230228_向下_任意_任意_任意_0"],
+        "signals_any": [],
+        "signals_not": []
+      }]
       },
       {
         "operate": "SE",
         "factors": [{
           "name": "笔向上平空",
-          "signals_all": ["15m_D0BL9_V230228_向上_任意_任意_任意_0"]
-        }]
+          "signals_all": ["15m_D0BL9_V230228_向上_任意_任意_任意_0"],
+        "signals_any": [],
+        "signals_not": []
+      }]
       }
     ],
 
@@ -347,11 +374,13 @@ POST /api/v1/backtest/czsc
       "operate": "LO",
       "factors": [{
         "name": "任一买点",
+        "signals_all": [],
         "signals_any": [
           "15m_D1BS_一买_任意_任意_任意_0",
           "15m_D2BS_二买_任意_任意_任意_0",
           "15m_D3BS_三买_任意_任意_任意_0"
-        ]
+        ],
+        "signals_not": []
       }]
     }],
 
@@ -359,11 +388,13 @@ POST /api/v1/backtest/czsc
       "operate": "LE",
       "factors": [{
         "name": "任一卖点",
+        "signals_all": [],
         "signals_any": [
           "15m_D1SS_一卖_任意_任意_任意_0",
           "15m_D2SS_二卖_任意_任意_任意_0",
           "15m_D3SS_三卖_任意_任意_任意_0"
-        ]
+        ],
+        "signals_not": []
       }]
     }],
 
@@ -431,12 +462,16 @@ POST /api/v1/backtest/czsc
         "factors": [
           {
             "name": "笔转向",
-            "signals_all": ["15m_D0BL9_V230228_向下_任意_任意_任意_0"]
-          },
+            "signals_all": ["15m_D0BL9_V230228_向下_任意_任意_任意_0"],
+        "signals_any": [],
+        "signals_not": []
+      },
           {
             "name": "MACD死叉",
-            "signals_all": ["15m_MACD_死叉_任意_任意_任意_0"]
-          }
+            "signals_all": ["15m_MACD_死叉_任意_任意_任意_0"],
+        "signals_any": [],
+        "signals_not": []
+      }
         ]
       }
     ],
@@ -496,7 +531,9 @@ POST /api/v1/backtest/czsc
         "signals_all": [
           "1d_D0BL9_V230228_向上_任意_任意_任意_0",
           "15m_D3BS_三买_任意_任意_任意_0"
-        ]
+        ],
+        "signals_any": [],
+        "signals_not": []
       }]
     }],
 
@@ -504,10 +541,12 @@ POST /api/v1/backtest/czsc
       "operate": "LE",
       "factors": [{
         "name": "三卖或日线转向",
+        "signals_all": [],
         "signals_any": [
           "15m_D3SS_三卖_任意_任意_任意_0",
           "1d_D0BL9_V230228_向下_任意_任意_任意_0"
-        ]
+        ],
+        "signals_not": []
       }]
     }],
 
@@ -662,7 +701,7 @@ GET /api/v1/signals/list
     "15m_D0BL9_V230228_向上_任意_任意_任意_0",
     "15m_MACD_金叉_任意_任意_任意_0"
   ],
-  "signals_not": [
+        "signals_not": [
     "15m_VOL_缩量_任意_任意_任意_0"
   ]
 }
