@@ -41,7 +41,8 @@
       "Bash(find:*)",
       "Bash(python:*)",
       "Bash(git checkout:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nfix: 修复信号名称格式错误 - 更新为7段格式\n\n问题：\n- CZSC后端要求信号名称必须是7段格式 k1_k2_k3_v1_v2_v3_score\n- 之前所有模板和mock数据使用的是6段格式，缺少v2字段\n- 导致策略创建时报错：ValueError: 信号名称格式错误\n\n修复内容：\n- 更新 strategyTemplates.ts 中所有4个模板的信号格式（bi_long, bi_bidirection, buypoint, multi_factor）\n- 更新 SignalSelector.tsx 中所有16个mock信号为7段格式\n- 添加注释说明7段格式要求\n\n修改示例：\n- ❌ 旧：15m_D1BS_一买_任意_任意_0 (6段)\n- ✅ 新：15m_D1BS_一买_任意_任意_任意_0 (7段)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git commit -m \"$(cat <<''EOF''\nfix: 修复信号名称格式错误 - 更新为7段格式\n\n问题：\n- CZSC后端要求信号名称必须是7段格式 k1_k2_k3_v1_v2_v3_score\n- 之前所有模板和mock数据使用的是6段格式，缺少v2字段\n- 导致策略创建时报错：ValueError: 信号名称格式错误\n\n修复内容：\n- 更新 strategyTemplates.ts 中所有4个模板的信号格式（bi_long, bi_bidirection, buypoint, multi_factor）\n- 更新 SignalSelector.tsx 中所有16个mock信号为7段格式\n- 添加注释说明7段格式要求\n\n修改示例：\n- ❌ 旧：15m_D1BS_一买_任意_任意_0 (6段)\n- ✅ 新：15m_D1BS_一买_任意_任意_任意_0 (7段)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

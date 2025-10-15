@@ -119,29 +119,49 @@ export const strategyTemplates: Record<string, StrategyTemplate> = {
       name: '买卖点策略',
       opens: [{
         operate: 'LO',
-        factors: [{
-          name: '任一买点',
-          signals_all: [],
-          signals_any: [
-            '15m_D1BS_一买_任意_任意_任意_0',
-            '15m_D2BS_二买_任意_任意_任意_0',
-            '15m_D3BS_三买_任意_任意_任意_0'
-          ],
-          signals_not: []
-        }]
+        factors: [
+          {
+            name: '一买',
+            signals_all: ['15m_D1BS_一买_任意_任意_任意_0'],
+            signals_any: [],
+            signals_not: []
+          },
+          {
+            name: '二买',
+            signals_all: ['15m_D2BS_二买_任意_任意_任意_0'],
+            signals_any: [],
+            signals_not: []
+          },
+          {
+            name: '三买',
+            signals_all: ['15m_D3BS_三买_任意_任意_任意_0'],
+            signals_any: [],
+            signals_not: []
+          }
+        ]
       }],
       exits: [{
         operate: 'LE',
-        factors: [{
-          name: '任一卖点',
-          signals_all: [],
-          signals_any: [
-            '15m_D1SS_一卖_任意_任意_任意_0',
-            '15m_D2SS_二卖_任意_任意_任意_0',
-            '15m_D3SS_三卖_任意_任意_任意_0'
-          ],
-          signals_not: []
-        }]
+        factors: [
+          {
+            name: '一卖',
+            signals_all: ['15m_D1SS_一卖_任意_任意_任意_0'],
+            signals_any: [],
+            signals_not: []
+          },
+          {
+            name: '二卖',
+            signals_all: ['15m_D2SS_二卖_任意_任意_任意_0'],
+            signals_any: [],
+            signals_not: []
+          },
+          {
+            name: '三卖',
+            signals_all: ['15m_D3SS_三卖_任意_任意_任意_0'],
+            signals_any: [],
+            signals_not: []
+          }
+        ]
       }],
       interval: 20,
       timeout: 150,

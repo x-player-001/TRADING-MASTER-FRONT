@@ -147,11 +147,16 @@ Position (策略) = Opens + Exits + 风控参数
 ```
 
 **字段说明**：
-- `signals_all`: 所有信号必须同时满足（AND 逻辑）
-- `signals_any`: 任意信号满足即可（OR 逻辑）
-- `signals_not`: 不能出现的信号（NOT 逻辑）
-- 三个字段**必须全部存在**，不使用时设为空数组 `[]`
-- 缺少任何一个字段会导致创建或回测失败
+- `signals_all`: 所有信号必须同时满足（AND 逻辑）**⚠️ 不能为空数组，至少需要1个信号**
+- `signals_any`: 任意信号满足即可（OR 逻辑），可以为空数组
+- `signals_not`: 不能出现的信号（NOT 逻辑），可以为空数组
+- 三个字段**必须全部存在**
+- **关键限制**：`signals_all` 必须至少包含一个信号，否则会报错 "signals_all 不能为空"
+
+**实现 OR 逻辑的正确方式**：
+如果需要"任一买点触发"（OR 逻辑），有两种方法：
+1. **推荐**：在 Event 中创建多个 Factor，每个 Factor 只包含一个信号
+2. **不推荐**：单个 Factor 中把多个信号放到 `signals_all`（这变成了 AND 逻辑）
 
 #### 风控参数
 - `interval`: 开仓间隔（K线数），0表示无限制
@@ -359,6 +364,8 @@ POST /api/v1/backtest/czsc
 
 **策略逻辑**：任一买点开多，任一卖点平多
 
+**说明**：实现 OR 逻辑（任一买点）的正确方式是使用多个 Factor，每个 Factor 包含一个信号。Event 会在任一 Factor 满足时触发。
+
 ```json
 {
   "strategy_id": "czsc_buypoint_v1",
@@ -372,30 +379,50 @@ POST /api/v1/backtest/czsc
 
     "opens": [{
       "operate": "LO",
-      "factors": [{
-        "name": "任一买点",
-        "signals_all": [],
-        "signals_any": [
-          "15m_D1BS_一买_任意_任意_任意_0",
-          "15m_D2BS_二买_任意_任意_任意_0",
-          "15m_D3BS_三买_任意_任意_任意_0"
-        ],
-        "signals_not": []
-      }]
+      "factors": [
+        {
+          "name": "一买",
+          "signals_all": ["15m_D1BS_一买_任意_任意_任意_0"],
+          "signals_any": [],
+          "signals_not": []
+        },
+        {
+          "name": "二买",
+          "signals_all": ["15m_D2BS_二买_任意_任意_任意_0"],
+          "signals_any": [],
+          "signals_not": []
+        },
+        {
+          "name": "三买",
+          "signals_all": ["15m_D3BS_三买_任意_任意_任意_0"],
+          "signals_any": [],
+          "signals_not": []
+        }
+      ]
     }],
 
     "exits": [{
       "operate": "LE",
-      "factors": [{
-        "name": "任一卖点",
-        "signals_all": [],
-        "signals_any": [
-          "15m_D1SS_一卖_任意_任意_任意_0",
-          "15m_D2SS_二卖_任意_任意_任意_0",
-          "15m_D3SS_三卖_任意_任意_任意_0"
-        ],
-        "signals_not": []
-      }]
+      "factors": [
+        {
+          "name": "一卖",
+          "signals_all": ["15m_D1SS_一卖_任意_任意_任意_0"],
+          "signals_any": [],
+          "signals_not": []
+        },
+        {
+          "name": "二卖",
+          "signals_all": ["15m_D2SS_二卖_任意_任意_任意_0"],
+          "signals_any": [],
+          "signals_not": []
+        },
+        {
+          "name": "三卖",
+          "signals_all": ["15m_D3SS_三卖_任意_任意_任意_0"],
+          "signals_any": [],
+          "signals_not": []
+        }
+      ]
     }],
 
     "interval": 20,

@@ -7,13 +7,18 @@
 
 /**
  * Factor 信号组合
- * 注意：后端要求三个信号字段必须存在，即使为空数组
+ *
+ * 后端验证规则：
+ * 1. 三个信号字段必须存在（不可为undefined）
+ * 2. signals_all 必须至少包含1个信号（不能为空数组）
+ * 3. signals_any 和 signals_not 可以为空数组
+ * 4. OR逻辑实现：多个Factor，每个Factor的signals_all包含1个信号
  */
 export interface CZSCFactor {
   name?: string;                    // Factor名称（可选）
-  signals_all: string[];            // 所有信号必须同时满足（AND逻辑）- 必需字段
-  signals_any: string[];            // 任意信号满足即可（OR逻辑）- 必需字段
-  signals_not: string[];            // 不能出现的信号（NOT逻辑）- 必需字段
+  signals_all: string[];            // 所有信号必须同时满足（AND逻辑）- 必需且不能为空
+  signals_any: string[];            // 任意信号满足即可（OR逻辑）- 必需但可以为空
+  signals_not: string[];            // 不能出现的信号（NOT逻辑）- 必需但可以为空
 }
 
 /**
