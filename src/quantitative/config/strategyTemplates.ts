@@ -170,11 +170,11 @@ export const strategyTemplates: Record<string, StrategyTemplate> = {
     }],
     signals_config: [
       {
-        name: 'czsc.signals.cxt.cxt_first_bs_V230228',
+        name: 'czsc.signals.cxt.cxt_first_buy_V221126',
         freq: '15m'
       },
       {
-        name: 'czsc.signals.cxt.cxt_second_bs_V230228',
+        name: 'czsc.signals.cxt.cxt_second_bs_V230320',
         freq: '15m'
       },
       {
