@@ -236,6 +236,18 @@ export interface CZSCBacktestListResponse {
   };
 }
 
+// CZSC 回测详情响应中的交易明细字段（英文字段名）
+export interface CZSCTradeDetail {
+  entry_time: string;        // 开仓时间
+  exit_time: string;         // 平仓时间
+  entry_price: number;       // 开仓价格
+  exit_price: number;        // 平仓价格
+  profit: number;            // 盈亏金额
+  profit_rate: number;       // 盈亏比例（小数格式，如0.011表示1.1%）
+  holding_bars?: number;     // 持仓K线数
+  holding_days?: number;     // 持仓天数
+}
+
 // CZSC 回测详情响应（GET /api/v1/backtest/{task_id}）
 export interface CZSCBacktestDetail {
   id: number;
@@ -250,8 +262,8 @@ export interface CZSCBacktestDetail {
   sharpe_ratio: number;
   total_trades: number;
   win_rate: number;
-  stats_data: CZSCBacktestStats;    // 完整统计数据
-  equity_curve: CZSCEquityPoint[];   // 权益曲线
-  trades_data: CZSCTrade[];          // ⚠️ 注意：字段名是 trades_data，不是 trades
+  stats_data: CZSCBacktestStats;       // 完整统计数据
+  equity_curve: CZSCEquityPoint[];      // 权益曲线
+  trades_data: CZSCTradeDetail[];       // ⚠️ 交易明细（英文字段名）
   created_at: string;
 }

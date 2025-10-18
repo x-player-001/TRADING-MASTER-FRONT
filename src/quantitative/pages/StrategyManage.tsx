@@ -22,8 +22,9 @@ const StrategyManage: React.FC<StrategyManageProps> = ({ isSidebarCollapsed }) =
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 创建策略向导
+  // 创建/编辑策略向导
   const [wizardVisible, setWizardVisible] = useState(false);
+  const [editingStrategy, setEditingStrategy] = useState<CZSCStrategy | null>(null);
 
   // 加载策略列表
   const loadStrategies = async () => {
@@ -43,6 +44,20 @@ const StrategyManage: React.FC<StrategyManageProps> = ({ isSidebarCollapsed }) =
     loadStrategies();
   }, []);
 
+  // 编辑策略
+  const handleEdit = async (strategyId: string) => {
+    try {
+      setIsLoading(true);
+      const strategy = await strategyAPI.getStrategy(strategyId);
+      setEditingStrategy(strategy);
+      setWizardVisible(true);
+    } catch (error: any) {
+      message.error(error.message || '加载策略详情失败');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // 删除策略
   const handleDelete = async (strategyId: string, name: string) => {
     try {
@@ -52,6 +67,19 @@ const StrategyManage: React.FC<StrategyManageProps> = ({ isSidebarCollapsed }) =
     } catch (error: any) {
       message.error(error.message || '删除失败');
     }
+  };
+
+  // 关闭向导
+  const handleCloseWizard = () => {
+    setWizardVisible(false);
+    setEditingStrategy(null);
+  };
+
+  // 向导成功回调
+  const handleWizardSuccess = () => {
+    setWizardVisible(false);
+    setEditingStrategy(null);
+    loadStrategies();
   };
 
   // 表格列定义
@@ -95,6 +123,9 @@ const StrategyManage: React.FC<StrategyManageProps> = ({ isSidebarCollapsed }) =
       fixed: 'right',
       render: (_, record) => (
         <Space size="small">
+          <Button type="link" size="small" onClick={() => handleEdit(record.strategy_id)}>
+            编辑
+          </Button>
           <Popconfirm
             title={`确定删除策略「${record.name}」吗？`}
             onConfirm={() => handleDelete(record.strategy_id, record.name)}
@@ -138,13 +169,11 @@ const StrategyManage: React.FC<StrategyManageProps> = ({ isSidebarCollapsed }) =
         </>
       ) : (
         <>
-          {/* 创建策略向导视图 */}
+          {/* 创建/编辑策略向导视图 */}
           <CreateStrategyWizard
-            onClose={() => setWizardVisible(false)}
-            onSuccess={() => {
-              setWizardVisible(false);
-              loadStrategies();
-            }}
+            editingStrategy={editingStrategy}
+            onClose={handleCloseWizard}
+            onSuccess={handleWizardSuccess}
           />
         </>
       )}

@@ -17,6 +17,7 @@ import {
 
 /**
  * 将CZSC回测结果转换为前端格式
+ * ⚠️ 后端返回的百分比数据需要乘以100（如0.15 → 15%）
  */
 const convertFromCZSCBacktestResult = (czscResult: CZSCBacktestResult, strategyId?: number): BacktestResult => {
   const stats = czscResult.stats;
@@ -39,7 +40,7 @@ const convertFromCZSCBacktestResult = (czscResult: CZSCBacktestResult, strategyI
     const drawdown = maxEquity > 0 ? (maxEquity - point.value) / maxEquity : 0;
     return {
       time: point.time,
-      drawdown: drawdown
+      drawdown: drawdown * 100  // 乘100转百分比
     };
   });
 
@@ -58,15 +59,15 @@ const convertFromCZSCBacktestResult = (czscResult: CZSCBacktestResult, strategyI
     end_time: czscResult.end_date,
     initial_capital: initialCapital,
     final_capital: finalCapital,
-    total_return: totalReturn,
-    annual_return: stats.年化 || 0,
-    sharpe_ratio: stats.夏普 || 0,
-    max_drawdown: stats.最大回撤 || 0,
+    total_return: (totalReturn || 0) * 100,           // 乘100转百分比
+    annual_return: (stats.年化 || 0) * 100,           // 乘100转百分比
+    sharpe_ratio: stats.夏普 || 0,                    // 夏普比率不需要乘100
+    max_drawdown: (stats.最大回撤 || 0) * 100,        // 乘100转百分比
     total_trades: czscResult.trades_count || trades.length,
     win_trades: Math.round((stats.交易胜率 || 0) * trades.length),
     loss_trades: Math.round((1 - (stats.交易胜率 || 0)) * trades.length),
-    win_rate: stats.交易胜率 || 0,
-    avg_win: stats.单笔收益 || 0,
+    win_rate: (stats.交易胜率 || 0) * 100,            // 乘100转百分比
+    avg_win: (stats.单笔收益 || 0) * 100,             // 乘100转百分比 (如果是比例)
     avg_loss: 0,
     profit_factor: 0,
     performance_data: {
@@ -86,7 +87,7 @@ const convertFromCZSCBacktestResult = (czscResult: CZSCBacktestResult, strategyI
       exit_price: trade.平仓价格,
       quantity: 1,
       profit: (trade.盈亏比例 / 10000) * trade.开仓价格, // BP转金额
-      profit_rate: trade.盈亏比例 / 10000, // BP转比例
+      profit_rate: (trade.盈亏比例 / 100),              // BP转百分比 (10000 BP = 100%)
       direction: trade.交易方向 === '多头' ? 'long' : 'short'
     }))
   };
@@ -136,6 +137,7 @@ export const backtestAPI = {
     const results = listData.results || [];
 
     // 转换列表项为前端格式（新版API已包含完整统计数据）
+    // ⚠️ 后端返回的百分比数据需要乘以100（如0.15 → 15%）
     return results.map(item => ({
       id: item.id || 0,
       strategy_id: 0,
@@ -145,17 +147,17 @@ export const backtestAPI = {
       end_time: item.end_date,
       initial_capital: 100000,
       final_capital: 100000 * (1 + item.total_return),
-      total_return: item.total_return,
-      annual_return: item.annual_return,
-      sharpe_ratio: item.sharpe_ratio,
-      max_drawdown: item.max_drawdown,
+      total_return: item.total_return * 100,          // 乘100转百分比
+      annual_return: item.annual_return * 100,        // 乘100转百分比
+      sharpe_ratio: item.sharpe_ratio,                // 夏普比率不需要乘100
+      max_drawdown: item.max_drawdown * 100,          // 乘100转百分比
       total_trades: item.total_trades,
       win_trades: item.win_trades,
       loss_trades: item.loss_trades,
-      win_rate: item.win_rate,
-      avg_win: item.avg_profit,
-      avg_loss: Math.abs(item.avg_loss), // 转为正数
-      profit_factor: item.profit_factor,
+      win_rate: item.win_rate * 100,                  // 乘100转百分比
+      avg_win: item.avg_profit * 100,                 // 乘100转百分比
+      avg_loss: Math.abs(item.avg_loss) * 100,        // 乘100转百分比
+      profit_factor: item.profit_factor,              // 盈亏比不需要乘100
       performance_data: {
         equity_curve: [],
         drawdown_curve: [],
@@ -169,32 +171,39 @@ export const backtestAPI = {
   /**
    * 获取回测详情
    * GET /api/v1/backtest/:task_id
+   *
+   * ⚠️ 重要：CZSCBacktestDetail包含两套数据：
+   * 1. 顶层英文字段（total_return, annual_return等）- 直接使用
+   * 2. stats_data中文字段（年化、夏普等）- 用于详细分析
    */
   getBacktestDetail: async (taskId: string): Promise<BacktestResult> => {
     // czscApiClient已自动解包data字段
     const detail = await czscApiGet<CZSCBacktestDetail>(`/api/v1/backtest/${taskId}`);
 
-    // 转换为前端格式
-    const stats = detail.stats_data;
-    const initialCapital = 100000;
+    // 从stats_data获取资金信息（如果存在）
+    const initialCapital = detail.stats_data?.['初始资金'] || 100000;
+    const finalCapital = detail.stats_data?.['最终资金'] || (initialCapital * (1 + detail.total_return));
 
-    // 转换资金曲线
+    // 转换资金曲线（兼容 dt 和 date 字段）
     const equityCurve = detail.equity_curve.map(point => ({
-      time: new Date(point.dt).getTime(),
-      value: point.equity
+      time: new Date(point.dt || point.date || '').getTime(),
+      value: point.equity || point.total || initialCapital
     }));
 
     // 计算回撤曲线
     let maxEquity = initialCapital;
     const drawdownCurve = detail.equity_curve.map(point => {
-      if (point.equity > maxEquity) maxEquity = point.equity;
-      const drawdown = (maxEquity - point.equity) / maxEquity;
+      const equity = point.equity || point.total || initialCapital;
+      if (equity > maxEquity) maxEquity = equity;
+      const drawdown = maxEquity > 0 ? (maxEquity - equity) / maxEquity : 0;
       return {
-        time: new Date(point.dt).getTime(),
-        drawdown: drawdown
+        time: new Date(point.dt || point.date || '').getTime(),
+        drawdown: drawdown * 100  // 乘100转百分比
       };
     });
 
+    // ⚠️ 后端返回的百分比数据需要乘以100（如0.15 → 15%）
+    // ⚠️ 使用顶层英文字段，不使用stats_data中的中文字段
     return {
       id: detail.id || 0,
       strategy_id: 0,
@@ -203,18 +212,18 @@ export const backtestAPI = {
       start_time: detail.start_date,
       end_time: detail.end_date,
       initial_capital: initialCapital,
-      final_capital: initialCapital * (1 + stats.total_return),
-      total_return: stats.total_return,
-      annual_return: stats.annual_return,
-      sharpe_ratio: stats.sharpe_ratio,
-      max_drawdown: stats.max_drawdown,
-      total_trades: stats.total_trades,
-      win_trades: stats.winning_trades,
-      loss_trades: stats.losing_trades,
-      win_rate: stats.win_rate,
-      avg_win: stats.avg_profit,
-      avg_loss: Math.abs(stats.avg_loss),
-      profit_factor: stats.profit_loss_ratio,
+      final_capital: finalCapital,
+      total_return: detail.total_return * 100,           // 使用顶层字段并乘100
+      annual_return: detail.annual_return * 100,         // 使用顶层字段并乘100
+      sharpe_ratio: detail.sharpe_ratio,                 // 夏普比率不需要乘100
+      max_drawdown: detail.max_drawdown * 100,           // 使用顶层字段并乘100
+      total_trades: detail.total_trades || 0,
+      win_trades: Math.round((detail.win_rate || 0) * detail.total_trades),
+      loss_trades: Math.round((1 - (detail.win_rate || 0)) * detail.total_trades),
+      win_rate: detail.win_rate * 100,                   // 使用顶层字段并乘100
+      avg_win: (detail.stats_data?.['单笔收益'] || 0),    // 单笔收益（可能是BP，需要确认）
+      avg_loss: 0,                                       // CZSC不提供
+      profit_factor: detail.stats_data?.['盈亏比'] || 0, // 从stats_data获取
       performance_data: {
         equity_curve: equityCurve,
         drawdown_curve: drawdownCurve,
@@ -222,7 +231,7 @@ export const backtestAPI = {
       },
       created_at: detail.created_at,
       task_id: detail.task_id,
-      // ⚠️ 注意：详情接口使用 trades_data 字段名
+      // ⚠️ 交易明细：trades_data包含英文字段名
       trades: detail.trades_data.map((trade, index) => ({
         id: index,
         backtest_id: detail.id || 0,
@@ -232,7 +241,7 @@ export const backtestAPI = {
         exit_price: trade.exit_price,
         quantity: 1,
         profit: trade.profit,
-        profit_rate: trade.profit_rate,
+        profit_rate: trade.profit_rate * 100,           // 小数转百分比（0.011 → 1.1%）
         direction: 'long' as const
       }))
     };
@@ -246,6 +255,7 @@ export const backtestAPI = {
     const detail = await czscApiGet<CZSCBacktestDetail>(`/api/v1/backtest/${taskId}`);
 
     // ⚠️ 注意：详情接口使用 trades_data 字段名
+    // ⚠️ profit_rate 需要乘以100转换为百分比
     return detail.trades_data.map((trade, index) => ({
       id: index,
       backtest_id: detail.id || 0,
@@ -255,7 +265,7 @@ export const backtestAPI = {
       exit_price: trade.exit_price,
       quantity: 1, // CZSC不提供数量，使用1
       profit: trade.profit,
-      profit_rate: trade.profit_rate,
+      profit_rate: trade.profit_rate * 100,       // 乘100转百分比
       direction: 'long' as const // CZSC默认只做多
     }));
   },

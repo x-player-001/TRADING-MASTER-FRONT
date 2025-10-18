@@ -2,11 +2,11 @@
  * 策略创建向导 - 手风琴式折叠主容器
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Collapse, Button, message } from 'antd';
 import type { CollapseProps } from 'antd';
 import { strategyAPI } from '../services/strategyAPI';
-import type { CZSCStrategyCreate } from '../types/strategy';
+import type { CZSCStrategyCreate, CZSCStrategy } from '../types/strategy';
 import type { StrategyWizardState, CollapseState } from '../types/strategyWizard';
 import { initialWizardState } from '../types/strategyWizard';
 import { strategyTemplates } from '../config/strategyTemplates';
@@ -20,11 +20,12 @@ import styles from './CreateStrategyWizard.module.scss';
 const { Panel } = Collapse;
 
 interface CreateStrategyWizardProps {
+  editingStrategy?: CZSCStrategy | null;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-const CreateStrategyWizard: React.FC<CreateStrategyWizardProps> = ({ onClose, onSuccess }) => {
+const CreateStrategyWizard: React.FC<CreateStrategyWizardProps> = ({ editingStrategy, onClose, onSuccess }) => {
   // 向导状态
   const [wizardState, setWizardState] = useState<StrategyWizardState>(initialWizardState);
 
@@ -40,6 +41,32 @@ const CreateStrategyWizard: React.FC<CreateStrategyWizardProps> = ({ onClose, on
 
   // 是否正在保存
   const [isSaving, setIsSaving] = useState(false);
+
+  // 编辑模式：加载策略数据
+  useEffect(() => {
+    if (editingStrategy) {
+      setWizardState({
+        selectedTemplate: '', // 编辑时不使用模板
+        metadata: {
+          name: editingStrategy.name,
+          description: editingStrategy.description || '',
+          category: editingStrategy.category || '',
+          version: editingStrategy.version,
+          author: editingStrategy.author || '',
+          tags: editingStrategy.tags || []
+        },
+        positions: JSON.parse(JSON.stringify(editingStrategy.positions_config || [])),
+        signals: JSON.parse(JSON.stringify(editingStrategy.signals_config || [])),
+        backtestParams: {
+          ensemble_method: editingStrategy.ensemble_method || 'mean',
+          fee_rate: editingStrategy.fee_rate || 0.0002,
+          digits: editingStrategy.digits || 2
+        }
+      });
+      // 编辑时展开所有面板
+      setActiveKeys(['basic', 'positions', 'signals', 'params', 'preview']);
+    }
+  }, [editingStrategy]);
 
   // 处理面板切换
   const handlePanelChange = (keys: string | string[]) => {
@@ -105,27 +132,49 @@ const CreateStrategyWizard: React.FC<CreateStrategyWizardProps> = ({ onClose, on
 
       setIsSaving(true);
 
-      // 构造创建请求
-      const createData: CZSCStrategyCreate = {
-        strategy_id: `strategy_${Date.now()}`,
-        name: wizardState.metadata.name,
-        description: wizardState.metadata.description,
-        category: wizardState.metadata.category,
-        positions_config: wizardState.positions,
-        signals_config: wizardState.signals,
-        ensemble_method: wizardState.backtestParams.ensemble_method,
-        fee_rate: wizardState.backtestParams.fee_rate,
-        digits: wizardState.backtestParams.digits,
-        version: wizardState.metadata.version,
-        author: wizardState.metadata.author,
-        tags: wizardState.metadata.tags
-      };
+      if (editingStrategy) {
+        // 编辑模式 - 更新策略
+        const updateData: CZSCStrategyCreate = {
+          strategy_id: editingStrategy.strategy_id,
+          name: wizardState.metadata.name,
+          description: wizardState.metadata.description,
+          category: wizardState.metadata.category,
+          positions_config: wizardState.positions,
+          signals_config: wizardState.signals,
+          ensemble_method: wizardState.backtestParams.ensemble_method,
+          fee_rate: wizardState.backtestParams.fee_rate,
+          digits: wizardState.backtestParams.digits,
+          version: wizardState.metadata.version,
+          author: wizardState.metadata.author,
+          tags: wizardState.metadata.tags
+        };
 
-      await strategyAPI.createStrategy(createData);
-      message.success('策略创建成功！');
+        await strategyAPI.updateStrategy(editingStrategy.strategy_id, updateData);
+        message.success('策略更新成功！');
+      } else {
+        // 创建模式 - 新建策略
+        const createData: CZSCStrategyCreate = {
+          strategy_id: `strategy_${Date.now()}`,
+          name: wizardState.metadata.name,
+          description: wizardState.metadata.description,
+          category: wizardState.metadata.category,
+          positions_config: wizardState.positions,
+          signals_config: wizardState.signals,
+          ensemble_method: wizardState.backtestParams.ensemble_method,
+          fee_rate: wizardState.backtestParams.fee_rate,
+          digits: wizardState.backtestParams.digits,
+          version: wizardState.metadata.version,
+          author: wizardState.metadata.author,
+          tags: wizardState.metadata.tags
+        };
+
+        await strategyAPI.createStrategy(createData);
+        message.success('策略创建成功！');
+      }
+
       onSuccess();
     } catch (error: any) {
-      message.error(error.message || '创建失败');
+      message.error(error.message || (editingStrategy ? '更新失败' : '创建失败'));
     } finally {
       setIsSaving(false);
     }
@@ -161,7 +210,7 @@ const CreateStrategyWizard: React.FC<CreateStrategyWizardProps> = ({ onClose, on
     <div className={styles.wizardContainer}>
       {/* 顶部操作栏 */}
       <div className={styles.header}>
-        <div className={styles.title}>创建策略</div>
+        <div className={styles.title}>{editingStrategy ? '编辑策略' : '创建策略'}</div>
         <div className={styles.actions}>
           <Button onClick={onClose}>取消</Button>
           <Button
@@ -170,7 +219,7 @@ const CreateStrategyWizard: React.FC<CreateStrategyWizardProps> = ({ onClose, on
             loading={isSaving}
             disabled={!validation.isValid}
           >
-            保存策略
+            {editingStrategy ? '更新策略' : '保存策略'}
           </Button>
         </div>
       </div>
@@ -205,16 +254,18 @@ const CreateStrategyWizard: React.FC<CreateStrategyWizardProps> = ({ onClose, on
           onChange={handlePanelChange}
           accordion={false}
         >
-          {/* Panel 1: 选择模板 */}
-          <Panel header="1️⃣ 选择模板" key="template">
-            <TemplateSelector
-              wizardState={wizardState}
-              onTemplateSelect={handleTemplateSelect}
-            />
-          </Panel>
+          {/* Panel 1: 选择模板（编辑模式时隐藏） */}
+          {!editingStrategy && (
+            <Panel header="1️⃣ 选择模板" key="template">
+              <TemplateSelector
+                wizardState={wizardState}
+                onTemplateSelect={handleTemplateSelect}
+              />
+            </Panel>
+          )}
 
           {/* Panel 2: 基本信息 */}
-          <Panel header="2️⃣ 基本信息" key="basic">
+          <Panel header={editingStrategy ? "1️⃣ 基本信息" : "2️⃣ 基本信息"} key="basic">
             <BasicInfoForm
               wizardState={wizardState}
               onChange={handleMetadataChange}
@@ -225,7 +276,7 @@ const CreateStrategyWizard: React.FC<CreateStrategyWizardProps> = ({ onClose, on
           <Panel
             header={
               <div className={styles.panelHeader}>
-                <span>3️⃣ Position配置 ({wizardState.positions.length}个)</span>
+                <span>{editingStrategy ? '2️⃣' : '3️⃣'} Position配置 ({wizardState.positions.length}个)</span>
                 {wizardState.positions.length === 0 && (
                   <span className={styles.errorBadge}>⚠️ 必需</span>
                 )}
@@ -243,7 +294,7 @@ const CreateStrategyWizard: React.FC<CreateStrategyWizardProps> = ({ onClose, on
           <Panel
             header={
               <div className={styles.panelHeader}>
-                <span>4️⃣ Signal配置 ({wizardState.signals.length}个)</span>
+                <span>{editingStrategy ? '3️⃣' : '4️⃣'} Signal配置 ({wizardState.signals.length}个)</span>
                 {wizardState.signals.length === 0 && (
                   <span className={styles.errorBadge}>⚠️ 必需</span>
                 )}
@@ -258,7 +309,7 @@ const CreateStrategyWizard: React.FC<CreateStrategyWizardProps> = ({ onClose, on
           </Panel>
 
           {/* Panel 5: 回测参数 */}
-          <Panel header="5️⃣ 回测参数" key="params">
+          <Panel header={editingStrategy ? "4️⃣ 回测参数" : "5️⃣ 回测参数"} key="params">
             <BacktestParamsForm
               wizardState={wizardState}
               onChange={(backtestParams) =>
@@ -271,7 +322,7 @@ const CreateStrategyWizard: React.FC<CreateStrategyWizardProps> = ({ onClose, on
           </Panel>
 
           {/* Panel 6: 预览JSON */}
-          <Panel header="6️⃣ 预览 JSON" key="preview">
+          <Panel header={editingStrategy ? "5️⃣ 预览 JSON" : "6️⃣ 预览 JSON"} key="preview">
             <div className={styles.panelContent}>
               {/* TODO: JSON预览 */}
               <pre className={styles.jsonPreview}>
