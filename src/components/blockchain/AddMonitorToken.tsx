@@ -12,7 +12,7 @@ const AddMonitorToken: React.FC<AddMonitorTokenProps> = ({ onSuccess }) => {
   const [formData, setFormData] = useState({
     pair_address: '',
     chain: 'bsc',
-    alert_thresholds: '5,10,15',
+    alert_thresholds: '70,80,90',
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -45,7 +45,7 @@ const AddMonitorToken: React.FC<AddMonitorTokenProps> = ({ onSuccess }) => {
       setFormData({
         pair_address: '',
         chain: 'bsc',
-        alert_thresholds: '5,10,15',
+        alert_thresholds: '70,80,90',
       });
 
       // 关闭展开状态
@@ -115,7 +115,7 @@ const AddMonitorToken: React.FC<AddMonitorTokenProps> = ({ onSuccess }) => {
                   name="alert_thresholds"
                   value={formData.alert_thresholds}
                   onChange={handleInputChange}
-                  placeholder="逗号分隔，如 5,10,15"
+                  placeholder="逗号分隔，如 70,80,90"
                   className={styles.input}
                   disabled={loading}
                 />
