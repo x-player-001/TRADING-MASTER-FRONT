@@ -1,0 +1,255 @@
+@use 'sass:color';
+
+.page {
+  padding: 2rem;
+  min-height: 100%;
+  background: #f9fafb;
+  animation: fadeInScale 0.6s ease-out;
+
+  :global(.dark) & {
+    background: #111827;
+  }
+
+  @media (max-width: 1024px) {
+    padding: 1rem;
+  }
+
+  &.sidebarCollapsed {
+    margin-left: 4rem;
+  }
+}
+
+.content {
+  margin-top: 2rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 4rem;
+  color: #6b7280;
+  font-size: 1.125rem;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+}
+
+.error {
+  text-align: center;
+  padding: 4rem;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+
+  p {
+    font-size: 1.125rem;
+    margin: 1rem 0;
+  }
+
+  small {
+    color: #6b7280;
+
+    :global(.dark) & {
+      color: #9ca3af;
+    }
+  }
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.statCard {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(229, 231, 235, 1);
+  overflow: hidden;
+  animation: slideInUp 0.6s ease-out;
+
+  :global(.dark) & {
+    background: #1f2937;
+    border-color: #374151;
+  }
+}
+
+.cardHeader {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(229, 231, 235, 1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  :global(.dark) & {
+    border-bottom-color: #374151;
+  }
+
+  h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+
+    :global(.dark) & {
+      color: #f9fafb;
+    }
+  }
+}
+
+.timestamp {
+  font-size: 0.75rem;
+  color: #6b7280;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+}
+
+.overviewGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  padding: 1.5rem;
+
+  @media (max-width: 640px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+.overviewItem {
+  text-align: center;
+
+  .label {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+
+    :global(.dark) & {
+      color: #9ca3af;
+    }
+  }
+
+  .value {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+.sourceList {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.sourceItem {
+  .sourceHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .sourceName {
+    font-weight: 600;
+    color: #111827;
+    font-size: 0.875rem;
+
+    :global(.dark) & {
+      color: #f9fafb;
+    }
+  }
+
+  .sourcePercentage {
+    font-size: 0.875rem;
+    color: #3b82f6;
+    font-weight: 600;
+  }
+}
+
+.sourceProgress {
+  height: 0.5rem;
+  background: rgba(229, 231, 235, 0.3);
+  border-radius: 1rem;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+
+  :global(.dark) & {
+    background: rgba(55, 65, 81, 0.5);
+  }
+}
+
+.progressBar {
+  height: 100%;
+  border-radius: 1rem;
+  transition: width 0.6s ease;
+}
+
+.sourceStats {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+
+  span {
+    flex: 1;
+  }
+}
+
+.refreshButton {
+  transition: all 0.3s ease;
+
+  &:hover:not(:disabled) {
+    background: rgba(59, 130, 246, 0.2) !important;
+    transform: translateY(-2px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 500;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

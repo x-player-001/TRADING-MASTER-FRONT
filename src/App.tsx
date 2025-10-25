@@ -15,6 +15,13 @@ import TradeAnalysis from './quantitative/pages/TradeAnalysis';
 import PositionMonitor from './quantitative/pages/PositionMonitor';
 import RiskManagement from './quantitative/pages/RiskManagement';
 import SignalMonitor from './quantitative/pages/SignalMonitor';
+// 链上数据模块
+import PotentialTokens from './pages/PotentialTokens';
+import MonitorTokens from './pages/MonitorTokens';
+import DeletedTokens from './pages/DeletedTokens';
+import BlockchainCharts from './pages/BlockchainCharts';
+import BlockchainStats from './pages/BlockchainStats';
+import TokenAnalysis from './pages/TokenAnalysis';
 
 function App() {
   const [isDark, setIsDark] = useState(false);
@@ -57,7 +64,10 @@ function App() {
 
     // 处理URL hash变化
     const handleHashChange = () => {
-      const hash = window.location.hash.slice(1);
+      const fullHash = window.location.hash.slice(1);
+      // 分离路由名称和查询参数（例如：token-analysis?symbol=BTC）
+      const hash = fullHash.split('?')[0];
+
       if (hash === 'oi-monitoring') {
         setCurrentPage('oi-monitoring');
       } else if (hash === 'system-status') {
@@ -80,6 +90,18 @@ function App() {
         setCurrentPage('quant-risk');
       } else if (hash === 'quant-signals') {
         setCurrentPage('quant-signals');
+      } else if (hash === 'potential-tokens') {
+        setCurrentPage('potential-tokens');
+      } else if (hash === 'monitor-tokens') {
+        setCurrentPage('monitor-tokens');
+      } else if (hash === 'deleted-tokens') {
+        setCurrentPage('deleted-tokens');
+      } else if (hash === 'blockchain-charts') {
+        setCurrentPage('blockchain-charts');
+      } else if (hash === 'blockchain-stats') {
+        setCurrentPage('blockchain-stats');
+      } else if (hash === 'token-analysis') {
+        setCurrentPage('token-analysis');
       } else {
         setCurrentPage('dashboard');
       }
@@ -150,6 +172,19 @@ function App() {
         return <RiskManagement isSidebarCollapsed={isSidebarCollapsed} />;
       case 'quant-signals':
         return <SignalMonitor isSidebarCollapsed={isSidebarCollapsed} />;
+      // 链上数据模块页面
+      case 'potential-tokens':
+        return <PotentialTokens isSidebarCollapsed={isSidebarCollapsed} />;
+      case 'monitor-tokens':
+        return <MonitorTokens isSidebarCollapsed={isSidebarCollapsed} />;
+      case 'deleted-tokens':
+        return <DeletedTokens isSidebarCollapsed={isSidebarCollapsed} />;
+      case 'blockchain-charts':
+        return <BlockchainCharts />;
+      case 'blockchain-stats':
+        return <BlockchainStats />;
+      case 'token-analysis':
+        return <TokenAnalysis isSidebarCollapsed={isSidebarCollapsed} />;
       default:
         return <Dashboard />;
     }

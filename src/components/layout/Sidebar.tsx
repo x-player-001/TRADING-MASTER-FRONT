@@ -39,8 +39,17 @@ const Sidebar: React.FC<SidebarProps> = ({
         { icon: '📊', label: '仪表板', href: '#', page: 'dashboard' },
         { icon: '💹', label: 'K线图表', href: '#kline-chart', page: 'kline-chart' },
         { icon: '📊', label: 'OI监控', href: '#oi-monitoring', page: 'oi-monitoring' },
-        { icon: '📡', label: '信号监控', href: '#quant-signals', page: 'quant-signals' },
-        { icon: '🎯', label: '交易规则', href: '#' }
+        { icon: '📡', label: '信号监控', href: '#quant-signals', page: 'quant-signals' }
+      ]
+    },
+    {
+      title: '链上数据 ⛓️',
+      items: [
+        { icon: '🔍', label: '潜力币种', href: '#potential-tokens', page: 'potential-tokens' },
+        { icon: '👁️', label: '监控币种', href: '#monitor-tokens', page: 'monitor-tokens' },
+        { icon: '🗑️', label: '已删除代币', href: '#deleted-tokens', page: 'deleted-tokens' }
+        // { icon: '📈', label: '链上K线', href: '#blockchain-charts', page: 'blockchain-charts' },
+        // { icon: '📊', label: '数据统计', href: '#blockchain-stats', page: 'blockchain-stats' }
       ]
     },
     {
