@@ -120,17 +120,6 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
     }
   };
 
-  // 获取所有可用的链
-  const availableChains = React.useMemo(() => {
-    const chains = new Set<string>();
-    tokens.forEach(token => {
-      if (token.chain) {
-        chains.add(token.chain);
-      }
-    });
-    return Array.from(chains).sort();
-  }, [tokens]);
-
   // 处理排序
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -211,16 +200,38 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
             <span>只显示未添加到监控的代币</span>
           </label>
 
-          <select
-            className={styles.filterSelect}
-            value={selectedChain}
-            onChange={(e) => setSelectedChain(e.target.value)}
-          >
-            <option value="all">所有链</option>
-            {availableChains.map(chain => (
-              <option key={chain} value={chain}>{chain}</option>
-            ))}
-          </select>
+          <div className={styles.chainRadioGroup}>
+            <label className={styles.radioLabel}>
+              <input
+                type="radio"
+                name="chain"
+                value="all"
+                checked={selectedChain === 'all'}
+                onChange={(e) => setSelectedChain(e.target.value)}
+              />
+              <span>所有链</span>
+            </label>
+            <label className={styles.radioLabel}>
+              <input
+                type="radio"
+                name="chain"
+                value="bsc"
+                checked={selectedChain === 'bsc'}
+                onChange={(e) => setSelectedChain(e.target.value)}
+              />
+              <span>BSC</span>
+            </label>
+            <label className={styles.radioLabel}>
+              <input
+                type="radio"
+                name="chain"
+                value="solana"
+                checked={selectedChain === 'solana'}
+                onChange={(e) => setSelectedChain(e.target.value)}
+              />
+              <span>Solana</span>
+            </label>
+          </div>
 
           <div className={styles.filterInfo}>
             显示 <strong>{filteredAndSortedTokens.length}</strong> / {tokens.length} 个代币
