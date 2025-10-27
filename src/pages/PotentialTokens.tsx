@@ -10,7 +10,7 @@ interface Props {
   isSidebarCollapsed?: boolean;
 }
 
-type SortField = 'price_ath_usd' | 'scraped_timestamp' | 'market_cap_at_scrape' | 'price_change_24h_at_scrape' | 'current_price_usd' | 'volume_24h' | 'liquidity_usd' | 'pair_created_at';
+type SortField = 'price_ath_usd' | 'scraped_timestamp' | 'market_cap_at_scrape' | 'price_change_24h_at_scrape' | 'current_price_usd' | 'volume_24h_at_scrape' | 'liquidity_at_scrape' | 'pair_created_at';
 type SortOrder = 'asc' | 'desc';
 
 const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
@@ -390,15 +390,15 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                   </th>
                   <th
                     className={styles.sortable}
-                    onClick={() => handleSort('volume_24h')}
+                    onClick={() => handleSort('volume_24h_at_scrape')}
                   >
-                    24小时成交量 {getSortIcon('volume_24h')}
+                    24小时成交量 {getSortIcon('volume_24h_at_scrape')}
                   </th>
                   <th
                     className={styles.sortable}
-                    onClick={() => handleSort('liquidity_usd')}
+                    onClick={() => handleSort('liquidity_at_scrape')}
                   >
-                    流动性 {getSortIcon('liquidity_usd')}
+                    流动性 {getSortIcon('liquidity_at_scrape')}
                   </th>
                   <th>24小时买卖</th>
                   <th
