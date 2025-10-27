@@ -105,6 +105,7 @@ const AddMonitorToken: React.FC<AddMonitorTokenProps> = ({ onSuccess }) => {
                 >
                   <option value="bsc">BSC</option>
                   <option value="solana">Solana</option>
+                  <option value="base">Base</option>
                 </select>
               </div>
 
