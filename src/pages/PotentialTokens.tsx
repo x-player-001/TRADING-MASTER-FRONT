@@ -294,11 +294,13 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                       ➕
                     </button>
                     <button
-                      className={styles.deleteBtn}
+                      className={`${styles.deleteBtn} ${deletingTokenId === token.id ? styles.deleting : ''}`}
                       onClick={() => handleDelete(token.id, token.token_symbol)}
                       disabled={deletingTokenId === token.id}
                     >
-                      {deletingTokenId === token.id ? '⏳' : '🗑️'}
+                      <span className={deletingTokenId === token.id ? styles.spinning : ''}>
+                        {deletingTokenId === token.id ? '🔄' : '🗑️'}
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -496,12 +498,14 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                         ➕ 添加
                       </button>
                       <button
-                        className={styles.deleteBtn}
+                        className={`${styles.deleteBtn} ${deletingTokenId === token.id ? styles.deleting : ''}`}
                         onClick={() => handleDelete(token.id, token.token_symbol)}
                         disabled={deletingTokenId === token.id}
                         title={deletingTokenId === token.id ? '删除中...' : '删除'}
                       >
-                        {deletingTokenId === token.id ? '⏳ 删除中...' : '🗑️ 删除'}
+                        <span className={deletingTokenId === token.id ? styles.spinning : ''}>
+                          {deletingTokenId === token.id ? '🔄' : '🗑️'}
+                        </span> 删除
                       </button>
                     </td>
                   </tr>
