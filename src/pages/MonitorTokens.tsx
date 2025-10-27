@@ -26,6 +26,7 @@ const MonitorTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
   // 编辑阈值状态
   const [editingTokenId, setEditingTokenId] = useState<string | null>(null);
   const [editingThresholds, setEditingThresholds] = useState<string>('');
+  const [deletingTokenId, setDeletingTokenId] = useState<string | null>(null);
 
   const fetchTokens = async () => {
     try {
@@ -109,11 +110,14 @@ const MonitorTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
   // 删除监控代币
   const handleDelete = async (tokenId: string) => {
     try {
+      setDeletingTokenId(tokenId);
       await blockchainAPI.deleteMonitorToken(tokenId);
       fetchTokens(); // 刷新列表
     } catch (err: any) {
       console.error('删除失败:', err);
       alert(`❌ 删除失败: ${err.message}`);
+    } finally {
+      setDeletingTokenId(null);
     }
   };
 
@@ -336,8 +340,9 @@ const MonitorTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                   <button
                     onClick={() => handleDelete(token.id)}
                     className={styles.deleteBtn}
+                    disabled={deletingTokenId === token.id}
                   >
-                    🗑️
+                    {deletingTokenId === token.id ? '⏳' : '🗑️'}
                   </button>
                 </div>
 
@@ -610,9 +615,10 @@ const MonitorTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                       <button
                         onClick={() => handleDelete(token.id)}
                         className={styles.deleteBtn}
-                        title="删除代币"
+                        disabled={deletingTokenId === token.id}
+                        title={deletingTokenId === token.id ? '删除中...' : '删除代币'}
                       >
-                        🗑️ 删除
+                        {deletingTokenId === token.id ? '⏳ 删除中...' : '🗑️ 删除'}
                       </button>
                     </td>
                   </tr>

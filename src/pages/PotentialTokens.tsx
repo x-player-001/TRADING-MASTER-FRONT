@@ -19,6 +19,7 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [onlyNotAdded, setOnlyNotAdded] = useState(true);
+  const [deletingTokenId, setDeletingTokenId] = useState<string | null>(null);
 
   // 排序和筛选状态（默认按涨幅降序排序）
   const [sortField, setSortField] = useState<SortField | null>('price_change_24h_at_scrape');
@@ -112,11 +113,14 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
   // 删除潜力代币
   const handleDelete = async (tokenId: string, symbol: string) => {
     try {
+      setDeletingTokenId(tokenId);
       await blockchainAPI.deletePotentialToken(tokenId);
       fetchTokens(); // 刷新列表
     } catch (err: any) {
       console.error('删除失败:', err);
       alert(`❌ 删除失败: ${err.message}`);
+    } finally {
+      setDeletingTokenId(null);
     }
   };
 
@@ -292,8 +296,9 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                     <button
                       className={styles.deleteBtn}
                       onClick={() => handleDelete(token.id, token.token_symbol)}
+                      disabled={deletingTokenId === token.id}
                     >
-                      🗑️
+                      {deletingTokenId === token.id ? '⏳' : '🗑️'}
                     </button>
                   </div>
                 </div>
@@ -493,9 +498,10 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                       <button
                         className={styles.deleteBtn}
                         onClick={() => handleDelete(token.id, token.token_symbol)}
-                        title="删除"
+                        disabled={deletingTokenId === token.id}
+                        title={deletingTokenId === token.id ? '删除中...' : '删除'}
                       >
-                        🗑️ 删除
+                        {deletingTokenId === token.id ? '⏳ 删除中...' : '🗑️ 删除'}
                       </button>
                     </td>
                   </tr>
