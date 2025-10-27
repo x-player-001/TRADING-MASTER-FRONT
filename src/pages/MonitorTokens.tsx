@@ -626,7 +626,7 @@ const MonitorTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                           <span className={styles.spinner}></span>
                         ) : (
                           '🗑️'
-                        )} 删除
+                        )}
                       </button>
                     </td>
                   </tr>

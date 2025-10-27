@@ -148,15 +148,14 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
     // 排序
     if (sortField) {
       result.sort((a, b) => {
-        let aValue = a[sortField];
-        let bValue = b[sortField];
+        let aValue: any = a[sortField];
+        let bValue: any = b[sortField];
 
-        // 处理null值
-        if (aValue === null && bValue === null) return 0;
-        if (aValue === null) return 1;
-        if (bValue === null) return -1;
+        // 处理null/undefined值
+        if (aValue === null || aValue === undefined) return 1;
+        if (bValue === null || bValue === undefined) return -1;
 
-        // 对于数值字段，确保转换为数字进行比较
+        // 对于数值字段，强制转换为数字进行比较
         const numericFields: SortField[] = [
           'price_ath_usd',
           'market_cap_at_scrape',
@@ -167,11 +166,20 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
         ];
 
         if (numericFields.includes(sortField)) {
-          aValue = Number(aValue);
-          bValue = Number(bValue);
+          // 强制转换为数字，确保数值比较
+          const aNum = typeof aValue === 'number' ? aValue : parseFloat(String(aValue));
+          const bNum = typeof bValue === 'number' ? bValue : parseFloat(String(bValue));
+
+          // 处理NaN
+          if (isNaN(aNum) && isNaN(bNum)) return 0;
+          if (isNaN(aNum)) return 1;
+          if (isNaN(bNum)) return -1;
+
+          // 数值比较
+          return sortOrder === 'asc' ? aNum - bNum : bNum - aNum;
         }
 
-        // 比较
+        // 字符串/日期比较
         if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
         if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
         return 0;
@@ -524,7 +532,7 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                           <span className={styles.spinner}></span>
                         ) : (
                           '🗑️'
-                        )} 删除
+                        )}
                       </button>
                     </td>
                   </tr>
