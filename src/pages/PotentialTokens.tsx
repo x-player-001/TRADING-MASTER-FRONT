@@ -10,7 +10,7 @@ interface Props {
   isSidebarCollapsed?: boolean;
 }
 
-type SortField = 'price_ath_usd' | 'scraped_timestamp' | 'market_cap_at_scrape' | 'price_change_24h_at_scrape' | 'current_price_usd' | 'volume_24h_at_scrape' | 'liquidity_at_scrape' | 'pair_created_at';
+type SortField = 'price_ath_usd' | 'scraped_timestamp' | 'market_cap_at_scrape' | 'price_change_24h_at_scrape' | 'current_price_usd' | 'volume_24h_at_scrape' | 'liquidity_at_scrape' | 'token_created_at';
 type SortOrder = 'asc' | 'desc';
 
 const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
@@ -403,9 +403,9 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                   <th>24小时买卖</th>
                   <th
                     className={styles.sortable}
-                    onClick={() => handleSort('pair_created_at')}
+                    onClick={() => handleSort('token_created_at')}
                   >
-                    创建时间 {getSortIcon('pair_created_at')}
+                    创建时间 {getSortIcon('token_created_at')}
                   </th>
                   <th>操作</th>
                 </tr>
