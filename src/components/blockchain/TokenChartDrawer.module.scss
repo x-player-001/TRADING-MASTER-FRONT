@@ -178,13 +178,14 @@
   width: 100%;
   height: 500px; // 固定高度
   overflow: hidden;
+  position: relative; // 为按钮提供定位参考
 }
 
-// 对数模式切换按钮（图表x轴右侧）
+// 对数模式切换按钮（图表右下角）
 .logBtn {
   position: absolute;
-  right: 2rem;
-  bottom: 15rem;
+  right: 0.5rem;
+  bottom: 0.5rem;
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   background: white;

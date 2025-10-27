@@ -221,16 +221,17 @@ const TokenChartDrawer: React.FC<Props> = ({
         <div className={styles.content}>
           {loading && <div className={styles.loading}>⏳ 加载中...</div>}
           {error && <div className={styles.error}>❌ {error}</div>}
-          <div ref={chartContainerRef} className={styles.chartContainer} />
 
-          {/* 对数模式切换按钮 */}
-          <button
-            className={`${styles.logBtn} ${isLogScale ? styles.active : ''}`}
-            onClick={() => setIsLogScale(!isLogScale)}
-            title={isLogScale ? '对数模式 (点击切换为线性)' : '线性模式 (点击切换为对数)'}
-          >
-            log
-          </button>
+          <div ref={chartContainerRef} className={styles.chartContainer}>
+            {/* 对数模式切换按钮 */}
+            <button
+              className={`${styles.logBtn} ${isLogScale ? styles.active : ''}`}
+              onClick={() => setIsLogScale(!isLogScale)}
+              title={isLogScale ? '对数模式 (点击切换为线性)' : '线性模式 (点击切换为对数)'}
+            >
+              log
+            </button>
+          </div>
         </div>
       </div>
     </>
