@@ -27,6 +27,7 @@ const TokenChartDrawer: React.FC<Props> = ({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLogScale, setIsLogScale] = useState(false); // 对数模式状态
   // 固定为5分钟K线
   const timeframe: 'minute' = 'minute';
   const aggregate: number = 5;
@@ -56,6 +57,7 @@ const TokenChartDrawer: React.FC<Props> = ({
       },
       rightPriceScale: {
         borderColor: '#374151',
+        mode: 0, // 默认线性模式
       },
     });
 
@@ -66,6 +68,34 @@ const TokenChartDrawer: React.FC<Props> = ({
       borderVisible: false,
       wickUpColor: '#10b981',
       wickDownColor: '#ef4444',
+      priceFormat: {
+        type: 'custom',
+        formatter: (price: number) => {
+          // 自定义价格格式化：小数点后0之后保留3位有效数字
+          if (price === 0) return '0.00';
+
+          const absPrice = Math.abs(price);
+
+          // 如果价格 >= 1，保留4位小数
+          if (absPrice >= 1) {
+            return price.toFixed(4);
+          }
+
+          // 如果价格 < 1，找到第一个非0数字，保留3位有效数字
+          const str = absPrice.toExponential();
+          const match = str.match(/(\d+)\.(\d+)e-(\d+)/);
+
+          if (match) {
+            const [, int, decimal, exp] = match;
+            const exponent = parseInt(exp);
+            const zeros = '0'.repeat(exponent - 1);
+            const significantDigits = (int + decimal).slice(0, 3);
+            return (price < 0 ? '-' : '') + '0.' + zeros + significantDigits;
+          }
+
+          return price.toFixed(8);
+        },
+      },
     });
 
     chartRef.current = chart;
@@ -98,6 +128,15 @@ const TokenChartDrawer: React.FC<Props> = ({
       candlestickSeriesRef.current = null;
     };
   }, [isOpen]);
+
+  // 切换对数/线性模式
+  useEffect(() => {
+    if (chartRef.current) {
+      chartRef.current.priceScale('right').applyOptions({
+        mode: isLogScale ? 1 : 0,
+      });
+    }
+  }, [isLogScale]);
 
   // 加载K线数据
   useEffect(() => {
@@ -183,6 +222,15 @@ const TokenChartDrawer: React.FC<Props> = ({
           {loading && <div className={styles.loading}>⏳ 加载中...</div>}
           {error && <div className={styles.error}>❌ {error}</div>}
           <div ref={chartContainerRef} className={styles.chartContainer} />
+
+          {/* 对数模式切换按钮 */}
+          <button
+            className={`${styles.logBtn} ${isLogScale ? styles.active : ''}`}
+            onClick={() => setIsLogScale(!isLogScale)}
+            title={isLogScale ? '对数模式 (点击切换为线性)' : '线性模式 (点击切换为对数)'}
+          >
+            log
+          </button>
         </div>
       </div>
     </>
