@@ -1,0 +1,334 @@
+// 爬虫统计样式
+.statsCard {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  animation: slideIn 0.4s ease-out;
+
+  :global(.dark) & {
+    background: #1e2028;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+
+  .title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    .icon {
+      font-size: 1.5rem;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+  }
+
+  .refreshBtn {
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 0.5rem;
+    color: white;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.body {
+  padding: 1.5rem;
+}
+
+.section {
+  margin-bottom: 2rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  .sectionTitle {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e5e7eb;
+
+    :global(.dark) & {
+      color: #d1d5db;
+      border-bottom-color: #374151;
+    }
+  }
+}
+
+// 统计网格
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.statItem {
+  padding: 1rem;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+  border-radius: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  :global(.dark) & {
+    background: linear-gradient(135deg, #2a2d35 0%, #1e2028 100%);
+  }
+
+  .label {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-weight: 500;
+
+    :global(.dark) & {
+      color: #9ca3af;
+    }
+  }
+
+  .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+
+    :global(.dark) & {
+      color: #f3f4f6;
+    }
+
+    &.success {
+      color: #10b981;
+    }
+
+    &.failed {
+      color: #ef4444;
+    }
+  }
+}
+
+// 最近运行信息
+.latestInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+
+  :global(.dark) & {
+    background: #2a2d35;
+  }
+
+  .label {
+    font-size: 0.9rem;
+    color: #6b7280;
+    font-weight: 500;
+
+    :global(.dark) & {
+      color: #9ca3af;
+    }
+  }
+
+  .value {
+    font-size: 0.9rem;
+    color: #111827;
+    font-weight: 600;
+
+    :global(.dark) & {
+      color: #f3f4f6;
+    }
+
+    &.success {
+      color: #10b981;
+    }
+
+    &.failed {
+      color: #ef4444;
+    }
+
+    &.error {
+      color: #ef4444;
+      font-size: 0.85rem;
+      max-width: 300px;
+      text-align: right;
+      word-break: break-word;
+    }
+  }
+}
+
+// 历史记录表格
+.historyTable {
+  overflow-x: auto;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+
+    thead {
+      background: #f9fafb;
+
+      :global(.dark) & {
+        background: #2a2d35;
+      }
+
+      th {
+        padding: 0.75rem 1rem;
+        text-align: left;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #374151;
+
+        :global(.dark) & {
+          color: #d1d5db;
+        }
+      }
+    }
+
+    tbody {
+      tr {
+        border-bottom: 1px solid #e5e7eb;
+
+        :global(.dark) & {
+          border-bottom-color: #374151;
+        }
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        &:hover {
+          background: #f9fafb;
+
+          :global(.dark) & {
+            background: #2a2d35;
+          }
+        }
+
+        td {
+          padding: 0.75rem 1rem;
+          font-size: 0.875rem;
+          color: #4b5563;
+
+          :global(.dark) & {
+            color: #9ca3af;
+          }
+        }
+      }
+    }
+  }
+
+  .status {
+    font-size: 1.2rem;
+
+    &.success {
+      color: #10b981;
+    }
+
+    &.failed {
+      color: #ef4444;
+    }
+  }
+}
+
+// 加载和错误状态
+.loading,
+.error {
+  padding: 2rem;
+  text-align: center;
+  font-size: 1rem;
+  color: #6b7280;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+}
+
+.error {
+  color: #ef4444;
+
+  :global(.dark) & {
+    color: #f87171;
+  }
+}
+
+// 动画
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// 移动端适配
+@media (max-width: 768px) {
+  .statsGrid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .statItem {
+    padding: 0.75rem;
+
+    .value {
+      font-size: 1.25rem;
+    }
+  }
+
+  .infoRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+
+    .value {
+      &.error {
+        max-width: 100%;
+        text-align: left;
+      }
+    }
+  }
+
+  .historyTable {
+    table {
+      thead th,
+      tbody td {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+      }
+    }
+  }
+}

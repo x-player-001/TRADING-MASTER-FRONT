@@ -1,0 +1,36 @@
+// 爬虫管理页面样式
+.page {
+  padding: 2rem;
+  min-height: 100%;
+  background: #f9fafb;
+  position: relative;
+
+  :global(.dark) & {
+    background: #111827;
+  }
+
+  @media (max-width: 1024px) {
+    padding: 1rem;
+  }
+
+  &.sidebarCollapsed {
+    margin-left: 4rem;
+  }
+}
+
+.container {
+  margin-top: 2rem;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+// 移动端适配
+@media (max-width: 768px) {
+  .container {
+    gap: 1rem;
+  }
+}

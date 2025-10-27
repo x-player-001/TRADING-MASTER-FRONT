@@ -1,5 +1,11 @@
 @use 'sass:color';
 
+// 可点击的卡片和行
+.tokenCard,
+.clickableRow {
+  cursor: pointer;
+}
+
 .page {
   padding: 2rem;
   min-height: 100%;
@@ -34,6 +40,20 @@
   strong {
     color: #3b82f6;
     font-size: 1rem;
+  }
+}
+
+// 可点击的表格行
+.clickableRow {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: rgba(59, 130, 246, 0.05);
+
+    :global(.dark) & {
+      background-color: rgba(59, 130, 246, 0.1);
+    }
   }
 }
 

@@ -2,15 +2,15 @@ import React, { useState, useEffect } from 'react';
 import styles from './PotentialTokens.module.scss';
 import PageHeader from '../components/ui/PageHeader';
 import { TopProgressBar } from '../components/ui';
-import ScraperConfig from '../components/blockchain/ScraperConfig';
 import { blockchainAPI } from '../services/blockchainAPI';
 import type { PotentialToken } from '../types/blockchain';
+import TokenChartDrawer from '../components/blockchain/TokenChartDrawer';
 
 interface Props {
   isSidebarCollapsed?: boolean;
 }
 
-type SortField = 'price_ath_usd' | 'scraped_timestamp' | 'market_cap_at_scrape' | 'price_change_24h_at_scrape' | 'current_price_usd' | 'volume_24h_at_scrape' | 'liquidity_at_scrape' | 'token_created_at';
+type SortField = 'price_ath_usd' | 'current_market_cap' | 'market_cap_at_scrape' | 'price_change_24h_at_scrape' | 'current_price_usd' | 'volume_24h' | 'current_tvl' | 'token_created_at';
 type SortOrder = 'asc' | 'desc';
 
 const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
@@ -20,6 +20,10 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
   const [error, setError] = useState<string | null>(null);
   const [onlyNotAdded, setOnlyNotAdded] = useState(true);
   const [deletingTokenId, setDeletingTokenId] = useState<string | null>(null);
+
+  // K线图表抽屉状态
+  const [chartDrawerOpen, setChartDrawerOpen] = useState(false);
+  const [selectedToken, setSelectedToken] = useState<PotentialToken | null>(null);
 
   // 排序和筛选状态（默认按涨幅降序排序）
   const [sortField, setSortField] = useState<SortField | null>('price_change_24h_at_scrape');
@@ -158,11 +162,12 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
         // 对于数值字段，强制转换为数字进行比较
         const numericFields: SortField[] = [
           'price_ath_usd',
+          'current_market_cap',
           'market_cap_at_scrape',
           'price_change_24h_at_scrape',
           'current_price_usd',
-          'volume_24h_at_scrape',
-          'liquidity_at_scrape'
+          'volume_24h',
+          'current_tvl'
         ];
 
         if (numericFields.includes(sortField)) {
@@ -179,7 +184,20 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
           return sortOrder === 'asc' ? aNum - bNum : bNum - aNum;
         }
 
-        // 字符串/日期比较
+        // 日期时间字段：转换为时间戳比较
+        if (sortField === 'token_created_at') {
+          const aTime = new Date(aValue).getTime();
+          const bTime = new Date(bValue).getTime();
+
+          // 处理无效日期
+          if (isNaN(aTime) && isNaN(bTime)) return 0;
+          if (isNaN(aTime)) return 1;
+          if (isNaN(bTime)) return -1;
+
+          return sortOrder === 'asc' ? aTime - bTime : bTime - aTime;
+        }
+
+        // 字符串比较
         if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
         if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
         return 0;
@@ -193,6 +211,12 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
   const getSortIcon = (field: SortField) => {
     if (sortField !== field) return '↕️';
     return sortOrder === 'asc' ? '↑' : '↓';
+  };
+
+  // 打开K线图表抽屉
+  const handleOpenChart = (token: PotentialToken) => {
+    setSelectedToken(token);
+    setChartDrawerOpen(true);
   };
 
   return (
@@ -213,9 +237,6 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
       </PageHeader>
 
       <div className={styles.content}>
-        {/* 爬虫配置 */}
-        <ScraperConfig />
-
         {/* 筛选器 */}
         <div className={styles.filters}>
           <label className={styles.filterLabel}>
@@ -291,7 +312,11 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
         {!loading && !error && tokens.length > 0 && (
           <div className={styles.mobileCards}>
             {filteredAndSortedTokens.map((token) => (
-              <div key={token.id} className={styles.tokenCard}>
+              <div
+                key={token.id}
+                className={styles.tokenCard}
+                onClick={() => handleOpenChart(token)}
+              >
                 {/* 卡片头部 - 符号和链 */}
                 <div className={styles.cardHeader}>
                   <div className={styles.cardTitle}>
@@ -338,6 +363,10 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                       <span className={styles.value}>{formatPrice(token.price_ath_usd)}</span>
                     </div>
                     <div className={styles.cardItem}>
+                      <span className={styles.label}>当前市值</span>
+                      <span className={styles.value}>{formatLargeNumber(token.current_market_cap)}</span>
+                    </div>
+                    <div className={styles.cardItem}>
                       <span className={styles.label}>当前价格</span>
                       <span className={styles.value}>{formatPrice(token.current_price_usd)}</span>
                     </div>
@@ -350,10 +379,6 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                           </span>
                         ) : '-'}
                       </span>
-                    </div>
-                    <div className={styles.cardItem}>
-                      <span className={styles.label}>市值</span>
-                      <span className={styles.value}>{formatLargeNumber(token.market_cap_at_scrape)}</span>
                     </div>
                     <div className={styles.cardItem}>
                       <span className={styles.label}>成交量</span>
@@ -398,12 +423,6 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                   </th>
                   <th
                     className={styles.sortable}
-                    onClick={() => handleSort('scraped_timestamp')}
-                  >
-                    抓取时间 {getSortIcon('scraped_timestamp')}
-                  </th>
-                  <th
-                    className={styles.sortable}
                     onClick={() => handleSort('market_cap_at_scrape')}
                   >
                     抓取时市值 {getSortIcon('market_cap_at_scrape')}
@@ -416,21 +435,27 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                   </th>
                   <th
                     className={styles.sortable}
+                    onClick={() => handleSort('current_market_cap')}
+                  >
+                    当前市值 {getSortIcon('current_market_cap')}
+                  </th>
+                  <th
+                    className={styles.sortable}
                     onClick={() => handleSort('current_price_usd')}
                   >
                     当前价格 {getSortIcon('current_price_usd')}
                   </th>
                   <th
                     className={styles.sortable}
-                    onClick={() => handleSort('volume_24h_at_scrape')}
+                    onClick={() => handleSort('volume_24h')}
                   >
-                    24小时成交量 {getSortIcon('volume_24h_at_scrape')}
+                    24小时成交量 {getSortIcon('volume_24h')}
                   </th>
                   <th
                     className={styles.sortable}
-                    onClick={() => handleSort('liquidity_at_scrape')}
+                    onClick={() => handleSort('current_tvl')}
                   >
-                    流动性 {getSortIcon('liquidity_at_scrape')}
+                    流动性 {getSortIcon('current_tvl')}
                   </th>
                   <th>24小时买卖</th>
                   <th
@@ -444,7 +469,11 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
               </thead>
               <tbody>
                 {filteredAndSortedTokens.map((token) => (
-                  <tr key={token.id}>
+                  <tr
+                    key={token.id}
+                    onClick={() => handleOpenChart(token)}
+                    className={styles.clickableRow}
+                  >
                     {/* 符号 */}
                     <td>
                       {token.pair_address ? (
@@ -468,11 +497,6 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                     {/* 历史最高 */}
                     <td className={styles.price}>{formatPrice(token.price_ath_usd)}</td>
 
-                    {/* 抓取时间 */}
-                    <td className={styles.time}>
-                      {token.scraped_timestamp ? formatTime(token.scraped_timestamp) : '-'}
-                    </td>
-
                     {/* 抓取时市值 */}
                     <td className={styles.marketCap}>
                       {formatLargeNumber(token.market_cap_at_scrape)}
@@ -487,6 +511,11 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                       ) : (
                         <span>-</span>
                       )}
+                    </td>
+
+                    {/* 当前市值 */}
+                    <td className={styles.marketCap}>
+                      {formatLargeNumber(token.current_market_cap)}
                     </td>
 
                     {/* 当前价格 */}
@@ -520,7 +549,7 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                         onClick={() => handleAddToMonitor(token.id, token.token_symbol)}
                         title="添加到监控"
                       >
-                        ➕ 添加
+                        ➕
                       </button>
                       <button
                         className={`${styles.deleteBtn} ${deletingTokenId === token.id ? styles.deleting : ''}`}
@@ -542,6 +571,18 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
           </div>
         )}
       </div>
+
+      {/* K线图表抽屉 */}
+      {selectedToken && (
+        <TokenChartDrawer
+          isOpen={chartDrawerOpen}
+          onClose={() => setChartDrawerOpen(false)}
+          tokenAddress={selectedToken.token_address}
+          pairAddress={selectedToken.pair_address}
+          tokenSymbol={selectedToken.token_symbol}
+          chain={selectedToken.chain}
+        />
+      )}
     </div>
   );
 };

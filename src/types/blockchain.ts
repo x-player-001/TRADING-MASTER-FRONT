@@ -444,6 +444,9 @@ export interface ScraperConfig {
   enabled_chains: string;
   use_undetected_chrome: boolean;
   enabled: boolean;
+  min_market_cap?: number;
+  min_liquidity?: number;
+  max_token_age_days?: number;
 }
 
 // 更新爬虫配置请求参数
@@ -455,6 +458,135 @@ export interface UpdateScraperConfigRequest {
   enabled_chains?: string;
   use_undetected_chrome?: number;
   enabled?: number;
+  min_market_cap?: number;
+  min_liquidity?: number;
+  max_token_age_days?: number;
+}
+
+// 爬虫统计信息
+export interface ScraperStats {
+  summary: {
+    total_runs: number;
+    success_count: number;
+    failed_count: number;
+    success_rate: number;
+    total_tokens_saved: number;
+    running_days: number;
+    running_hours: number;
+    first_run?: string;
+    last_run?: string;
+  };
+  latest: {
+    id: string;
+    started_at: string;
+    status: 'success' | 'failed';
+    chain: string;
+    tokens_saved: number;
+    duration_seconds: number;
+    error_message?: string;
+  } | null;
+  history: Array<{
+    id: string;
+    started_at: string;
+    completed_at: string;
+    duration_seconds: number;
+    status: 'success' | 'failed';
+    chain: string;
+    tokens_scraped: number;
+    tokens_filtered: number | null;
+    tokens_saved: number;
+    tokens_skipped: number;
+    filter_stats: {
+      by_market_cap: number;
+      by_liquidity: number;
+      by_age: number;
+    };
+    error_message?: string;
+  }>;
+}
+
+// ==================== 监控任务配置 API ====================
+
+// 监控任务配置信息
+export interface MonitorConfig {
+  id: string;
+  min_monitor_market_cap: number | null;
+  min_monitor_liquidity: number | null;
+  update_interval_minutes: number;
+  default_drop_threshold: number;
+  default_alert_thresholds: number[];
+  enabled: number;
+  max_retry_count: number;
+  batch_size: number;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// 更新监控配置请求参数
+export interface UpdateMonitorConfigRequest {
+  min_monitor_market_cap?: number | null;
+  min_monitor_liquidity?: number | null;
+  update_interval_minutes?: number;
+  default_drop_threshold?: number;
+  default_alert_thresholds?: number[];
+  enabled?: number;
+  max_retry_count?: number;
+  batch_size?: number;
+  description?: string;
+}
+
+// 监控统计信息
+export interface MonitorStats {
+  summary: {
+    total_runs: number;
+    success_count: number;
+    failed_count: number;
+    success_rate: number;
+    total_tokens_updated: number;
+    total_tokens_removed: number;
+    total_alerts_triggered: number;
+    running_days: number;
+    running_hours: number;
+    first_run: string | null;
+    last_run: string | null;
+  };
+  latest: {
+    id: string;
+    started_at: string;
+    completed_at: string;
+    duration_seconds: number;
+    status: 'success' | 'failed' | 'running';
+    tokens_monitored: number;
+    tokens_updated: number;
+    tokens_failed: number;
+    tokens_auto_removed: number;
+    alerts_triggered: number;
+    removal_stats: {
+      by_market_cap: number;
+      by_liquidity: number;
+      by_other: number;
+    };
+    error_message?: string;
+  } | null;
+  history: Array<{
+    id: string;
+    started_at: string;
+    completed_at: string;
+    duration_seconds: number;
+    status: 'success' | 'failed' | 'running';
+    tokens_monitored: number;
+    tokens_updated: number;
+    tokens_failed: number;
+    tokens_auto_removed: number;
+    alerts_triggered: number;
+    removal_stats: {
+      by_market_cap: number;
+      by_liquidity: number;
+      by_other: number;
+    };
+    error_message?: string;
+  }>;
 }
 
 // ==================== 手动添加监控 API ====================
@@ -465,4 +597,42 @@ export interface AddMonitorByPairRequest {
   chain?: string;
   drop_threshold?: number;
   alert_thresholds?: string;
+}
+
+// ==================== K线数据 API ====================
+
+// K线数据
+export interface TokenKline {
+  id: string;
+  token_address: string;
+  pair_address: string;
+  chain: string;
+  timestamp: number;
+  timeframe: string;
+  aggregate: number;
+  open: string;
+  high: string;
+  low: string;
+  close: string;
+  volume: string;
+  data_source: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// K线数据列表响应
+export interface TokenKlineListResponse {
+  total: number;
+  data: TokenKline[];
+}
+
+// K线数据查询参数
+export interface TokenKlineParams {
+  token_address?: string;
+  pair_address?: string;
+  timeframe?: 'minute' | 'hour' | 'day';
+  aggregate?: number;
+  limit?: number;
+  start_time?: number;
+  end_time?: number;
 }

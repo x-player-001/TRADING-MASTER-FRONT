@@ -24,6 +24,10 @@ import type {
   SearchParams,
   ScraperConfig,
   UpdateScraperConfigRequest,
+  ScraperStats,
+  MonitorConfig,
+  UpdateMonitorConfigRequest,
+  MonitorStats,
   AddMonitorByPairRequest
 } from '../types/blockchain';
 
@@ -205,6 +209,37 @@ class BlockchainAPIService {
     return blockchainPut<ScraperConfig>('/api/scraper/config', config);
   }
 
+  /**
+   * 获取爬虫运行统计
+   */
+  async getScraperStats(): Promise<ScraperStats> {
+    return blockchainGet<ScraperStats>('/api/scraper/stats');
+  }
+
+  // ========== 监控任务配置 ==========
+
+  /**
+   * 获取监控任务配置
+   */
+  async getMonitorConfig(): Promise<MonitorConfig> {
+    return blockchainGet<MonitorConfig>('/api/monitor/config');
+  }
+
+  /**
+   * 更新监控任务配置
+   */
+  async updateMonitorConfig(config: UpdateMonitorConfigRequest): Promise<{ success: boolean; message: string }> {
+    return blockchainPut('/api/monitor/config', config);
+  }
+
+  /**
+   * 获取监控任务运行统计
+   */
+  async getMonitorStats(limit?: number): Promise<MonitorStats> {
+    const params = limit ? { limit } : {};
+    return blockchainGet<MonitorStats>('/api/monitor/stats', params);
+  }
+
   // ========== 手动添加监控 ==========
 
   /**
@@ -228,6 +263,15 @@ class BlockchainAPIService {
    */
   async permanentDeletePotentialToken(tokenId: string): Promise<any> {
     return blockchainDelete(`/api/potential-tokens/${tokenId}/permanent`);
+  }
+
+  // ========== K线数据 ==========
+
+  /**
+   * 查询代币K线数据
+   */
+  async getTokenKlines(params: TokenKlineParams): Promise<TokenKlineListResponse> {
+    return blockchainGet<TokenKlineListResponse>('/api/klines', { params });
   }
 }
 

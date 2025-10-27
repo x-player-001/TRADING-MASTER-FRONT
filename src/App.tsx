@@ -22,6 +22,7 @@ import DeletedTokens from './pages/DeletedTokens';
 import BlockchainCharts from './pages/BlockchainCharts';
 import BlockchainStats from './pages/BlockchainStats';
 import TokenAnalysis from './pages/TokenAnalysis';
+import TaskManagement from './pages/TaskManagement';
 
 function App() {
   const [isDark, setIsDark] = useState(false);
@@ -102,6 +103,8 @@ function App() {
         setCurrentPage('blockchain-stats');
       } else if (hash === 'token-analysis') {
         setCurrentPage('token-analysis');
+      } else if (hash === 'task-management') {
+        setCurrentPage('task-management');
       } else {
         setCurrentPage('dashboard');
       }
@@ -185,6 +188,8 @@ function App() {
         return <BlockchainStats />;
       case 'token-analysis':
         return <TokenAnalysis isSidebarCollapsed={isSidebarCollapsed} />;
+      case 'task-management':
+        return <TaskManagement isSidebarCollapsed={isSidebarCollapsed} />;
       default:
         return <Dashboard />;
     }

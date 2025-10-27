@@ -128,7 +128,7 @@ const AddMonitorToken: React.FC<AddMonitorTokenProps> = ({ onSuccess }) => {
                 className={styles.submitButton}
                 disabled={loading}
               >
-                {loading ? '添加中...' : '添加监控'}
+                {loading ? '⏳ 中...' : '➕'}
               </button>
             </div>
           </form>

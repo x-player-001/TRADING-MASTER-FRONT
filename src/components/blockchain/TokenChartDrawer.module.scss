@@ -1,0 +1,198 @@
+// 抽屉遮罩层
+.overlay {
+  position: fixed;
+  top: 4rem; // Header高度，从header下方开始
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  animation: fadeIn 0.3s ease;
+}
+
+// 抽屉主体
+.drawer {
+  position: fixed;
+  top: 4rem; // Header高度，从header下方开始
+  right: 0;
+  bottom: 0;
+  width: 800px;
+  max-width: 90vw;
+  background: white;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.2);
+  z-index: 101;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.3s ease;
+
+  :global(.dark) & {
+    background: #1f2937;
+  }
+
+  @media (max-width: 1024px) {
+    width: 100vw;
+    max-width: 100vw;
+  }
+}
+
+// 头部
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+
+  :global(.dark) & {
+    border-bottom-color: #374151;
+  }
+}
+
+.titleArea {
+  flex: 1;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+
+  :global(.dark) & {
+    color: #f9fafb;
+  }
+}
+
+.titleLink {
+  color: #3b82f6;
+  text-decoration: none;
+  transition: all 0.2s ease;
+
+  :global(.dark) & {
+    color: #60a5fa;
+  }
+
+  &:hover {
+    color: #2563eb;
+    text-decoration: underline;
+
+    :global(.dark) & {
+      color: #3b82f6;
+    }
+  }
+}
+
+.chain {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 400;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0.25rem 0 0 0;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+}
+
+.closeBtn {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  :global(.dark) & {
+    border-color: #374151;
+    color: #9ca3af;
+  }
+
+  &:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+    color: #111827;
+
+    :global(.dark) & {
+      background: #374151;
+      border-color: #4b5563;
+      color: #f9fafb;
+    }
+  }
+}
+
+// 内容区域
+.content {
+  flex: 1;
+  padding: 1.5rem;
+  overflow: auto;
+  position: relative;
+}
+
+.loading,
+.error {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 1rem 2rem;
+  border-radius: 0.5rem;
+  background: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-size: 0.875rem;
+  z-index: 10;
+
+  :global(.dark) & {
+    background: #374151;
+  }
+}
+
+.loading {
+  color: #6b7280;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+}
+
+.error {
+  color: #ef4444;
+}
+
+.chartContainer {
+  width: 100%;
+  height: 500px; // 固定高度
+  overflow: hidden;
+}
+
+// 动画
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}

@@ -47,7 +47,8 @@ const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { icon: '🔍', label: '潜力币种', href: '#potential-tokens', page: 'potential-tokens' },
         { icon: '👁️', label: '监控币种', href: '#monitor-tokens', page: 'monitor-tokens' },
-        { icon: '🗑️', label: '已删除代币', href: '#deleted-tokens', page: 'deleted-tokens' }
+        { icon: '🗑️', label: '已删除代币', href: '#deleted-tokens', page: 'deleted-tokens' },
+        { icon: '⚙️', label: '任务管理', href: '#task-management', page: 'task-management' }
         // { icon: '📈', label: '链上K线', href: '#blockchain-charts', page: 'blockchain-charts' },
         // { icon: '📊', label: '数据统计', href: '#blockchain-stats', page: 'blockchain-stats' }
       ]

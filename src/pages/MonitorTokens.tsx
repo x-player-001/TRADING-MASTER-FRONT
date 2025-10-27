@@ -5,6 +5,7 @@ import { TopProgressBar } from '../components/ui';
 import AddMonitorToken from '../components/blockchain/AddMonitorToken';
 import { blockchainAPI } from '../services/blockchainAPI';
 import type { MonitorToken, PriceAlert } from '../types/blockchain';
+import TokenChartDrawer from '../components/blockchain/TokenChartDrawer';
 
 interface Props {
   isSidebarCollapsed?: boolean;
@@ -27,6 +28,10 @@ const MonitorTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
   const [editingTokenId, setEditingTokenId] = useState<string | null>(null);
   const [editingThresholds, setEditingThresholds] = useState<string>('');
   const [deletingTokenId, setDeletingTokenId] = useState<string | null>(null);
+
+  // K线图表抽屉状态
+  const [chartDrawerOpen, setChartDrawerOpen] = useState(false);
+  const [selectedToken, setSelectedToken] = useState<MonitorToken | null>(null);
 
   const fetchTokens = async () => {
     try {
@@ -164,6 +169,12 @@ const MonitorTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
   };
 
   // 格式化时间
+  // 打开K线图表抽屉
+  const handleOpenChart = (token: MonitorToken) => {
+    setSelectedToken(token);
+    setChartDrawerOpen(true);
+  };
+
   const formatTime = (timeStr: string): string => {
     const date = new Date(timeStr);
     return date.toLocaleString('zh-CN', {
@@ -319,7 +330,11 @@ const MonitorTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
         {!loading && !error && tokens.length > 0 && (
           <div className={styles.mobileCards}>
             {tokens.map((token) => (
-              <div key={token.id} className={styles.tokenCard}>
+              <div
+                key={token.id}
+                className={styles.tokenCard}
+                onClick={() => handleOpenChart(token)}
+              >
                 {/* 卡片头部 */}
                 <div className={styles.cardHeader}>
                   <div className={styles.cardTitle}>
@@ -353,6 +368,10 @@ const MonitorTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                 {/* 卡片内容（两列布局）*/}
                 <div className={styles.cardBody}>
                   <div className={styles.cardGrid}>
+                    <div className={styles.cardItem}>
+                      <span className={styles.label}>当前市值</span>
+                      <span className={styles.value}>{formatLargeNumber(token.current_market_cap)}</span>
+                    </div>
                     <div className={styles.cardItem}>
                       <span className={styles.label}>当前价格</span>
                       <span className={styles.value}>{formatPrice(token.current_price_usd)}</span>
@@ -473,6 +492,7 @@ const MonitorTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                 <tr>
                   <th>符号</th>
                   <th>链</th>
+                  <th>当前市值</th>
                   <th>当前价格</th>
                   <th>历史最高</th>
                   <th>距峰值跌幅</th>
@@ -487,7 +507,11 @@ const MonitorTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
               </thead>
               <tbody>
                 {tokens.map((token) => (
-                  <tr key={token.id}>
+                  <tr
+                    key={token.id}
+                    onClick={() => handleOpenChart(token)}
+                    className={styles.clickableRow}
+                  >
                     {/* 符号 */}
                     <td>
                       {token.pair_address ? (
@@ -507,6 +531,11 @@ const MonitorTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
 
                     {/* 链 */}
                     <td className={styles.chain}>{token.chain}</td>
+
+                    {/* 当前市值 */}
+                    <td className={styles.marketCap}>
+                      {formatLargeNumber(token.current_market_cap)}
+                    </td>
 
                     {/* 当前价格 */}
                     <td className={styles.price}>{formatPrice(token.current_price_usd)}</td>
@@ -636,6 +665,18 @@ const MonitorTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
           </div>
         )}
       </div>
+
+      {/* K线图表抽屉 */}
+      {selectedToken && (
+        <TokenChartDrawer
+          isOpen={chartDrawerOpen}
+          onClose={() => setChartDrawerOpen(false)}
+          tokenAddress={selectedToken.token_address}
+          pairAddress={selectedToken.pair_address}
+          tokenSymbol={selectedToken.token_symbol}
+          chain={selectedToken.chain}
+        />
+      )}
     </div>
   );
 };

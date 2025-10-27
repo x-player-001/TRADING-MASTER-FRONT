@@ -14,6 +14,9 @@ const ScraperConfig: React.FC = () => {
     scrape_interval_max: 0,
     enabled_chains: '',
     enabled: false,
+    min_market_cap: 50000,
+    min_liquidity: 20000,
+    max_token_age_days: 30,
   });
 
   useEffect(() => {
@@ -31,6 +34,9 @@ const ScraperConfig: React.FC = () => {
         scrape_interval_max: data.scrape_interval_max,
         enabled_chains: data.enabled_chains,
         enabled: data.enabled,
+        min_market_cap: data.min_market_cap || 50000,
+        min_liquidity: data.min_liquidity || 20000,
+        max_token_age_days: data.max_token_age_days || 30,
       });
     } catch (err: any) {
       console.error('获取爬虫配置失败:', err);
@@ -48,6 +54,9 @@ const ScraperConfig: React.FC = () => {
         scrape_interval_max: formData.scrape_interval_max,
         enabled_chains: formData.enabled_chains,
         enabled: formData.enabled ? 1 : 0,
+        min_market_cap: formData.min_market_cap,
+        min_liquidity: formData.min_liquidity,
+        max_token_age_days: formData.max_token_age_days,
       };
       const data = await blockchainAPI.updateScraperConfig(updateData);
       setConfig(data);
@@ -131,6 +140,45 @@ const ScraperConfig: React.FC = () => {
                 placeholder="如: bsc,solana"
               />
               <span className={styles.hint}>逗号分隔</span>
+            </div>
+
+            <div className={styles.formItem}>
+              <label>最小市值(USD)</label>
+              <input
+                type="number"
+                min="0"
+                step="1000"
+                value={formData.min_market_cap}
+                onChange={(e) => setFormData({ ...formData, min_market_cap: parseInt(e.target.value) })}
+                placeholder="50000"
+              />
+              <span className={styles.hint}>默认 50k</span>
+            </div>
+
+            <div className={styles.formItem}>
+              <label>最小流动性(USD)</label>
+              <input
+                type="number"
+                min="0"
+                step="1000"
+                value={formData.min_liquidity}
+                onChange={(e) => setFormData({ ...formData, min_liquidity: parseInt(e.target.value) })}
+                placeholder="20000"
+              />
+              <span className={styles.hint}>默认 20k</span>
+            </div>
+
+            <div className={styles.formItem}>
+              <label>代币最大年龄(天)</label>
+              <input
+                type="number"
+                min="1"
+                max="365"
+                value={formData.max_token_age_days}
+                onChange={(e) => setFormData({ ...formData, max_token_age_days: parseInt(e.target.value) })}
+                placeholder="30"
+              />
+              <span className={styles.hint}>默认 30 天</span>
             </div>
 
             <div className={styles.formItem}>

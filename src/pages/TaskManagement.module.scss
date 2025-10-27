@@ -1,0 +1,161 @@
+// 任务管理页面样式
+.page {
+  padding: 2rem;
+  min-height: 100%;
+  background: #f9fafb;
+  position: relative;
+
+  :global(.dark) & {
+    background: #111827;
+  }
+
+  @media (max-width: 1024px) {
+    padding: 1rem;
+  }
+
+  &.sidebarCollapsed {
+    margin-left: 4rem;
+  }
+}
+
+.container {
+  margin-top: 2rem;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+// Tab 切换栏
+.tabBar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 2rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+
+  :global(.dark) & {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  &:hover {
+    border-color: #3b82f6;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.2);
+
+    :global(.dark) & {
+      box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.3);
+    }
+  }
+
+  &.active {
+    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+    border-color: transparent;
+    color: white;
+    box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
+
+    .tabIcon {
+      filter: grayscale(0) brightness(1.2);
+    }
+
+    .tabTitle {
+      color: white;
+      font-weight: 700;
+    }
+
+    .tabDesc {
+      color: rgba(255, 255, 255, 0.9);
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 1.25rem 1.5rem;
+    gap: 0.75rem;
+  }
+}
+
+.tabIcon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+  }
+}
+
+.tabContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.tabTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  transition: all 0.3s ease;
+
+  :global(.dark) & {
+    color: #f9fafb;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
+}
+
+.tabDesc {
+  font-size: 0.875rem;
+  color: #6b7280;
+  transition: all 0.3s ease;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+  }
+}
+
+// Tab 内容区域
+.taskSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeIn 0.4s ease-out;
+
+  @media (max-width: 768px) {
+    gap: 1rem;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
