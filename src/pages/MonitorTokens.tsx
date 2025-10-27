@@ -342,9 +342,11 @@ const MonitorTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                     className={`${styles.deleteBtn} ${deletingTokenId === token.id ? styles.deleting : ''}`}
                     disabled={deletingTokenId === token.id}
                   >
-                    <span className={deletingTokenId === token.id ? styles.spinning : ''}>
-                      {deletingTokenId === token.id ? '🔄' : '🗑️'}
-                    </span>
+                    {deletingTokenId === token.id ? (
+                      <span className={styles.spinner}></span>
+                    ) : (
+                      '🗑️'
+                    )}
                   </button>
                 </div>
 
@@ -620,9 +622,11 @@ const MonitorTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                         disabled={deletingTokenId === token.id}
                         title={deletingTokenId === token.id ? '删除中...' : '删除代币'}
                       >
-                        <span className={deletingTokenId === token.id ? styles.spinning : ''}>
-                          {deletingTokenId === token.id ? '🔄' : '🗑️'}
-                        </span> 删除
+                        {deletingTokenId === token.id ? (
+                          <span className={styles.spinner}></span>
+                        ) : (
+                          '🗑️'
+                        )} 删除
                       </button>
                     </td>
                   </tr>

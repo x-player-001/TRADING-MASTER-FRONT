@@ -148,13 +148,28 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
     // 排序
     if (sortField) {
       result.sort((a, b) => {
-        const aValue = a[sortField];
-        const bValue = b[sortField];
+        let aValue = a[sortField];
+        let bValue = b[sortField];
 
         // 处理null值
         if (aValue === null && bValue === null) return 0;
         if (aValue === null) return 1;
         if (bValue === null) return -1;
+
+        // 对于数值字段，确保转换为数字进行比较
+        const numericFields: SortField[] = [
+          'price_ath_usd',
+          'market_cap_at_scrape',
+          'price_change_24h_at_scrape',
+          'current_price_usd',
+          'volume_24h_at_scrape',
+          'liquidity_at_scrape'
+        ];
+
+        if (numericFields.includes(sortField)) {
+          aValue = Number(aValue);
+          bValue = Number(bValue);
+        }
 
         // 比较
         if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
@@ -298,9 +313,11 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                       onClick={() => handleDelete(token.id, token.token_symbol)}
                       disabled={deletingTokenId === token.id}
                     >
-                      <span className={deletingTokenId === token.id ? styles.spinning : ''}>
-                        {deletingTokenId === token.id ? '🔄' : '🗑️'}
-                      </span>
+                      {deletingTokenId === token.id ? (
+                        <span className={styles.spinner}></span>
+                      ) : (
+                        '🗑️'
+                      )}
                     </button>
                   </div>
                 </div>
@@ -503,9 +520,11 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                         disabled={deletingTokenId === token.id}
                         title={deletingTokenId === token.id ? '删除中...' : '删除'}
                       >
-                        <span className={deletingTokenId === token.id ? styles.spinning : ''}>
-                          {deletingTokenId === token.id ? '🔄' : '🗑️'}
-                        </span> 删除
+                        {deletingTokenId === token.id ? (
+                          <span className={styles.spinner}></span>
+                        ) : (
+                          '🗑️'
+                        )} 删除
                       </button>
                     </td>
                   </tr>
