@@ -521,6 +521,7 @@ const MonitorTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                           rel="noopener noreferrer"
                           className={styles.symbolLink}
                           title={`查看 ${token.token_symbol} 在 DexScreener`}
+                          onClick={(e) => e.stopPropagation()}
                         >
                           {token.token_symbol}
                         </a>
@@ -580,13 +581,19 @@ const MonitorTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                           <div className={styles.thresholdActions}>
                             <button
                               className={styles.saveBtn}
-                              onClick={() => handleSaveThresholds(token.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSaveThresholds(token.id);
+                              }}
                             >
                               ✓
                             </button>
                             <button
                               className={styles.cancelBtn}
-                              onClick={handleCancelEdit}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCancelEdit();
+                              }}
                             >
                               ✕
                             </button>
@@ -607,7 +614,10 @@ const MonitorTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                           </div>
                           <button
                             className={styles.editThresholdBtn}
-                            onClick={() => handleStartEditThresholds(token.id, token.alert_thresholds || [])}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStartEditThresholds(token.id, token.alert_thresholds || []);
+                            }}
                             title="编辑报警阈值"
                           >
                             ✏️
@@ -646,7 +656,10 @@ const MonitorTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                     {/* 操作 */}
                     <td>
                       <button
-                        onClick={() => handleDelete(token.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(token.id);
+                        }}
                         className={`${styles.deleteBtn} ${deletingTokenId === token.id ? styles.deleting : ''}`}
                         disabled={deletingTokenId === token.id}
                         title={deletingTokenId === token.id ? '删除中...' : '删除代币'}

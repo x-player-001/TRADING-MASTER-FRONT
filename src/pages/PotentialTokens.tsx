@@ -483,6 +483,7 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                           rel="noopener noreferrer"
                           className={styles.symbolLink}
                           title={`查看 ${token.token_symbol} 在 DexScreener`}
+                          onClick={(e) => e.stopPropagation()}
                         >
                           {token.token_symbol}
                         </a>
@@ -546,14 +547,20 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                     <td className={styles.actions}>
                       <button
                         className={styles.addBtn}
-                        onClick={() => handleAddToMonitor(token.id, token.token_symbol)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddToMonitor(token.id, token.token_symbol);
+                        }}
                         title="添加到监控"
                       >
                         ➕
                       </button>
                       <button
                         className={`${styles.deleteBtn} ${deletingTokenId === token.id ? styles.deleting : ''}`}
-                        onClick={() => handleDelete(token.id, token.token_symbol)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(token.id, token.token_symbol);
+                        }}
                         disabled={deletingTokenId === token.id}
                         title={deletingTokenId === token.id ? '删除中...' : '删除'}
                       >
