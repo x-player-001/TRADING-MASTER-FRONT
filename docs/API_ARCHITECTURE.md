@@ -6,7 +6,7 @@
 
 ```
 前端应用
-├── K线数据服务 (http://45.249.246.109:3000)
+├── K线数据服务 (http://localhost:3000)
 │   ├── K线数据拉取和存储
 │   ├── 市场数据实时监控
 │   ├── 币种配置管理
@@ -26,7 +26,7 @@
 
 ### 1. K线数据服务客户端 (`apiClient.ts`)
 
-**Base URL**: `http://45.249.246.109:3000`
+**Base URL**: `http://localhost:3000`
 **环境变量**: `VITE_API_URL`
 **超时时间**: 10秒
 
@@ -86,8 +86,8 @@ src/services/
 
 ```env
 # K线数据服务
-VITE_API_URL=http://45.249.246.109:3000
-VITE_WS_URL=ws://45.249.246.109:3000
+VITE_API_URL=http://localhost:3000
+VITE_WS_URL=ws://localhost:3000
 
 # CZSC回测系统
 VITE_CZSC_API_URL=http://localhost:8000
@@ -99,7 +99,7 @@ VITE_ENABLE_CZSC=true
 ### 开发环境 (.env.local)
 
 ```env
-VITE_API_URL=http://45.249.246.109:3000
+VITE_API_URL=http://localhost:3000
 VITE_CZSC_API_URL=http://localhost:8000
 VITE_ENABLE_CZSC=true
 ```
@@ -363,7 +363,7 @@ npm run dev
 
 ```typescript
 // 检查K线数据服务
-const healthK = await fetch('http://45.249.246.109:3000/health');
+const healthK = await fetch('http://localhost:3000/health');
 console.log('K线服务状态:', await healthK.json());
 
 // 检查CZSC服务
@@ -399,6 +399,6 @@ if (isCZSCEnabled) {
 
 ## 🔗 快速链接
 
-- K线数据服务Swagger: `http://45.249.246.109:3000/api-docs`
+- K线数据服务Swagger: `http://localhost:3000/api-docs`
 - CZSC回测系统文档: 见 `API_DOCUMENTATION.md`
 - 前端开发服务器: `http://localhost:3001`

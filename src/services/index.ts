@@ -1,6 +1,6 @@
 // 统一导出所有API服务
 
-// K线数据服务 (http://45.249.246.109:3000)
+// K线数据服务
 export { default as apiClient, apiGet, apiPost, apiPut, apiDelete, apiPatch, API_BASE_URL } from './apiClient';
 export { oiAPI, default as OIAPIService } from './oiAPI';
 export { monitoringAPI, default as MonitoringAPIService } from './monitoringAPI';

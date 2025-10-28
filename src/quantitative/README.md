@@ -99,7 +99,7 @@ src/quantitative/
 
 ### 后端API基础URL
 ```typescript
-const API_BASE_URL = 'http://45.249.246.109:3000';
+const API_BASE_URL = 'http://localhost:3000';
 ```
 
 ### API路由前缀

@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 
 // API基础配置
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://45.249.246.109:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 // 创建axios实例
 const apiClient: AxiosInstance = axios.create({
