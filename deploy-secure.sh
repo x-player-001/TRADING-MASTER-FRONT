@@ -1,6 +1,6 @@
 #!/bin/bash
 # Trading Master Frontend - 安全部署脚本
-# 用途：生成随机路径和配置nginx反向代理
+# 用途：生成随机路径和端口，配置nginx反向代理
 
 set -e
 
@@ -23,7 +23,7 @@ if ! command -v nginx &> /dev/null; then
     systemctl enable nginx
 fi
 
-# 生成随机路径前缀
+# 生成随机路径前缀和端口
 RANDOM_PATH=$(openssl rand -hex 8)
 RANDOM_PORT=$((30000 + RANDOM % 10000))
 
@@ -31,23 +31,6 @@ echo "✅ 已生成随机配置："
 echo "   随机路径: /app-${RANDOM_PATH}/"
 echo "   nginx端口: ${RANDOM_PORT}"
 echo ""
-
-# 生成密码
-read -p "🔐 设置访问用户名 [默认: admin]: " USERNAME
-USERNAME=${USERNAME:-admin}
-
-read -sp "🔑 设置访问密码: " PASSWORD
-echo ""
-
-if [ -z "$PASSWORD" ]; then
-    echo "❌ 密码不能为空"
-    exit 1
-fi
-
-# 创建htpasswd文件
-echo "📝 创建认证文件..."
-yum install -y httpd-tools
-htpasswd -bc /etc/nginx/.htpasswd "$USERNAME" "$PASSWORD"
 
 # 修改nginx配置
 NGINX_CONF="/etc/nginx/conf.d/trading-front.conf"
@@ -66,9 +49,6 @@ server {
 
     # 随机路径前缀
     location /app-${RANDOM_PATH}/ {
-        auth_basic "Trading Master - Restricted Access";
-        auth_basic_user_file /etc/nginx/.htpasswd;
-
         rewrite ^/app-${RANDOM_PATH}/(.*) /\$1 break;
         proxy_pass http://127.0.0.1:3001;
 
@@ -117,22 +97,16 @@ Trading Master Frontend 访问信息
 生成时间: $(date)
 
 访问地址: http://你的服务器IP:${RANDOM_PORT}/app-${RANDOM_PATH}/
-用户名: ${USERNAME}
-密码: ${PASSWORD}
 
 ⚠️ 请妥善保管此文件，删除前请务必记录访问信息！
 
 nginx配置文件: ${NGINX_CONF}
-认证文件: /etc/nginx/.htpasswd
 
 管理命令:
 - 查看nginx状态: systemctl status nginx
 - 重启nginx: systemctl restart nginx
 - 查看访问日志: tail -f /var/log/nginx/trading-front-access.log
 - 查看错误日志: tail -f /var/log/nginx/trading-front-error.log
-
-修改密码:
-  htpasswd /etc/nginx/.htpasswd ${USERNAME}
 ========================================
 EOF
 

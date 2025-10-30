@@ -25,7 +25,6 @@ eslint.config.js
 
 # Deployment sensitive files
 trading-front-access.txt
-.htpasswd
 
 # Editor directories and files
 .vscode/*
