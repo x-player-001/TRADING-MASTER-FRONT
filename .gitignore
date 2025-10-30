@@ -20,6 +20,9 @@ dist-ssr
 # Claude settings
 .claude/settings.local.json
 
+# Legacy config files (for Node 16 compatibility)
+eslint.config.js
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
