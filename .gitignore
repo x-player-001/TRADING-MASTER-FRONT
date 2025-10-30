@@ -23,6 +23,10 @@ dist-ssr
 # Legacy config files (for Node 16 compatibility)
 eslint.config.js
 
+# Deployment sensitive files
+trading-front-access.txt
+.htpasswd
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
