@@ -39,11 +39,20 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
       .filter(token => {
         // 使用 scraped_timestamp 字段（这是抓取时间）
         if (!token.scraped_timestamp) return false;
-        const scrapedAt = new Date(token.scraped_timestamp).getTime();
+
+        // 处理 UTC 时间字符串
+        const timestampStr = typeof token.scraped_timestamp === 'string' && !token.scraped_timestamp.endsWith('Z')
+          ? `${token.scraped_timestamp}Z`
+          : token.scraped_timestamp;
+        const scrapedAt = new Date(timestampStr).getTime();
         return scrapedAt >= oneHourAgo;
       })
       .map(token => {
-        const scrapedAt = new Date(token.scraped_timestamp).getTime();
+        // 处理 UTC 时间字符串
+        const timestampStr = typeof token.scraped_timestamp === 'string' && !token.scraped_timestamp.endsWith('Z')
+          ? `${token.scraped_timestamp}Z`
+          : token.scraped_timestamp;
+        const scrapedAt = new Date(timestampStr).getTime();
         const minutesAgo = Math.floor((now - scrapedAt) / 60000);
         return {
           symbol: token.token_symbol,
@@ -88,9 +97,20 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
     return `$${price.toFixed(8)}`;
   };
 
-  // 格式化时间
+  // 格式化时间（后端返回UTC时间，需要转为北京时间UTC+8）
   const formatTime = (timestamp: number | string): string => {
-    const date = new Date(timestamp);
+    let date: Date;
+
+    if (typeof timestamp === 'string') {
+      // 如果是字符串格式 "2025-10-31T12:18:41"，后端返回的是UTC时间
+      // 需要在末尾加上 'Z' 表示UTC时区，然后JavaScript会自动转换为本地时间
+      const utcString = timestamp.endsWith('Z') ? timestamp : `${timestamp}Z`;
+      date = new Date(utcString);
+    } else {
+      // 如果是时间戳（毫秒），直接创建Date对象
+      date = new Date(timestamp);
+    }
+
     return date.toLocaleString('zh-CN', {
       month: '2-digit',
       day: '2-digit',
