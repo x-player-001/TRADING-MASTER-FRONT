@@ -23,6 +23,9 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
   // 符号搜索过滤
   const [symbolFilter, setSymbolFilter] = useState<string>('');
 
+  // 外部链接跳转目标（dex 或 gmgn）
+  const [linkTarget, setLinkTarget] = useState<'dex' | 'gmgn'>('dex');
+
   // K线图表抽屉状态
   const [chartDrawerOpen, setChartDrawerOpen] = useState(false);
   const [selectedToken, setSelectedToken] = useState<PotentialToken | null>(null);
@@ -273,6 +276,21 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
     setChartDrawerOpen(true);
   };
 
+  // 生成符号链接URL
+  const getSymbolLink = (token: PotentialToken): string => {
+    const chain = token.chain.toLowerCase();
+    const chainPath = chain === 'solana' ? 'solana' : 'bsc';
+
+    if (linkTarget === 'dex') {
+      // DEX Screener 使用 pair_address
+      return `https://dexscreener.com/${chainPath}/${token.pair_address}`;
+    } else {
+      // GMGN 使用 token_address
+      const gmgnChain = chain === 'solana' ? 'sol' : 'bsc';
+      return `https://gmgn.ai/${gmgnChain}/token/${token.token_address}`;
+    }
+  };
+
   return (
     <div className={`${styles.page} ${isSidebarCollapsed ? styles.sidebarCollapsed : ''}`}>
       <TopProgressBar isVisible={loading} progress={loading ? 50 : 100} absolute />
@@ -338,27 +356,30 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
               </label>
             </div>
 
-            {/* 外部链接跳转 */}
-            {selectedToken && (
-              <div className={styles.externalLinks}>
-                <a
-                  href={`https://dexscreener.com/${selectedToken.chain.toLowerCase() === 'solana' ? 'solana' : 'bsc'}/${selectedToken.pair_address}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={styles.linkBtn}
-                >
-                  📊 DEX
-                </a>
-                <a
-                  href={`https://gmgn.ai/${selectedToken.chain.toLowerCase() === 'solana' ? 'sol' : 'bsc'}/token/${selectedToken.token_address}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={styles.linkBtn}
-                >
-                  🔗 GMGN
-                </a>
-              </div>
-            )}
+            {/* 外部链接跳转目标选择 */}
+            <div className={styles.linkTargetGroup}>
+              <span className={styles.linkTargetLabel}>跳转网站:</span>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="linkTarget"
+                  value="dex"
+                  checked={linkTarget === 'dex'}
+                  onChange={(e) => setLinkTarget(e.target.value as 'dex' | 'gmgn')}
+                />
+                <span>DEX</span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="linkTarget"
+                  value="gmgn"
+                  checked={linkTarget === 'gmgn'}
+                  onChange={(e) => setLinkTarget(e.target.value as 'dex' | 'gmgn')}
+                />
+                <span>GMGN</span>
+              </label>
+            </div>
 
             <div className={styles.filterInfo}>
               显示 <strong>{filteredAndSortedTokens.length}</strong> / {tokens.length} 个代币
@@ -435,18 +456,14 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                 {/* 卡片头部 - 符号和链 */}
                 <div className={styles.cardHeader}>
                   <div className={styles.cardTitle}>
-                    {token.pair_address ? (
-                      <a
-                        href={`https://dexscreener.com/${token.chain.toLowerCase() === 'solana' ? 'solana' : 'bsc'}/${token.pair_address}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={styles.symbolLink}
-                      >
-                        {token.token_symbol}
-                      </a>
-                    ) : (
-                      <span className={styles.symbol}>{token.token_symbol}</span>
-                    )}
+                    <a
+                      href={getSymbolLink(token)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.symbolLink}
+                    >
+                      {token.token_symbol}
+                    </a>
                     <span className={styles.chainBadge}>{token.chain}</span>
                   </div>
                   <div className={styles.cardActions}>
@@ -591,20 +608,16 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                   >
                     {/* 符号 */}
                     <td>
-                      {token.pair_address ? (
-                        <a
-                          href={`https://dexscreener.com/${token.chain.toLowerCase() === 'solana' ? 'solana' : 'bsc'}/${token.pair_address}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={styles.symbolLink}
-                          title={`查看 ${token.token_symbol} 在 DexScreener`}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {token.token_symbol}
-                        </a>
-                      ) : (
-                        <span className={styles.symbol}>{token.token_symbol}</span>
-                      )}
+                      <a
+                        href={getSymbolLink(token)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={styles.symbolLink}
+                        title={`查看 ${token.token_symbol} 在 ${linkTarget === 'dex' ? 'DEX Screener' : 'GMGN'}`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {token.token_symbol}
+                      </a>
                     </td>
 
                     {/* 链 */}
