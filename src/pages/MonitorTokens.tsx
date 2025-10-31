@@ -175,8 +175,20 @@ const MonitorTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
     setChartDrawerOpen(true);
   };
 
-  const formatTime = (timeStr: string): string => {
-    const date = new Date(timeStr);
+  // 格式化时间（后端返回UTC时间，需要转为北京时间UTC+8）
+  const formatTime = (timestamp: number | string): string => {
+    let date: Date;
+
+    if (typeof timestamp === 'string') {
+      // 如果是字符串格式 "2025-10-31T12:18:41"，后端返回的是UTC时间
+      // 需要在末尾加上 'Z' 表示UTC时区，然后JavaScript会自动转换为本地时间
+      const utcString = timestamp.endsWith('Z') ? timestamp : `${timestamp}Z`;
+      date = new Date(utcString);
+    } else {
+      // 如果是时间戳（毫秒），直接创建Date对象
+      date = new Date(timestamp);
+    }
+
     return date.toLocaleString('zh-CN', {
       month: '2-digit',
       day: '2-digit',

@@ -18,8 +18,10 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [onlyNotAdded, setOnlyNotAdded] = useState(true);
   const [deletingTokenId, setDeletingTokenId] = useState<string | null>(null);
+
+  // 符号搜索过滤
+  const [symbolFilter, setSymbolFilter] = useState<string>('');
 
   // K线图表抽屉状态
   const [chartDrawerOpen, setChartDrawerOpen] = useState(false);
@@ -70,7 +72,7 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
 
       const response = await blockchainAPI.getPotentialTokens({
         limit: 100,
-        only_not_added: onlyNotAdded
+        only_not_added: false // 不再只显示未添加的
       });
       setTokens(response.data);
       setTotal(response.total);
@@ -84,7 +86,7 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
 
   useEffect(() => {
     fetchTokens();
-  }, [onlyNotAdded]);
+  }, []);
 
   // 格式化价格
   const formatPrice = (price: number | null): string => {
@@ -188,6 +190,14 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
   const filteredAndSortedTokens = React.useMemo(() => {
     let result = [...tokens];
 
+    // 符号筛选（前端过滤）
+    if (symbolFilter.trim()) {
+      const filterLower = symbolFilter.toLowerCase().trim();
+      result = result.filter(token =>
+        token.token_symbol.toLowerCase().includes(filterLower)
+      );
+    }
+
     // 链筛选
     if (selectedChain !== 'all') {
       result = result.filter(token => token.chain === selectedChain);
@@ -249,7 +259,7 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
     }
 
     return result;
-  }, [tokens, selectedChain, sortField, sortOrder]);
+  }, [tokens, symbolFilter, selectedChain, sortField, sortOrder]);
 
   // 排序图标
   const getSortIcon = (field: SortField) => {
@@ -285,15 +295,16 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
         <div className={styles.filtersWrapper}>
           {/* 筛选器 */}
           <div className={styles.filters}>
-            <label className={styles.filterLabel}>
-              <input
-                type="checkbox"
-                checked={onlyNotAdded}
-                onChange={(e) => setOnlyNotAdded(e.target.checked)}
-              />
-              <span>只显示未添加到监控的代币</span>
-            </label>
+            {/* 符号搜索输入框 */}
+            <input
+              type="text"
+              placeholder="🔍 搜索代币符号..."
+              value={symbolFilter}
+              onChange={(e) => setSymbolFilter(e.target.value)}
+              className={styles.symbolInput}
+            />
 
+            {/* 链筛选 */}
             <div className={styles.chainRadioGroup}>
               <label className={styles.radioLabel}>
                 <input
@@ -326,6 +337,28 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
                 <span>Solana</span>
               </label>
             </div>
+
+            {/* 外部链接跳转 */}
+            {selectedToken && (
+              <div className={styles.externalLinks}>
+                <a
+                  href={`https://dexscreener.com/${selectedToken.chain.toLowerCase() === 'solana' ? 'solana' : 'bsc'}/${selectedToken.pair_address}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.linkBtn}
+                >
+                  📊 DEX
+                </a>
+                <a
+                  href={`https://gmgn.ai/${selectedToken.chain.toLowerCase() === 'solana' ? 'sol' : 'bsc'}/token/${selectedToken.token_address}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.linkBtn}
+                >
+                  🔗 GMGN
+                </a>
+              </div>
+            )}
 
             <div className={styles.filterInfo}>
               显示 <strong>{filteredAndSortedTokens.length}</strong> / {tokens.length} 个代币
