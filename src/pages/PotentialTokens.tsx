@@ -30,6 +30,30 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [selectedChain, setSelectedChain] = useState<string>('all');
 
+  // 最近1小时内抓取的代币（用于时间轴展示）
+  const recentTokensIn1Hour = React.useMemo(() => {
+    const now = Date.now();
+    const oneHourAgo = now - 60 * 60 * 1000;
+
+    return tokens
+      .filter(token => {
+        // 使用 scraped_timestamp 字段（这是抓取时间）
+        if (!token.scraped_timestamp) return false;
+        const scrapedAt = new Date(token.scraped_timestamp).getTime();
+        return scrapedAt >= oneHourAgo;
+      })
+      .map(token => {
+        const scrapedAt = new Date(token.scraped_timestamp).getTime();
+        const minutesAgo = Math.floor((now - scrapedAt) / 60000);
+        return {
+          symbol: token.token_symbol,
+          minutesAgo,
+          timeInterval: Math.floor(minutesAgo / 10) * 10 // 以10分钟为区间
+        };
+      })
+      .sort((a, b) => a.minutesAgo - b.minutesAgo);
+  }, [tokens]);
+
   const fetchTokens = async () => {
     try {
       setLoading(true);
@@ -237,53 +261,91 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
       </PageHeader>
 
       <div className={styles.content}>
-        {/* 筛选器 */}
-        <div className={styles.filters}>
-          <label className={styles.filterLabel}>
-            <input
-              type="checkbox"
-              checked={onlyNotAdded}
-              onChange={(e) => setOnlyNotAdded(e.target.checked)}
-            />
-            <span>只显示未添加到监控的代币</span>
-          </label>
+        {/* 筛选器和时间轴容器 */}
+        <div className={styles.filtersWrapper}>
+          {/* 筛选器 */}
+          <div className={styles.filters}>
+            <label className={styles.filterLabel}>
+              <input
+                type="checkbox"
+                checked={onlyNotAdded}
+                onChange={(e) => setOnlyNotAdded(e.target.checked)}
+              />
+              <span>只显示未添加到监控的代币</span>
+            </label>
 
-          <div className={styles.chainRadioGroup}>
-            <label className={styles.radioLabel}>
-              <input
-                type="radio"
-                name="chain"
-                value="all"
-                checked={selectedChain === 'all'}
-                onChange={(e) => setSelectedChain(e.target.value)}
-              />
-              <span>所有链</span>
-            </label>
-            <label className={styles.radioLabel}>
-              <input
-                type="radio"
-                name="chain"
-                value="bsc"
-                checked={selectedChain === 'bsc'}
-                onChange={(e) => setSelectedChain(e.target.value)}
-              />
-              <span>BSC</span>
-            </label>
-            <label className={styles.radioLabel}>
-              <input
-                type="radio"
-                name="chain"
-                value="solana"
-                checked={selectedChain === 'solana'}
-                onChange={(e) => setSelectedChain(e.target.value)}
-              />
-              <span>Solana</span>
-            </label>
+            <div className={styles.chainRadioGroup}>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="chain"
+                  value="all"
+                  checked={selectedChain === 'all'}
+                  onChange={(e) => setSelectedChain(e.target.value)}
+                />
+                <span>所有链</span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="chain"
+                  value="bsc"
+                  checked={selectedChain === 'bsc'}
+                  onChange={(e) => setSelectedChain(e.target.value)}
+                />
+                <span>BSC</span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="chain"
+                  value="solana"
+                  checked={selectedChain === 'solana'}
+                  onChange={(e) => setSelectedChain(e.target.value)}
+                />
+                <span>Solana</span>
+              </label>
+            </div>
+
+            <div className={styles.filterInfo}>
+              显示 <strong>{filteredAndSortedTokens.length}</strong> / {tokens.length} 个代币
+            </div>
           </div>
 
-          <div className={styles.filterInfo}>
-            显示 <strong>{filteredAndSortedTokens.length}</strong> / {tokens.length} 个代币
-          </div>
+          {/* 时间轴展示模块 */}
+          {recentTokensIn1Hour.length > 0 && (
+            <div className={styles.timelineContainer}>
+              <div className={styles.timelineLabel}>
+                <span className={styles.timelineLabelIcon}>⏱️</span>
+                <span className={styles.timelineLabelText}>最近1小时</span>
+              </div>
+              <div className={styles.timelineScroll}>
+                <div className={styles.timelineTrack}>
+                  {recentTokensIn1Hour.map((item, index) => {
+                    // 根据时间区间分配颜色 (0-10分钟, 10-20分钟, ...)
+                    const getColorClass = (interval: number) => {
+                      if (interval >= 0 && interval < 10) return styles.interval0;
+                      if (interval >= 10 && interval < 20) return styles.interval10;
+                      if (interval >= 20 && interval < 30) return styles.interval20;
+                      if (interval >= 30 && interval < 40) return styles.interval30;
+                      if (interval >= 40 && interval < 50) return styles.interval40;
+                      return styles.interval50;
+                    };
+
+                    return (
+                      <div
+                        key={`${item.symbol}-${index}`}
+                        className={`${styles.timelineItem} ${getColorClass(item.timeInterval)}`}
+                      >
+                        <span className={styles.timelineTime}>{item.minutesAgo}m</span>
+                        <span className={styles.timelineSymbol}>{item.symbol}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 加载状态 */}

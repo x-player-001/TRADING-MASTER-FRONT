@@ -57,10 +57,17 @@
   }
 }
 
+// 筛选器和时间轴容器
+.filtersWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
 .filters {
   display: flex;
   gap: 1rem;
-  margin-bottom: 1.5rem;
   flex-wrap: wrap;
 
   @media (max-width: 640px) {
@@ -867,6 +874,247 @@
   }
   to {
     transform: rotate(360deg);
+  }
+}
+
+// 时间轴展示模块样式
+.timelineContainer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1.25rem;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(99, 102, 241, 0.05));
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 0.75rem;
+  backdrop-filter: blur(8px);
+  position: relative;
+  overflow: hidden;
+
+  :global(.dark) & {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(99, 102, 241, 0.08));
+    border-color: rgba(59, 130, 246, 0.25);
+  }
+
+  // 发光效果
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    animation: shimmer 3s infinite;
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.timelineLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  position: relative;
+  z-index: 1;
+}
+
+.timelineLabelIcon {
+  font-size: 1.125rem;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+.timelineLabelText {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #3b82f6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+
+  :global(.dark) & {
+    color: #60a5fa;
+  }
+}
+
+.timelineScroll {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  position: relative;
+  z-index: 1;
+
+  // 隐藏滚动条但保持功能
+  &::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(59, 130, 246, 0.05);
+    border-radius: 2px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, #3b82f6, #6366f1);
+    border-radius: 2px;
+
+    &:hover {
+      background: linear-gradient(90deg, #2563eb, #4f46e5);
+    }
+  }
+}
+
+.timelineTrack {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  min-width: min-content;
+}
+
+.timelineItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: default;
+  position: relative;
+  overflow: hidden;
+
+  // 渐变背景动画
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: inherit;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  &:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+
+    &::before {
+      opacity: 0.2;
+    }
+  }
+}
+
+.timelineTime {
+  font-size: 0.6875rem;
+  opacity: 0.85;
+  font-weight: 700;
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.timelineSymbol {
+  font-weight: 700;
+  letter-spacing: 0.025em;
+}
+
+// 时间区间颜色方案 (0-10分钟 最新 -> 50-60分钟 最旧)
+.interval0 {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+
+  :global(.dark) & {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+  }
+}
+
+.interval10 {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: white;
+  border: 1px solid rgba(249, 115, 22, 0.4);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.25);
+
+  :global(.dark) & {
+    background: linear-gradient(135deg, #ea580c, #c2410c);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.35);
+  }
+}
+
+.interval20 {
+  background: linear-gradient(135deg, #eab308, #ca8a04);
+  color: white;
+  border: 1px solid rgba(234, 179, 8, 0.4);
+  box-shadow: 0 4px 12px rgba(234, 179, 8, 0.25);
+
+  :global(.dark) & {
+    background: linear-gradient(135deg, #ca8a04, #a16207);
+    box-shadow: 0 4px 12px rgba(234, 179, 8, 0.35);
+  }
+}
+
+.interval30 {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
+
+  :global(.dark) & {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.35);
+  }
+}
+
+.interval40 {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+
+  :global(.dark) & {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+  }
+}
+
+.interval50 {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+
+  :global(.dark) & {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
   }
 }
 
