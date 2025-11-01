@@ -285,9 +285,10 @@ const PotentialTokens: React.FC<Props> = ({ isSidebarCollapsed }) => {
       // DEX Screener 使用 pair_address
       return `https://dexscreener.com/${chainPath}/${token.pair_address}`;
     } else {
-      // GMGN 使用 token_address
+      // GMGN 使用 token_address（如果为空则使用 pair_address 兜底）
       const gmgnChain = chain === 'solana' ? 'sol' : 'bsc';
-      return `https://gmgn.ai/${gmgnChain}/token/${token.token_address}`;
+      const address = token.token_address || token.pair_address;
+      return `https://gmgn.ai/${gmgnChain}/token/${address}`;
     }
   };
 
