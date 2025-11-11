@@ -89,26 +89,22 @@ const OIMonitoring: React.FC = () => {
     });
 
     // 服务运行时间
-    if (serviceStatus?.uptime_ms) {
-      cards.push({
-        icon: '📈',
-        label: '运行时间',
-        value: formatUptime(serviceStatus.uptime_ms),
-        glowColor: 'rgba(34, 197, 94, 0.6)',
-        index: 3
-      });
-    }
+    cards.push({
+      icon: '📈',
+      label: '运行时间',
+      value: serviceStatus?.uptime_ms ? formatUptime(serviceStatus.uptime_ms) : '--',
+      glowColor: 'rgba(34, 197, 94, 0.6)',
+      index: 3
+    });
 
     // 最后轮询时间
-    if (serviceStatus?.last_poll_time) {
-      cards.push({
-        icon: '🕐',
-        label: '最后轮询',
-        value: new Date(serviceStatus.last_poll_time).toLocaleString(),
-        glowColor: 'rgba(168, 85, 247, 0.6)',
-        index: 4
-      });
-    }
+    cards.push({
+      icon: '🕐',
+      label: '最后轮询',
+      value: serviceStatus?.last_poll_time ? new Date(serviceStatus.last_poll_time).toLocaleString() : '--',
+      glowColor: 'rgba(168, 85, 247, 0.6)',
+      index: 4
+    });
 
     return cards;
   }, [serviceStatus]);
