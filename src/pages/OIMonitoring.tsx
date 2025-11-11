@@ -6,6 +6,7 @@ import PageHeader from '../components/ui/PageHeader';
 import { StatusOverview, StatusIndicator, StatusCardProps, TopProgressBar, DataSection, CoolRefreshButton, SeverityFilter } from '../components/ui';
 import { OIStatisticsTable } from '../components/oi/OIStatisticsTable';
 import { OIAnomaliesList } from '../components/oi/OIAnomaliesList';
+import OIRecentAlerts from '../components/oi/OIRecentAlerts';
 import { useOIMonitoring } from '../hooks/useOIMonitoring';
 import { useOIFilters } from '../hooks/useOIFilters';
 import { useTopProgress } from '../hooks/useTopProgress';
@@ -156,9 +157,6 @@ const OIMonitoring: React.FC = () => {
             icon="📊"
           />
 
-      {/* 服务状态概览 */}
-      <StatusOverview cards={statusCards} />
-
       {/* 筛选器 */}
       <div className={styles.filterSection}>
         <div className={styles.filterRow}>
@@ -202,6 +200,11 @@ const OIMonitoring: React.FC = () => {
         </div>
       </div>
 
+      {/* 最近异常报警时间轴 */}
+      <div className={styles.recentAlertsSection}>
+        <OIRecentAlerts anomalies={anomalies} />
+      </div>
+
       <div className={styles.mainGrid}>
         {/* OI统计数据 */}
         <DataSection
@@ -240,6 +243,9 @@ const OIMonitoring: React.FC = () => {
           <OIAnomaliesList data={filteredAnomalies} />
         </DataSection>
       </div>
+
+      {/* 服务状态概览 - 移到页面底部 */}
+      <StatusOverview cards={statusCards} />
         </>
       )}
     </div>

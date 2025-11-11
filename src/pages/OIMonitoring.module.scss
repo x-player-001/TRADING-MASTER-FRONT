@@ -33,7 +33,7 @@ $warning: #f59e0b;
   margin-bottom: 1.5rem;
   background: transparent !important;
   border-radius: 0.75rem;
-  padding: 1.25rem;
+  padding: 0.75rem 1rem;
   border: 1px solid #e5e7eb;
 
   :global(.dark) & {
@@ -332,6 +332,15 @@ $warning: #f59e0b;
 
   @media (max-width: 640px) {
     gap: 1rem;
+  }
+}
+
+// 最近异常报警区域 - 独立显示在表格上方
+.recentAlertsSection {
+  margin-bottom: 1.5rem;
+
+  @media (max-width: 640px) {
+    margin-bottom: 1rem;
   }
 }
 
