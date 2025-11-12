@@ -1,9 +1,9 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { DatePicker, Input } from 'antd';
 import dayjs, { Dayjs } from 'dayjs';
 import styles from './OIMonitoring.module.scss';
 import PageHeader from '../components/ui/PageHeader';
-import { StatusOverview, StatusIndicator, StatusCardProps, TopProgressBar, DataSection, CoolRefreshButton, SeverityFilter } from '../components/ui';
+import { TopProgressBar, DataSection, CoolRefreshButton, SeverityFilter } from '../components/ui';
 import { OIStatisticsTable } from '../components/oi/OIStatisticsTable';
 import { OIAnomaliesList } from '../components/oi/OIAnomaliesList';
 import OIRecentAlerts from '../components/oi/OIRecentAlerts';
@@ -54,61 +54,6 @@ const OIMonitoring: React.FC = () => {
     searchTerm,
     severityFilter
   });
-
-  // 优化：使用useMemo缓存状态卡片数据，避免重复计算
-  const statusCards = useMemo((): StatusCardProps[] => {
-    const cards: StatusCardProps[] = [];
-
-    // 服务运行状态
-    cards.push({
-      icon: <StatusIndicator status={serviceStatus?.is_running ? 'running' : 'stopped'} />,
-      label: 'OI服务状态',
-      value: serviceStatus?.is_running ? '运行中' : '已停止',
-      status: serviceStatus?.is_running ? 'running' : 'stopped',
-      glowColor: serviceStatus?.is_running ? 'rgba(16, 185, 129, 0.6)' : 'rgba(239, 68, 68, 0.6)',
-      index: 0
-    });
-
-    // 监控币种数量
-    cards.push({
-      icon: '🎯',
-      label: '监控币种',
-      value: serviceStatus?.active_symbols_count || 0,
-      glowColor: 'rgba(245, 158, 11, 0.6)',
-      index: 1
-    });
-
-    // 轮询间隔
-    cards.push({
-      icon: '⏱️',
-      label: '轮询间隔',
-      value: serviceStatus?.config?.polling_interval_ms
-        ? `${serviceStatus.config.polling_interval_ms / 1000}s`
-        : '30s',
-      glowColor: 'rgba(139, 92, 246, 0.6)',
-      index: 2
-    });
-
-    // 服务运行时间
-    cards.push({
-      icon: '📈',
-      label: '运行时间',
-      value: serviceStatus?.uptime_ms ? formatUptime(serviceStatus.uptime_ms) : '--',
-      glowColor: 'rgba(34, 197, 94, 0.6)',
-      index: 3
-    });
-
-    // 最后轮询时间
-    cards.push({
-      icon: '🕐',
-      label: '最后轮询',
-      value: serviceStatus?.last_poll_time ? new Date(serviceStatus.last_poll_time).toLocaleString() : '--',
-      glowColor: 'rgba(168, 85, 247, 0.6)',
-      index: 4
-    });
-
-    return cards;
-  }, [serviceStatus]);
 
   // 优化：使用useCallback缓存事件处理器
   const handleRefresh = useCallback(() => {
@@ -189,6 +134,7 @@ const OIMonitoring: React.FC = () => {
               }}
             />
           </div>
+
           <div className={styles.filterItem}>
             <CoolRefreshButton
               onClick={handleRefresh}
@@ -196,6 +142,28 @@ const OIMonitoring: React.FC = () => {
               size="small"
               iconOnly
             />
+          </div>
+
+          {/* 服务状态信息 */}
+          <div className={styles.statusInfo}>
+            <span className={styles.statusItem}>
+              <span className={styles.statusLabel}>监控币种:</span>
+              <span className={styles.statusValue}>{serviceStatus?.active_symbols_count || 0}</span>
+            </span>
+            <span className={styles.statusItem}>
+              <span className={styles.statusLabel}>轮询间隔:</span>
+              <span className={styles.statusValue}>
+                {serviceStatus?.config?.polling_interval_ms
+                  ? `${serviceStatus.config.polling_interval_ms / 1000}s`
+                  : '30s'}
+              </span>
+            </span>
+            <span className={styles.statusItem}>
+              <span className={styles.statusLabel}>运行时间:</span>
+              <span className={styles.statusValue}>
+                {serviceStatus?.uptime_ms ? formatUptime(serviceStatus.uptime_ms) : '--'}
+              </span>
+            </span>
           </div>
         </div>
       </div>
@@ -218,7 +186,7 @@ const OIMonitoring: React.FC = () => {
           empty={!loading && !loadingStates.statistics && (!filteredStatistics || filteredStatistics.length === 0)}
           emptyText="暂无统计数据"
         >
-          <OIStatisticsTable data={filteredStatistics} />
+          <OIStatisticsTable data={filteredStatistics} initialDate={selectedDate} />
         </DataSection>
 
         {/* 异常监测 */}
@@ -243,9 +211,6 @@ const OIMonitoring: React.FC = () => {
           <OIAnomaliesList data={filteredAnomalies} />
         </DataSection>
       </div>
-
-      {/* 服务状态概览 - 移到页面底部 */}
-      <StatusOverview cards={statusCards} />
         </>
       )}
     </div>

@@ -66,25 +66,19 @@ const OIRecentAlerts: React.FC<OIRecentAlertsProps> = ({ anomalies }) => {
     'unusual_change': '异常'
   };
 
-  if (recentAlerts.length === 0) {
-    return (
-      <div className={styles.empty}>
-        <div className={styles.emptyIcon}>✅</div>
-        <div className={styles.emptyText}>最近半小时无异常报警</div>
-      </div>
-    );
-  }
-
   return (
     <div className={styles.timelineContainer}>
       <div className={styles.timelineLabel}>
         <span className={styles.timelineLabelIcon}>⚠️</span>
         <span className={styles.timelineLabelText}>最近30分钟</span>
-        <span className={styles.timelineCount}>{recentAlerts.length} 个异常</span>
+        {recentAlerts.length > 0 && (
+          <span className={styles.timelineCount}>{recentAlerts.length} 个异常</span>
+        )}
       </div>
-      <div className={styles.timelineScroll}>
-        <div className={styles.timelineTrack}>
-          {recentAlerts.map((item, index) => {
+      {recentAlerts.length > 0 && (
+        <div className={styles.timelineScroll}>
+          <div className={styles.timelineTrack}>
+            {recentAlerts.map((item, index) => {
             // 根据时间区间分配颜色 (0-5分钟, 5-10分钟, ...)
             const getColorClass = (interval: number) => {
               if (interval >= 0 && interval < 5) return styles.interval0;
@@ -106,7 +100,8 @@ const OIRecentAlerts: React.FC<OIRecentAlertsProps> = ({ anomalies }) => {
             );
           })}
         </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 };

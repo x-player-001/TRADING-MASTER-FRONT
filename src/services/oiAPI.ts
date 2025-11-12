@@ -1,4 +1,4 @@
-import { OIStatisticsResponse, OIAnomaliesResponse, OIStatusResponse } from '../types';
+import { OIStatisticsResponse, OIAnomaliesResponse, OIStatusResponse, OICurveResponse } from '../types';
 import { apiGet, apiPost, apiPut } from './apiClient';
 
 class OIAPIService {
@@ -86,6 +86,14 @@ class OIAPIService {
     order?: 'ASC' | 'DESC';
   }) {
     return apiGet('/api/oi/anomalies', { params });
+  }
+
+  // 获取OI曲线数据
+  async getOICurve(params: {
+    symbol: string;
+    date: string;
+  }): Promise<OICurveResponse> {
+    return apiGet<OICurveResponse>('/api/oi/curve', { params });
   }
 }
 

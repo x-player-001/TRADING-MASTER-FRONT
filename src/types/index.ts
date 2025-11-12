@@ -301,3 +301,22 @@ export interface SystemStats {
 export interface MetricsHistoryResponse {
   data: SystemMetrics[];
 }
+
+// OI曲线数据点
+export interface OICurveDataPoint {
+  timestamp: number;
+  snapshot_time: string;
+  open_interest: number;
+  data_source: string;
+}
+
+// OI曲线响应数据
+export interface OICurveData {
+  symbol: string;
+  date: string;
+  curve: OICurveDataPoint[];
+  count: number;
+}
+
+// OI曲线API响应（apiClient自动解包后）
+export type OICurveResponse = OICurveData;

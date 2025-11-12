@@ -80,6 +80,17 @@
 
 // 单元格样式
 .symbolCell {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background: #f3f4f6;
+
+    :global(.dark) & {
+      background: #374151;
+    }
+  }
+
   .symbolName {
     font-weight: 700;
     font-size: 1rem;
@@ -87,6 +98,16 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+
+    &::after {
+      content: '📈';
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
 
     :global(.dark) & {
       background: linear-gradient(135deg, #fbbf24, #f59e0b);
@@ -94,6 +115,10 @@
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
+  }
+
+  &:hover .symbolName::after {
+    opacity: 1;
   }
 }
 
