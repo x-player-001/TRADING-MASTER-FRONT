@@ -175,7 +175,7 @@ const OICurveChart: React.FC<OICurveChartProps> = ({
       }
       open={visible}
       onClose={onClose}
-      width="85%"
+      width="50%"
       placement="right"
       className={styles.curveDrawer}
     >
