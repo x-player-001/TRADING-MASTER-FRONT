@@ -1,31 +1,35 @@
-.curveModal {
-  :global(.ant-modal-content) {
+.curveDrawer {
+  :global(.ant-drawer-content) {
     background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
   }
 
-  :global(.ant-modal-header) {
+  :global(.ant-drawer-header) {
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--border-color);
   }
 
-  :global(.ant-modal-title) {
+  :global(.ant-drawer-title) {
     color: var(--text-primary);
   }
 
-  :global(.ant-modal-close-x) {
+  :global(.ant-drawer-close) {
     color: var(--text-secondary);
+  }
+
+  :global(.ant-drawer-body) {
+    padding: 1.5rem;
+    background: var(--bg-primary);
   }
 }
 
-.modalHeader {
+.drawerHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
   width: 100%;
 
-  .modalTitle {
+  .drawerTitle {
     font-size: 1.125rem;
     font-weight: 600;
     color: var(--text-primary);
@@ -153,25 +157,43 @@
   }
 }
 
+.chartSection {
+  margin-bottom: 2rem;
+
+  .chartTitle {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    padding: 0.5rem 1rem;
+    background: var(--bg-tertiary);
+    border-radius: 0.5rem;
+    border-left: 4px solid var(--primary-color);
+  }
+}
+
 // 深色主题
 :global(.dark) {
-  .curveModal {
-    :global(.ant-modal-content) {
+  .curveDrawer {
+    :global(.ant-drawer-content) {
+      background: #1f2937;
+    }
+
+    :global(.ant-drawer-header) {
       background: #1f2937;
       border-color: #374151;
     }
 
-    :global(.ant-modal-header) {
-      background: #1f2937;
-      border-color: #374151;
-    }
-
-    :global(.ant-modal-title) {
+    :global(.ant-drawer-title) {
       color: #f9fafb;
     }
 
-    :global(.ant-modal-close-x) {
+    :global(.ant-drawer-close) {
       color: #9ca3af;
+    }
+
+    :global(.ant-drawer-body) {
+      background: #111827;
     }
   }
 
@@ -183,5 +205,12 @@
   .tooltip {
     background: #1f2937;
     border-color: #374151;
+  }
+
+  .chartSection {
+    .chartTitle {
+      background: #1f2937;
+      border-left-color: #3B82F6;
+    }
   }
 }

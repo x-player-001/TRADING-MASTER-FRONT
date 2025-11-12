@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceDot, Brush } from 'recharts';
-import { Modal, DatePicker, Spin } from 'antd';
+import { Drawer, DatePicker, Spin } from 'antd';
 import dayjs, { Dayjs } from 'dayjs';
 import { oiAPI } from '../../services/oiAPI';
 import { OICurveData, OICurveDataPoint } from '../../types';
@@ -158,10 +158,10 @@ const OICurveChart: React.FC<OICurveChartProps> = ({
 
 
   return (
-    <Modal
+    <Drawer
       title={
-        <div className={styles.modalHeader}>
-          <span className={styles.modalTitle}>
+        <div className={styles.drawerHeader}>
+          <span className={styles.drawerTitle}>
             📈 {symbol} OI变化曲线
           </span>
           <DatePicker
@@ -174,11 +174,10 @@ const OICurveChart: React.FC<OICurveChartProps> = ({
         </div>
       }
       open={visible}
-      onCancel={onClose}
-      width={1000}
-      footer={null}
-      centered
-      className={styles.curveModal}
+      onClose={onClose}
+      width="85%"
+      placement="right"
+      className={styles.curveDrawer}
     >
       <div className={styles.chartContainer}>
         {loading ? (
@@ -246,126 +245,140 @@ const OICurveChart: React.FC<OICurveChartProps> = ({
               )}
             </div>
 
-            {/* Recharts图表 */}
-            <ResponsiveContainer width="100%" height={450}>
-              <LineChart
-                data={chartData}
-                margin={{ top: 10, right: 80, left: 10, bottom: 50 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis
-                  dataKey="index"
-                  stroke="#9CA3AF"
-                  tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                  interval="preserveStartEnd"
-                  minTickGap={50}
-                  tickFormatter={(index) => chartData[index]?.time || ''}
-                />
-                {/* OI Y轴（左侧） */}
-                <YAxis
-                  yAxisId="oi"
-                  stroke="#3B82F6"
-                  tick={false}
-                  scale="log"
-                  domain={['auto', 'auto']}
-                  label={{ value: 'OI', position: 'insideLeft', style: { fill: '#3B82F6' } }}
-                />
-                {/* 价格 Y轴（右侧第一个） */}
-                <YAxis
-                  yAxisId="price"
-                  orientation="right"
-                  stroke="#10B981"
-                  tick={false}
-                  domain={['auto', 'auto']}
-                  label={{ value: '价格', position: 'insideRight', angle: -90, style: { fill: '#10B981' } }}
-                />
-                {/* 资金费率 Y轴（右侧第二个） */}
-                <YAxis
-                  yAxisId="funding"
-                  orientation="right"
-                  stroke="#F59E0B"
-                  tick={false}
-                  domain={['auto', 'auto']}
-                  dx={40}
-                  label={{ value: '资金费率', position: 'insideRight', angle: -90, dx: 40, style: { fill: '#F59E0B' } }}
-                />
-                <Tooltip content={<CustomTooltip />} />
-
-                {/* OI 曲线 */}
-                <Line
-                  yAxisId="oi"
-                  type="monotone"
-                  dataKey="oi"
-                  stroke="#3B82F6"
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={{ r: 6, fill: '#3B82F6' }}
-                  name="OI"
-                />
-
-                {/* 价格曲线 */}
-                {chartData.some(d => d.price !== undefined) && (
+            {/* OI 曲线图 */}
+            <div className={styles.chartSection}>
+              <h3 className={styles.chartTitle}>📊 持仓量 (OI)</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart
+                  data={chartData}
+                  margin={{ top: 10, right: 30, left: 10, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis
+                    dataKey="index"
+                    stroke="#9CA3AF"
+                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                    interval="preserveStartEnd"
+                    minTickGap={50}
+                    tickFormatter={(index) => chartData[index]?.time || ''}
+                  />
+                  <YAxis
+                    stroke="#3B82F6"
+                    tick={false}
+                    scale="log"
+                    domain={['auto', 'auto']}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
                   <Line
-                    yAxisId="price"
                     type="monotone"
-                    dataKey="price"
-                    stroke="#10B981"
+                    dataKey="oi"
+                    stroke="#3B82F6"
                     strokeWidth={2}
                     dot={false}
-                    activeDot={{ r: 6, fill: '#10B981' }}
-                    name="价格"
+                    activeDot={{ r: 6, fill: '#3B82F6' }}
+                    name="OI"
                   />
-                )}
+                  {anomalyMarkers.firstIndex !== null && chartData[anomalyMarkers.firstIndex] && (
+                    <ReferenceDot
+                      x={chartData[anomalyMarkers.firstIndex].index}
+                      y={chartData[anomalyMarkers.firstIndex].oi}
+                      r={4}
+                      fill="#EF4444"
+                    />
+                  )}
+                  {anomalyMarkers.lastIndex !== null &&
+                   anomalyMarkers.lastIndex !== anomalyMarkers.firstIndex &&
+                   chartData[anomalyMarkers.lastIndex] && (
+                    <ReferenceDot
+                      x={chartData[anomalyMarkers.lastIndex].index}
+                      y={chartData[anomalyMarkers.lastIndex].oi}
+                      r={4}
+                      fill="#F59E0B"
+                    />
+                  )}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
 
-                {/* 资金费率曲线 */}
-                {chartData.some(d => d.fundingRate !== undefined) && (
-                  <Line
-                    yAxisId="funding"
-                    type="monotone"
-                    dataKey="fundingRate"
-                    stroke="#F59E0B"
-                    strokeWidth={2}
-                    dot={false}
-                    activeDot={{ r: 6, fill: '#F59E0B' }}
-                    name="资金费率"
-                  />
-                )}
+            {/* 价格曲线图 */}
+            {chartData.some(d => d.price !== undefined && d.price !== null) && (
+              <div className={styles.chartSection}>
+                <h3 className={styles.chartTitle}>💰 标记价格</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart
+                    data={chartData}
+                    margin={{ top: 10, right: 30, left: 10, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis
+                      dataKey="index"
+                      stroke="#9CA3AF"
+                      tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                      interval="preserveStartEnd"
+                      minTickGap={50}
+                      tickFormatter={(index) => chartData[index]?.time || ''}
+                    />
+                    <YAxis
+                      stroke="#10B981"
+                      tick={false}
+                      domain={['auto', 'auto']}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Line
+                      type="monotone"
+                      dataKey="price"
+                      stroke="#10B981"
+                      strokeWidth={2}
+                      dot={false}
+                      activeDot={{ r: 6, fill: '#10B981' }}
+                      name="价格"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
 
-                {anomalyMarkers.firstIndex !== null && chartData[anomalyMarkers.firstIndex] && (
-                  <ReferenceDot
-                    yAxisId="oi"
-                    x={chartData[anomalyMarkers.firstIndex].index}
-                    y={chartData[anomalyMarkers.firstIndex].oi}
-                    r={4}
-                    fill="#EF4444"
-                  />
-                )}
-
-                {anomalyMarkers.lastIndex !== null &&
-                 anomalyMarkers.lastIndex !== anomalyMarkers.firstIndex &&
-                 chartData[anomalyMarkers.lastIndex] && (
-                  <ReferenceDot
-                    yAxisId="oi"
-                    x={chartData[anomalyMarkers.lastIndex].index}
-                    y={chartData[anomalyMarkers.lastIndex].oi}
-                    r={4}
-                    fill="#F59E0B"
-                  />
-                )}
-
-                <Brush
-                  dataKey="time"
-                  height={30}
-                  stroke="#3B82F6"
-                  fill="#1f2937"
-                  travellerWidth={10}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {/* 资金费率曲线图 */}
+            {chartData.some(d => d.fundingRate !== undefined && d.fundingRate !== null) && (
+              <div className={styles.chartSection}>
+                <h3 className={styles.chartTitle}>📈 资金费率</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart
+                    data={chartData}
+                    margin={{ top: 10, right: 30, left: 10, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis
+                      dataKey="index"
+                      stroke="#9CA3AF"
+                      tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                      interval="preserveStartEnd"
+                      minTickGap={50}
+                      tickFormatter={(index) => chartData[index]?.time || ''}
+                    />
+                    <YAxis
+                      stroke="#F59E0B"
+                      tick={false}
+                      domain={['auto', 'auto']}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Line
+                      type="monotone"
+                      dataKey="fundingRate"
+                      stroke="#F59E0B"
+                      strokeWidth={2}
+                      dot={false}
+                      activeDot={{ r: 6, fill: '#F59E0B' }}
+                      name="资金费率"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </>
         )}
       </div>
-    </Modal>
+    </Drawer>
   );
 };
 
