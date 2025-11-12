@@ -20,6 +20,8 @@ interface ChartDataPoint {
   time: string;
   oi: number;
   timestamp: number;
+  price?: number;
+  fundingRate?: number;
 }
 
 const OICurveChart: React.FC<OICurveChartProps> = ({
@@ -62,7 +64,9 @@ const OICurveChart: React.FC<OICurveChartProps> = ({
           minute: '2-digit'
         }),
         oi: point.open_interest,
-        timestamp: point.timestamp
+        timestamp: point.timestamp,
+        price: point.mark_price,
+        fundingRate: point.funding_rate ? point.funding_rate * 100 : undefined // 转换为百分比
       }));
       setChartData(formatted);
     } catch (error) {
@@ -136,6 +140,16 @@ const OICurveChart: React.FC<OICurveChartProps> = ({
           <div className={styles.tooltipValue}>
             OI: {data.oi.toLocaleString()}
           </div>
+          {data.price !== undefined && (
+            <div className={styles.tooltipValue}>
+              价格: ${data.price.toFixed(6)}
+            </div>
+          )}
+          {data.fundingRate !== undefined && (
+            <div className={styles.tooltipValue}>
+              资金费率: {data.fundingRate.toFixed(4)}%
+            </div>
+          )}
         </div>
       );
     }
@@ -196,6 +210,22 @@ const OICurveChart: React.FC<OICurveChartProps> = ({
                   {chartData[chartData.length - 1]?.oi.toLocaleString() || '--'}
                 </span>
               </div>
+              {chartData[chartData.length - 1]?.price !== undefined && (
+                <div className={styles.statItem}>
+                  <span className={styles.statLabel}>最新价格:</span>
+                  <span className={styles.statValue} style={{ color: '#10B981' }}>
+                    ${chartData[chartData.length - 1].price!.toFixed(6)}
+                  </span>
+                </div>
+              )}
+              {chartData[chartData.length - 1]?.fundingRate !== undefined && (
+                <div className={styles.statItem}>
+                  <span className={styles.statLabel}>资金费率:</span>
+                  <span className={styles.statValue} style={{ color: '#F59E0B' }}>
+                    {chartData[chartData.length - 1].fundingRate!.toFixed(4)}%
+                  </span>
+                </div>
+              )}
               {firstAnomalyTime && (
                 <div className={styles.statItem}>
                   <span className={styles.statLabel}>首次异常:</span>
@@ -218,7 +248,7 @@ const OICurveChart: React.FC<OICurveChartProps> = ({
             <ResponsiveContainer width="100%" height={450}>
               <LineChart
                 data={chartData}
-                margin={{ top: 10, right: 30, left: 10, bottom: 50 }}
+                margin={{ top: 10, right: 80, left: 10, bottom: 50 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis
@@ -229,31 +259,86 @@ const OICurveChart: React.FC<OICurveChartProps> = ({
                   minTickGap={50}
                   tickFormatter={(index) => chartData[index]?.time || ''}
                 />
+                {/* OI Y轴（左侧） */}
                 <YAxis
-                  stroke="#9CA3AF"
-                  tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                  yAxisId="oi"
+                  stroke="#3B82F6"
+                  tick={{ fill: '#3B82F6', fontSize: 12 }}
                   tickFormatter={(value) => value.toLocaleString()}
                   scale="log"
                   domain={['auto', 'auto']}
+                  label={{ value: 'OI', position: 'insideLeft', style: { fill: '#3B82F6' } }}
+                />
+                {/* 价格 Y轴（右侧第一个） */}
+                <YAxis
+                  yAxisId="price"
+                  orientation="right"
+                  stroke="#10B981"
+                  tick={{ fill: '#10B981', fontSize: 12 }}
+                  tickFormatter={(value) => `$${value.toFixed(4)}`}
+                  domain={['auto', 'auto']}
+                  label={{ value: '价格', position: 'insideRight', angle: -90, style: { fill: '#10B981' } }}
+                />
+                {/* 资金费率 Y轴（右侧第二个） */}
+                <YAxis
+                  yAxisId="funding"
+                  orientation="right"
+                  stroke="#F59E0B"
+                  tick={{ fill: '#F59E0B', fontSize: 12 }}
+                  tickFormatter={(value) => `${value.toFixed(4)}%`}
+                  domain={['auto', 'auto']}
+                  dx={40}
+                  label={{ value: '资金费率', position: 'insideRight', angle: -90, dx: 40, style: { fill: '#F59E0B' } }}
                 />
                 <Tooltip content={<CustomTooltip />} />
 
+                {/* OI 曲线 */}
                 <Line
+                  yAxisId="oi"
                   type="monotone"
                   dataKey="oi"
                   stroke="#3B82F6"
                   strokeWidth={2}
                   dot={false}
                   activeDot={{ r: 6, fill: '#3B82F6' }}
+                  name="OI"
                 />
+
+                {/* 价格曲线 */}
+                {chartData.some(d => d.price !== undefined) && (
+                  <Line
+                    yAxisId="price"
+                    type="monotone"
+                    dataKey="price"
+                    stroke="#10B981"
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 6, fill: '#10B981' }}
+                    name="价格"
+                  />
+                )}
+
+                {/* 资金费率曲线 */}
+                {chartData.some(d => d.fundingRate !== undefined) && (
+                  <Line
+                    yAxisId="funding"
+                    type="monotone"
+                    dataKey="fundingRate"
+                    stroke="#F59E0B"
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 6, fill: '#F59E0B' }}
+                    name="资金费率"
+                  />
+                )}
 
                 {anomalyMarkers.firstIndex !== null && chartData[anomalyMarkers.firstIndex] && (
                   <ReferenceDot
+                    yAxisId="oi"
                     x={chartData[anomalyMarkers.firstIndex].index}
                     y={chartData[anomalyMarkers.firstIndex].oi}
                     r={4}
                     fill="#EF4444"
-                    isFront={true}
                   />
                 )}
 
@@ -261,11 +346,11 @@ const OICurveChart: React.FC<OICurveChartProps> = ({
                  anomalyMarkers.lastIndex !== anomalyMarkers.firstIndex &&
                  chartData[anomalyMarkers.lastIndex] && (
                   <ReferenceDot
+                    yAxisId="oi"
                     x={chartData[anomalyMarkers.lastIndex].index}
                     y={chartData[anomalyMarkers.lastIndex].oi}
                     r={4}
                     fill="#F59E0B"
-                    isFront={true}
                   />
                 )}
 

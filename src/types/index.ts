@@ -308,6 +308,9 @@ export interface OICurveDataPoint {
   snapshot_time: string;
   open_interest: number;
   data_source: string;
+  mark_price?: number;         // 标记价格
+  funding_rate?: number;        // 资金费率
+  next_funding_time?: number;   // 下次资金费率结算时间
 }
 
 // OI曲线响应数据
