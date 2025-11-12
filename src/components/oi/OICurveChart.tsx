@@ -265,8 +265,7 @@ const OICurveChart: React.FC<OICurveChartProps> = ({
                 <YAxis
                   yAxisId="oi"
                   stroke="#3B82F6"
-                  tick={{ fill: '#3B82F6', fontSize: 12 }}
-                  tickFormatter={(value) => value.toLocaleString()}
+                  tick={false}
                   scale="log"
                   domain={['auto', 'auto']}
                   label={{ value: 'OI', position: 'insideLeft', style: { fill: '#3B82F6' } }}
@@ -276,8 +275,7 @@ const OICurveChart: React.FC<OICurveChartProps> = ({
                   yAxisId="price"
                   orientation="right"
                   stroke="#10B981"
-                  tick={{ fill: '#10B981', fontSize: 12 }}
-                  tickFormatter={(value) => `$${value.toFixed(4)}`}
+                  tick={false}
                   domain={['auto', 'auto']}
                   label={{ value: '价格', position: 'insideRight', angle: -90, style: { fill: '#10B981' } }}
                 />
@@ -286,8 +284,7 @@ const OICurveChart: React.FC<OICurveChartProps> = ({
                   yAxisId="funding"
                   orientation="right"
                   stroke="#F59E0B"
-                  tick={{ fill: '#F59E0B', fontSize: 12 }}
-                  tickFormatter={(value) => `${value.toFixed(4)}%`}
+                  tick={false}
                   domain={['auto', 'auto']}
                   dx={40}
                   label={{ value: '资金费率', position: 'insideRight', angle: -90, dx: 40, style: { fill: '#F59E0B' } }}
