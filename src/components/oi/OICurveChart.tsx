@@ -140,12 +140,12 @@ const OICurveChart: React.FC<OICurveChartProps> = ({
           <div className={styles.tooltipValue}>
             OI: {data.oi.toLocaleString()}
           </div>
-          {data.price !== undefined && (
+          {data.price !== undefined && data.price !== null && (
             <div className={styles.tooltipValue}>
               价格: ${data.price.toFixed(6)}
             </div>
           )}
-          {data.fundingRate !== undefined && (
+          {data.fundingRate !== undefined && data.fundingRate !== null && (
             <div className={styles.tooltipValue}>
               资金费率: {data.fundingRate.toFixed(4)}%
             </div>
@@ -210,7 +210,8 @@ const OICurveChart: React.FC<OICurveChartProps> = ({
                   {chartData[chartData.length - 1]?.oi.toLocaleString() || '--'}
                 </span>
               </div>
-              {chartData[chartData.length - 1]?.price !== undefined && (
+              {chartData[chartData.length - 1]?.price !== undefined &&
+               chartData[chartData.length - 1]?.price !== null && (
                 <div className={styles.statItem}>
                   <span className={styles.statLabel}>最新价格:</span>
                   <span className={styles.statValue} style={{ color: '#10B981' }}>
@@ -218,7 +219,8 @@ const OICurveChart: React.FC<OICurveChartProps> = ({
                   </span>
                 </div>
               )}
-              {chartData[chartData.length - 1]?.fundingRate !== undefined && (
+              {chartData[chartData.length - 1]?.fundingRate !== undefined &&
+               chartData[chartData.length - 1]?.fundingRate !== null && (
                 <div className={styles.statItem}>
                   <span className={styles.statLabel}>资金费率:</span>
                   <span className={styles.statValue} style={{ color: '#F59E0B' }}>
