@@ -81,6 +81,15 @@ export interface OIAnomaly {
   severity: 'low' | 'medium' | 'high';
   anomaly_time: string;
   threshold_value: string;
+  // 新增字段
+  price_before?: string;
+  price_after?: string;
+  price_change?: string;
+  price_change_percent?: string;
+  top_trader_long_short_ratio?: string;
+  top_account_long_short_ratio?: string;
+  global_long_short_ratio?: string;
+  taker_buy_sell_ratio?: string;
 }
 
 // Anomalies API返回数据（apiClient自动解包）

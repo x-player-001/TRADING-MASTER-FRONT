@@ -51,6 +51,11 @@ const AnomalyItem = memo<{ anomaly: OIAnomaly }>(({ anomaly }) => {
 
   const severityClass = styles[anomaly.severity] || styles.medium;
 
+  // 格式化价格变化
+  const priceChangePercent = anomaly.price_change_percent
+    ? parseFloat(anomaly.price_change_percent).toFixed(2)
+    : null;
+
   return (
     <div className={`${styles.anomalyItem} ${severityClass}`}>
       <div className={styles.anomalyHeader}>
@@ -64,6 +69,8 @@ const AnomalyItem = memo<{ anomaly: OIAnomaly }>(({ anomaly }) => {
           {formatTimestamp(anomaly.anomaly_time)}
         </span>
       </div>
+
+      {/* OI变化信息 */}
       <p className={styles.message}>
         OI在{anomaly.period_minutes}分钟内
         <span className={`${styles.changeText} ${anomaly.percent_change > 0 ? styles.increase : styles.decrease}`}>
@@ -74,6 +81,45 @@ const AnomalyItem = memo<{ anomaly: OIAnomaly }>(({ anomaly }) => {
           变化量 {oiChangeInfo.changeFormatted}）
         </span>
       </p>
+
+      {/* 价格变化信息 */}
+      {priceChangePercent && (
+        <p className={styles.priceInfo}>
+          <span className={styles.label}>价格变化:</span>
+          <span className={`${styles.priceChange} ${parseFloat(priceChangePercent) > 0 ? styles.increase : styles.decrease}`}>
+            {parseFloat(priceChangePercent) > 0 ? '+' : ''}{priceChangePercent}%
+          </span>
+          {anomaly.price_before && anomaly.price_after && (
+            <span className={styles.priceDetail}>
+              ({parseFloat(anomaly.price_before).toFixed(6)} → {parseFloat(anomaly.price_after).toFixed(6)})
+            </span>
+          )}
+        </p>
+      )}
+
+      {/* 多空比数据 */}
+      {(anomaly.top_trader_long_short_ratio || anomaly.global_long_short_ratio || anomaly.taker_buy_sell_ratio) && (
+        <div className={styles.ratioInfo}>
+          {anomaly.top_trader_long_short_ratio && (
+            <span className={styles.ratioItem}>
+              <span className={styles.ratioLabel}>大户多空比:</span>
+              <span className={styles.ratioValue}>{parseFloat(anomaly.top_trader_long_short_ratio).toFixed(2)}</span>
+            </span>
+          )}
+          {anomaly.global_long_short_ratio && (
+            <span className={styles.ratioItem}>
+              <span className={styles.ratioLabel}>全局多空比:</span>
+              <span className={styles.ratioValue}>{parseFloat(anomaly.global_long_short_ratio).toFixed(2)}</span>
+            </span>
+          )}
+          {anomaly.taker_buy_sell_ratio && (
+            <span className={styles.ratioItem}>
+              <span className={styles.ratioLabel}>主动买卖比:</span>
+              <span className={styles.ratioValue}>{parseFloat(anomaly.taker_buy_sell_ratio).toFixed(2)}</span>
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 });

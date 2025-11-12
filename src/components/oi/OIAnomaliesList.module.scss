@@ -153,6 +153,83 @@
   }
 }
 
+// 价格信息
+.priceInfo {
+  font-size: 0.875rem;
+  margin: 0.5rem 0;
+  color: #4b5563;
+
+  :global(.dark) & {
+    color: #d1d5db;
+  }
+
+  .label {
+    font-weight: 500;
+    margin-right: 0.5rem;
+  }
+
+  .priceChange {
+    font-weight: 600;
+    margin-right: 0.5rem;
+
+    &.increase {
+      color: #10b981;
+    }
+
+    &.decrease {
+      color: #ef4444;
+    }
+  }
+
+  .priceDetail {
+    color: #6b7280;
+    font-size: 0.8125rem;
+
+    :global(.dark) & {
+      color: #9ca3af;
+    }
+  }
+}
+
+// 多空比信息
+.ratioInfo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+
+  :global(.dark) & {
+    border-top-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .ratioItem {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.8125rem;
+
+    .ratioLabel {
+      color: #6b7280;
+      font-weight: 500;
+
+      :global(.dark) & {
+        color: #9ca3af;
+      }
+    }
+
+    .ratioValue {
+      color: #1f2937;
+      font-weight: 600;
+
+      :global(.dark) & {
+        color: #f3f4f6;
+      }
+    }
+  }
+}
+
 // 空状态
 .emptyState {
   text-align: center;
