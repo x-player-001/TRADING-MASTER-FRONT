@@ -98,12 +98,18 @@ const AnomalyItem = memo<{ anomaly: OIAnomaly }>(({ anomaly }) => {
       )}
 
       {/* 多空比数据 */}
-      {(anomaly.top_trader_long_short_ratio || anomaly.global_long_short_ratio || anomaly.taker_buy_sell_ratio) && (
+      {(anomaly.top_trader_long_short_ratio || anomaly.top_account_long_short_ratio || anomaly.global_long_short_ratio || anomaly.taker_buy_sell_ratio) && (
         <div className={styles.ratioInfo}>
           {anomaly.top_trader_long_short_ratio && (
             <span className={styles.ratioItem}>
               <span className={styles.ratioLabel}>大户多空比:</span>
               <span className={styles.ratioValue}>{parseFloat(anomaly.top_trader_long_short_ratio).toFixed(2)}</span>
+            </span>
+          )}
+          {anomaly.top_account_long_short_ratio && (
+            <span className={styles.ratioItem}>
+              <span className={styles.ratioLabel}>大户账户多空比:</span>
+              <span className={styles.ratioValue}>{parseFloat(anomaly.top_account_long_short_ratio).toFixed(2)}</span>
             </span>
           )}
           {anomaly.global_long_short_ratio && (
