@@ -56,46 +56,60 @@ const AnomalyItem = memo<{ anomaly: OIAnomaly }>(({ anomaly }) => {
     ? parseFloat(anomaly.price_change_percent).toFixed(2)
     : null;
 
+  // 格式化资金费率变化
+  const fundingRateChangePercent = anomaly.funding_rate_change_percent
+    ? parseFloat(anomaly.funding_rate_change_percent).toFixed(2)
+    : null;
+
   return (
     <div className={`${styles.anomalyItem} ${severityClass}`}>
-      <div className={styles.anomalyHeader}>
-        <div className={styles.anomalyInfo}>
-          <span className={styles.symbol}>{anomaly.symbol}</span>
-          <span className={styles.type}>
-            {anomaly.period_minutes}分钟异常
-          </span>
-        </div>
+      {/* 第一行：币种 + 时间段 + 时间戳 */}
+      <div className={styles.firstLine}>
+        <span className={styles.symbol}>{anomaly.symbol}</span>
+        <span className={styles.period}>{anomaly.period_minutes}分钟</span>
         <span className={styles.timestamp}>
           {formatTimestamp(anomaly.anomaly_time)}
         </span>
       </div>
 
-      {/* OI变化信息 */}
-      <p className={styles.message}>
-        OI在{anomaly.period_minutes}分钟内
-        <span className={`${styles.changeText} ${anomaly.percent_change > 0 ? styles.increase : styles.decrease}`}>
-          {oiChangeInfo.direction} {oiChangeInfo.percentage}%
-        </span>
-        <span className={styles.detailText}>
-          （{oiChangeInfo.beforeFormatted} → {oiChangeInfo.afterFormatted}，
-          变化量 {oiChangeInfo.changeFormatted}）
-        </span>
-      </p>
-
-      {/* 价格变化信息 */}
-      {priceChangePercent && (
-        <p className={styles.priceInfo}>
-          <span className={styles.label}>价格变化:</span>
-          <span className={`${styles.priceChange} ${parseFloat(priceChangePercent) > 0 ? styles.increase : styles.decrease}`}>
-            {parseFloat(priceChangePercent) > 0 ? '+' : ''}{priceChangePercent}%
+      {/* 第二行：OI和价格变化 */}
+      <div className={styles.secondLine}>
+        <span className={styles.changeItem}>
+          OI:
+          <span className={`${styles.changeText} ${anomaly.percent_change > 0 ? styles.increase : styles.decrease}`}>
+            {anomaly.percent_change > 0 ? '+' : ''}{oiChangeInfo.percentage}%
           </span>
-          {anomaly.price_before && anomaly.price_after && (
-            <span className={styles.priceDetail}>
-              ({parseFloat(anomaly.price_before).toFixed(6)} → {parseFloat(anomaly.price_after).toFixed(6)})
+          <span className={styles.detailText}>
+            （{oiChangeInfo.beforeFormatted} → {oiChangeInfo.afterFormatted}）
+          </span>
+        </span>
+        {priceChangePercent && (
+          <span className={styles.changeItem}>
+            price:
+            <span className={`${styles.changeText} ${parseFloat(priceChangePercent) > 0 ? styles.increase : styles.decrease}`}>
+              {parseFloat(priceChangePercent) > 0 ? '+' : ''}{priceChangePercent}%
             </span>
-          )}
-        </p>
-      )}
+            {anomaly.price_before && anomaly.price_after && (
+              <span className={styles.detailText}>
+                ({parseFloat(anomaly.price_before).toFixed(6)} → {parseFloat(anomaly.price_after).toFixed(6)})
+              </span>
+            )}
+          </span>
+        )}
+        {fundingRateChangePercent && (
+          <span className={styles.changeItem}>
+            funding:
+            <span className={`${styles.changeText} ${parseFloat(fundingRateChangePercent) > 0 ? styles.increase : styles.decrease}`}>
+              {parseFloat(fundingRateChangePercent) > 0 ? '+' : ''}{fundingRateChangePercent}%
+            </span>
+            {anomaly.funding_rate_before && anomaly.funding_rate_after && (
+              <span className={styles.detailText}>
+                ({(parseFloat(anomaly.funding_rate_before) * 100).toFixed(4)}% → {(parseFloat(anomaly.funding_rate_after) * 100).toFixed(4)}%)
+              </span>
+            )}
+          </span>
+        )}
+      </div>
 
       {/* 多空比数据 */}
       {(anomaly.top_trader_long_short_ratio || anomaly.top_account_long_short_ratio || anomaly.global_long_short_ratio || anomaly.taker_buy_sell_ratio) && (

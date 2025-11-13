@@ -73,6 +73,15 @@ const OIMonitoring: React.FC = () => {
     }
   }, [isRefreshing, startProgress, finishProgress]);
 
+  // 定时刷新 - 每分钟自动刷新一次
+  useEffect(() => {
+    const timer = setInterval(() => {
+      refresh();
+    }, 60000); // 60秒 = 1分钟
+
+    return () => clearInterval(timer);
+  }, [refresh]);
+
   // 只在严重错误时显示错误页面，否则显示固定布局
   const hasError = error && !statistics && !anomalies;
 

@@ -194,21 +194,8 @@ const OICurveChart: React.FC<OICurveChartProps> = ({
           </div>
         ) : (
           <>
+            {/* 标题信息 - 一行显示 */}
             <div className={styles.chartStats}>
-              <div className={styles.statItem}>
-                <span className={styles.statLabel}>数据点数:</span>
-                <span className={styles.statValue}>{curveData?.count || 0}</span>
-              </div>
-              <div className={styles.statItem}>
-                <span className={styles.statLabel}>日期:</span>
-                <span className={styles.statValue}>{curveData?.date}</span>
-              </div>
-              <div className={styles.statItem}>
-                <span className={styles.statLabel}>最新OI:</span>
-                <span className={styles.statValue}>
-                  {chartData[chartData.length - 1]?.oi.toLocaleString() || '--'}
-                </span>
-              </div>
               {chartData[chartData.length - 1]?.price !== undefined &&
                chartData[chartData.length - 1]?.price !== null && (
                 <div className={styles.statItem}>
@@ -245,66 +232,11 @@ const OICurveChart: React.FC<OICurveChartProps> = ({
               )}
             </div>
 
-            {/* OI 曲线图 */}
-            <div className={styles.chartSection}>
-              <h3 className={styles.chartTitle}>📊 持仓量 (OI)</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart
-                  data={chartData}
-                  margin={{ top: 10, right: 30, left: 10, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis
-                    dataKey="index"
-                    stroke="#9CA3AF"
-                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                    interval="preserveStartEnd"
-                    minTickGap={50}
-                    tickFormatter={(index) => chartData[index]?.time || ''}
-                  />
-                  <YAxis
-                    stroke="#3B82F6"
-                    tick={false}
-                    scale="log"
-                    domain={['auto', 'auto']}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Line
-                    type="monotone"
-                    dataKey="oi"
-                    stroke="#3B82F6"
-                    strokeWidth={2}
-                    dot={false}
-                    activeDot={{ r: 6, fill: '#3B82F6' }}
-                    name="OI"
-                  />
-                  {anomalyMarkers.firstIndex !== null && chartData[anomalyMarkers.firstIndex] && (
-                    <ReferenceDot
-                      x={chartData[anomalyMarkers.firstIndex].index}
-                      y={chartData[anomalyMarkers.firstIndex].oi}
-                      r={4}
-                      fill="#EF4444"
-                    />
-                  )}
-                  {anomalyMarkers.lastIndex !== null &&
-                   anomalyMarkers.lastIndex !== anomalyMarkers.firstIndex &&
-                   chartData[anomalyMarkers.lastIndex] && (
-                    <ReferenceDot
-                      x={chartData[anomalyMarkers.lastIndex].index}
-                      y={chartData[anomalyMarkers.lastIndex].oi}
-                      r={4}
-                      fill="#F59E0B"
-                    />
-                  )}
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* 价格曲线图 */}
+            {/* 价格和持仓量合并图表 */}
             {chartData.some(d => d.price !== undefined && d.price !== null) && (
               <div className={styles.chartSection}>
-                <h3 className={styles.chartTitle}>💰 标记价格</h3>
-                <ResponsiveContainer width="100%" height={300}>
+                <h3 className={styles.chartTitle}>📊 价格 & 持仓量 (OI)</h3>
+                <ResponsiveContainer width="100%" height={400}>
                   <LineChart
                     data={chartData}
                     margin={{ top: 10, right: 30, left: 10, bottom: 5 }}
@@ -319,12 +251,24 @@ const OICurveChart: React.FC<OICurveChartProps> = ({
                       tickFormatter={(index) => chartData[index]?.time || ''}
                     />
                     <YAxis
+                      yAxisId="left"
                       stroke="#10B981"
                       tick={false}
                       domain={['auto', 'auto']}
+                      label={{ value: '价格', angle: -90, position: 'insideLeft', style: { fill: '#10B981' } }}
+                    />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      stroke="#3B82F6"
+                      tick={false}
+                      scale="log"
+                      domain={['auto', 'auto']}
+                      label={{ value: 'OI', angle: 90, position: 'insideRight', style: { fill: '#3B82F6' } }}
                     />
                     <Tooltip content={<CustomTooltip />} />
                     <Line
+                      yAxisId="left"
                       type="monotone"
                       dataKey="price"
                       stroke="#10B981"
@@ -333,6 +277,36 @@ const OICurveChart: React.FC<OICurveChartProps> = ({
                       activeDot={{ r: 6, fill: '#10B981' }}
                       name="价格"
                     />
+                    <Line
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="oi"
+                      stroke="#3B82F6"
+                      strokeWidth={2}
+                      dot={false}
+                      activeDot={{ r: 6, fill: '#3B82F6' }}
+                      name="OI"
+                    />
+                    {anomalyMarkers.firstIndex !== null && chartData[anomalyMarkers.firstIndex] && (
+                      <ReferenceDot
+                        yAxisId="right"
+                        x={chartData[anomalyMarkers.firstIndex].index}
+                        y={chartData[anomalyMarkers.firstIndex].oi}
+                        r={4}
+                        fill="#EF4444"
+                      />
+                    )}
+                    {anomalyMarkers.lastIndex !== null &&
+                     anomalyMarkers.lastIndex !== anomalyMarkers.firstIndex &&
+                     chartData[anomalyMarkers.lastIndex] && (
+                      <ReferenceDot
+                        yAxisId="right"
+                        x={chartData[anomalyMarkers.lastIndex].index}
+                        y={chartData[anomalyMarkers.lastIndex].oi}
+                        r={4}
+                        fill="#F59E0B"
+                      />
+                    )}
                   </LineChart>
                 </ResponsiveContainer>
               </div>

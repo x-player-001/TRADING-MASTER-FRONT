@@ -9,8 +9,10 @@
 .anomalyItem {
   border: 1px solid;
   border-radius: 0.5rem;
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  max-height: 120px;
+  overflow: hidden;
 
   &:hover {
     transform: translateY(-2px);
@@ -68,84 +70,45 @@
   }
 }
 
-// 异常头部
-.anomalyHeader {
+// 第一行：币种 + 时间段 + 时间戳
+.firstLine {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
 
-  .anomalyInfo {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  .symbol {
+    font-weight: 700;
+    color: #1f2937;
+    font-size: 1rem;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 
-    .symbol {
-      font-weight: 700;
-      color: #1f2937;
-      font-size: 1rem;
-      background: linear-gradient(135deg, #f59e0b, #d97706);
+    :global(.dark) & {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-
-      :global(.dark) & {
-        background: linear-gradient(135deg, #fbbf24, #f59e0b);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-      }
     }
+  }
 
-    .type {
-      font-size: 0.75rem;
-      padding: 0.125rem 0.5rem;
-      border-radius: 9999px;
-      background-color: rgba(255, 255, 255, 0.5);
+  .period {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-weight: 500;
 
-      :global(.dark) & {
-        background-color: rgba(0, 0, 0, 0.2);
-      }
+    :global(.dark) & {
+      color: #9ca3af;
     }
   }
 
   .timestamp {
+    margin-left: auto;
     font-size: 0.75rem;
-  }
-}
-
-// 异常消息
-.message {
-  font-size: 0.875rem;
-  margin: 0 0 0.5rem 0;
-  color: #4b5563;
-
-  :global(.dark) & {
-    color: #d1d5db;
-  }
-
-  .changeText {
-    font-weight: 600;
-    margin-left: 0.25rem;
-
-    &.increase {
-      color: #10b981;
-      font-weight: 700;
-      font-size: 0.875rem;
-    }
-
-    &.decrease {
-      color: #ef4444;
-      font-weight: 700;
-      font-size: 0.875rem;
-    }
-  }
-
-  .detailText {
-    margin-left: 0.5rem;
     color: #6b7280;
-    font-size: 0.8125rem;
-    font-weight: 500;
 
     :global(.dark) & {
       color: #9ca3af;
@@ -153,24 +116,27 @@
   }
 }
 
-// 价格信息
-.priceInfo {
+// 第二行：OI和价格变化
+.secondLine {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 0.25rem;
   font-size: 0.875rem;
-  margin: 0.5rem 0;
   color: #4b5563;
+  line-height: 1.4;
 
   :global(.dark) & {
     color: #d1d5db;
   }
 
-  .label {
-    font-weight: 500;
-    margin-right: 0.5rem;
+  .changeItem {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.25rem;
   }
 
-  .priceChange {
-    font-weight: 600;
-    margin-right: 0.5rem;
+  .changeText {
+    font-weight: 700;
 
     &.increase {
       color: #10b981;
@@ -181,9 +147,10 @@
     }
   }
 
-  .priceDetail {
+  .detailText {
     color: #6b7280;
     font-size: 0.8125rem;
+    font-weight: 500;
 
     :global(.dark) & {
       color: #9ca3af;
@@ -195,10 +162,10 @@
 .ratioInfo {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
 
   :global(.dark) & {
     border-top-color: rgba(255, 255, 255, 0.1);

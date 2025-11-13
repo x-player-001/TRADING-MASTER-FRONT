@@ -80,12 +80,19 @@ export interface OIAnomaly {
   oi_change: string;
   severity: 'low' | 'medium' | 'high';
   anomaly_time: string;
+  anomaly_type?: string;
   threshold_value: string;
-  // 新增字段
+  // 价格相关字段
   price_before?: string;
   price_after?: string;
   price_change?: string;
   price_change_percent?: string;
+  // 资金费率相关字段
+  funding_rate_before?: string | null;
+  funding_rate_after?: string | null;
+  funding_rate_change?: string | null;
+  funding_rate_change_percent?: string | null;
+  // 多空比字段
   top_trader_long_short_ratio?: string;
   top_account_long_short_ratio?: string;
   global_long_short_ratio?: string;
