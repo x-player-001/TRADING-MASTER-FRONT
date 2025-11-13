@@ -133,7 +133,7 @@
   }
 }
 
-// 第二行：OI和价格变化
+// 第二行：OI和价格变化百分比
 .secondLine {
   display: flex;
   gap: 1.5rem;
@@ -163,15 +163,23 @@
       color: #ef4444;
     }
   }
+}
 
-  .detailText {
-    color: #6b7280;
-    font-size: 0.8125rem;
+// 第三行：详细数值变化
+.thirdLine {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.8125rem;
+  color: #6b7280;
+  line-height: 1.4;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+
+  .detailItem {
     font-weight: 500;
-
-    :global(.dark) & {
-      color: #9ca3af;
-    }
   }
 }
 

@@ -123,15 +123,12 @@ const AnomalyItem = memo<{ anomaly: OIAnomaly; isNew?: boolean }>(({ anomaly, is
         </span>
       </div>
 
-      {/* 第二行：OI和价格变化 */}
+      {/* 第二行：OI和价格变化百分比 */}
       <div className={styles.secondLine}>
         <span className={styles.changeItem}>
           OI:
           <span className={`${styles.changeText} ${anomaly.percent_change > 0 ? styles.increase : styles.decrease}`}>
-            {anomaly.percent_change > 0 ? '+' : ''}{oiChangeInfo.percentage}%
-          </span>
-          <span className={styles.detailText}>
-            （{oiChangeInfo.beforeFormatted} → {oiChangeInfo.afterFormatted}）
+            {anomaly.percent_change > 0 ? '+' : '-'}{oiChangeInfo.percentage}%
           </span>
         </span>
         {priceChangePercent && (
@@ -140,11 +137,6 @@ const AnomalyItem = memo<{ anomaly: OIAnomaly; isNew?: boolean }>(({ anomaly, is
             <span className={`${styles.changeText} ${parseFloat(priceChangePercent) > 0 ? styles.increase : styles.decrease}`}>
               {parseFloat(priceChangePercent) > 0 ? '+' : ''}{priceChangePercent}%
             </span>
-            {anomaly.price_before && anomaly.price_after && (
-              <span className={styles.detailText}>
-                ({parseFloat(anomaly.price_before).toFixed(6)} → {parseFloat(anomaly.price_after).toFixed(6)})
-              </span>
-            )}
           </span>
         )}
         {fundingRateChangePercent && (
@@ -153,11 +145,23 @@ const AnomalyItem = memo<{ anomaly: OIAnomaly; isNew?: boolean }>(({ anomaly, is
             <span className={`${styles.changeText} ${parseFloat(fundingRateChangePercent) > 0 ? styles.increase : styles.decrease}`}>
               {parseFloat(fundingRateChangePercent) > 0 ? '+' : ''}{fundingRateChangePercent}%
             </span>
-            {anomaly.funding_rate_before && anomaly.funding_rate_after && (
-              <span className={styles.detailText}>
-                ({(parseFloat(anomaly.funding_rate_before) * 100).toFixed(4)}% → {(parseFloat(anomaly.funding_rate_after) * 100).toFixed(4)}%)
-              </span>
-            )}
+          </span>
+        )}
+      </div>
+
+      {/* 第三行：详细数值变化 */}
+      <div className={styles.thirdLine}>
+        <span className={styles.detailItem}>
+          {oiChangeInfo.beforeFormatted} → {oiChangeInfo.afterFormatted}
+        </span>
+        {anomaly.price_before && anomaly.price_after && (
+          <span className={styles.detailItem}>
+            {parseFloat(anomaly.price_before).toFixed(6)} → {parseFloat(anomaly.price_after).toFixed(6)}
+          </span>
+        )}
+        {anomaly.funding_rate_before && anomaly.funding_rate_after && (
+          <span className={styles.detailItem}>
+            {(parseFloat(anomaly.funding_rate_before) * 100).toFixed(4)}% → {(parseFloat(anomaly.funding_rate_after) * 100).toFixed(4)}%
           </span>
         )}
       </div>
