@@ -190,9 +190,9 @@ const OIMonitoring: React.FC = () => {
             ? `原始数据：${counts.originalStatistics} 个币种，筛选后：${counts.filteredStatistics} 个币种`
             : `共 ${counts.originalStatistics} 个币种正在监控`
           }
-          loading={loading || loadingStates.statistics}
+          loading={loading && !statistics}
           error={null}
-          empty={!loading && !loadingStates.statistics && (!filteredStatistics || filteredStatistics.length === 0)}
+          empty={!loading && (!filteredStatistics || filteredStatistics.length === 0)}
           emptyText="暂无统计数据"
         >
           <OIStatisticsTable data={filteredStatistics} initialDate={selectedDate} />
@@ -205,9 +205,9 @@ const OIMonitoring: React.FC = () => {
             ? `原始异常：${counts.originalAnomalies} 个，筛选后：${counts.filteredAnomalies} 个`
             : `共发现 ${counts.originalAnomalies} 个异常`
           }
-          loading={loading || loadingStates.anomalies}
+          loading={loading && !anomalies}
           error={null}
-          empty={!loading && !loadingStates.anomalies && (!filteredAnomalies || filteredAnomalies.length === 0)}
+          empty={!loading && (!filteredAnomalies || filteredAnomalies.length === 0)}
           emptyText="暂无异常检测"
           headerActions={
             <SeverityFilter
