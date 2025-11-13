@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useState, useEffect, useRef } from 'react';
 import { OIAnomaly } from '../../types';
 import { formatOIChange, formatTimestamp } from '../../utils/oiFormatters';
 import styles from './OIAnomaliesList.module.scss';
@@ -9,13 +9,61 @@ interface OIAnomaliesListProps {
 }
 
 /**
+ * 生成异常项的唯一ID
+ */
+const getAnomalyId = (anomaly: OIAnomaly): string => {
+  return `${anomaly.symbol}-${anomaly.anomaly_time}-${anomaly.period_minutes}`;
+};
+
+/**
  * OI异常列表组件
  * 使用React.memo优化，仅在data变化时重新渲染
+ * 支持增量更新和淡入动画
  */
 export const OIAnomaliesList = memo<OIAnomaliesListProps>(({
   data,
   maxRows = 30
 }) => {
+  const [displayData, setDisplayData] = useState<OIAnomaly[]>([]);
+  const [newItemIds, setNewItemIds] = useState<Set<string>>(new Set());
+  const prevDataRef = useRef<Map<string, OIAnomaly>>(new Map());
+
+  useEffect(() => {
+    if (!data || data.length === 0) {
+      setDisplayData([]);
+      prevDataRef.current.clear();
+      return;
+    }
+
+    const currentData = data.slice(0, maxRows);
+    const currentMap = new Map(currentData.map(item => [getAnomalyId(item), item]));
+    const prevMap = prevDataRef.current;
+
+    // 找出新增的项
+    const newIds = new Set<string>();
+    currentData.forEach(item => {
+      const id = getAnomalyId(item);
+      if (!prevMap.has(id)) {
+        newIds.add(id);
+      }
+    });
+
+    // 更新显示数据
+    setDisplayData(currentData);
+    setNewItemIds(newIds);
+
+    // 更新引用
+    prevDataRef.current = currentMap;
+
+    // 300ms后清除新增标记（动画完成）
+    if (newIds.size > 0) {
+      const timer = setTimeout(() => {
+        setNewItemIds(new Set());
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [data, maxRows]);
+
   if (!data || data.length === 0) {
     return (
       <div className={styles.emptyState}>
@@ -25,16 +73,19 @@ export const OIAnomaliesList = memo<OIAnomaliesListProps>(({
     );
   }
 
-  const displayData = data.slice(0, maxRows);
-
   return (
     <div className={styles.anomalyList}>
-      {displayData.map((anomaly, index) => (
-        <AnomalyItem
-          key={`${anomaly.symbol}-${anomaly.anomaly_time}-${index}`}
-          anomaly={anomaly}
-        />
-      ))}
+      {displayData.map((anomaly) => {
+        const id = getAnomalyId(anomaly);
+        const isNew = newItemIds.has(id);
+        return (
+          <AnomalyItem
+            key={id}
+            anomaly={anomaly}
+            isNew={isNew}
+          />
+        );
+      })}
     </div>
   );
 });
@@ -42,7 +93,7 @@ export const OIAnomaliesList = memo<OIAnomaliesListProps>(({
 /**
  * 异常项组件 - 单独抽离以便优化渲染
  */
-const AnomalyItem = memo<{ anomaly: OIAnomaly }>(({ anomaly }) => {
+const AnomalyItem = memo<{ anomaly: OIAnomaly; isNew?: boolean }>(({ anomaly, isNew = false }) => {
   const oiChangeInfo = formatOIChange(
     anomaly.percent_change,
     anomaly.oi_before,
@@ -62,7 +113,7 @@ const AnomalyItem = memo<{ anomaly: OIAnomaly }>(({ anomaly }) => {
     : null;
 
   return (
-    <div className={`${styles.anomalyItem} ${severityClass}`}>
+    <div className={`${styles.anomalyItem} ${severityClass} ${isNew ? styles.newItem : ''}`}>
       {/* 第一行：币种 + 时间段 + 时间戳 */}
       <div className={styles.firstLine}>
         <span className={styles.symbol}>{anomaly.symbol}</span>

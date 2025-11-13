@@ -5,18 +5,35 @@
   gap: 1rem;
 }
 
+// 淡入动画
+@keyframes fadeInSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 // 异常项
 .anomalyItem {
   border: 1px solid;
   border-radius: 0.5rem;
   padding: 0.75rem 1rem;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.3s ease;
   max-height: 120px;
   overflow: hidden;
 
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  // 新增项动画
+  &.newItem {
+    animation: fadeInSlide 0.3s ease-out;
   }
 
   // 严重程度样式

@@ -9,6 +9,18 @@
   }
 }
 
+// 淡入动画
+@keyframes fadeInHighlight {
+  from {
+    opacity: 0;
+    background-color: rgba(59, 130, 246, 0.2);
+  }
+  to {
+    opacity: 1;
+    background-color: transparent;
+  }
+}
+
 // 统计表格
 .statisticsTable {
   width: 100%;
@@ -45,6 +57,11 @@
 
   .tableRow {
     transition: background-color 0.2s ease;
+
+    // 新增或更新的行
+    &.newRow {
+      animation: fadeInHighlight 0.5s ease-out;
+    }
 
     &:hover {
       background: #f9fafb;
