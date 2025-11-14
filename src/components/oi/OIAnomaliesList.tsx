@@ -131,22 +131,30 @@ const AnomalyItem = memo<{ anomaly: OIAnomaly; isNew?: boolean }>(({ anomaly, is
             {anomaly.percent_change > 0 ? '+' : '-'}{oiChangeInfo.percentage}%
           </span>
         </span>
-        {priceChangePercent && (
-          <span className={styles.changeItem}>
-            price:
-            <span className={`${styles.changeText} ${parseFloat(priceChangePercent) > 0 ? styles.increase : styles.decrease}`}>
-              {parseFloat(priceChangePercent) > 0 ? '+' : ''}{priceChangePercent}%
-            </span>
-          </span>
-        )}
-        {fundingRateChangePercent && (
-          <span className={styles.changeItem}>
-            funding:
-            <span className={`${styles.changeText} ${parseFloat(fundingRateChangePercent) > 0 ? styles.increase : styles.decrease}`}>
-              {parseFloat(fundingRateChangePercent) > 0 ? '+' : ''}{fundingRateChangePercent}%
-            </span>
-          </span>
-        )}
+        <span className={styles.changeItem}>
+          {priceChangePercent ? (
+            <>
+              price:
+              <span className={`${styles.changeText} ${parseFloat(priceChangePercent) > 0 ? styles.increase : styles.decrease}`}>
+                {parseFloat(priceChangePercent) > 0 ? '+' : ''}{priceChangePercent}%
+              </span>
+            </>
+          ) : (
+            <span style={{ opacity: 0.5 }}>price: -</span>
+          )}
+        </span>
+        <span className={styles.changeItem}>
+          {fundingRateChangePercent ? (
+            <>
+              funding:
+              <span className={`${styles.changeText} ${parseFloat(fundingRateChangePercent) > 0 ? styles.increase : styles.decrease}`}>
+                {parseFloat(fundingRateChangePercent) > 0 ? '+' : ''}{fundingRateChangePercent}%
+              </span>
+            </>
+          ) : (
+            <span style={{ opacity: 0.5 }}>funding: -</span>
+          )}
+        </span>
       </div>
 
       {/* 第三行：详细数值变化 */}
@@ -154,16 +162,20 @@ const AnomalyItem = memo<{ anomaly: OIAnomaly; isNew?: boolean }>(({ anomaly, is
         <span className={styles.detailItem}>
           {oiChangeInfo.beforeFormatted} → {oiChangeInfo.afterFormatted}
         </span>
-        {anomaly.price_before && anomaly.price_after && (
-          <span className={styles.detailItem}>
-            {parseFloat(anomaly.price_before).toFixed(6)} → {parseFloat(anomaly.price_after).toFixed(6)}
-          </span>
-        )}
-        {anomaly.funding_rate_before && anomaly.funding_rate_after && (
-          <span className={styles.detailItem}>
-            {(parseFloat(anomaly.funding_rate_before) * 100).toFixed(4)}% → {(parseFloat(anomaly.funding_rate_after) * 100).toFixed(4)}%
-          </span>
-        )}
+        <span className={styles.detailItem}>
+          {anomaly.price_before && anomaly.price_after ? (
+            `${parseFloat(anomaly.price_before).toFixed(6)} → ${parseFloat(anomaly.price_after).toFixed(6)}`
+          ) : (
+            <span style={{ opacity: 0.5 }}>-</span>
+          )}
+        </span>
+        <span className={styles.detailItem}>
+          {anomaly.funding_rate_before && anomaly.funding_rate_after ? (
+            `${(parseFloat(anomaly.funding_rate_before) * 100).toFixed(4)}% → ${(parseFloat(anomaly.funding_rate_after) * 100).toFixed(4)}%`
+          ) : (
+            <span style={{ opacity: 0.5 }}>-</span>
+          )}
+        </span>
       </div>
 
       {/* 多空比数据 */}

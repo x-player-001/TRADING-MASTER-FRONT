@@ -135,8 +135,9 @@
 
 // 第二行：OI和价格变化百分比
 .secondLine {
-  display: flex;
-  gap: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
   margin-bottom: 0.25rem;
   font-size: 0.875rem;
   color: #4b5563;
@@ -167,8 +168,9 @@
 
 // 第三行：详细数值变化
 .thirdLine {
-  display: flex;
-  gap: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
   margin-bottom: 0.25rem;
   font-size: 0.8125rem;
   color: #6b7280;
