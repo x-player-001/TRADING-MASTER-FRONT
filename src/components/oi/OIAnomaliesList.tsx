@@ -114,13 +114,18 @@ const AnomalyItem = memo<{ anomaly: OIAnomaly; isNew?: boolean }>(({ anomaly, is
 
   return (
     <div className={`${styles.anomalyItem} ${severityClass} ${isNew ? styles.newItem : ''}`}>
-      {/* 第一行：币种 + 时间段 + 时间戳 */}
+      {/* 第一行：币种 + 时间段 + 时间戳 + 信号评分 */}
       <div className={styles.firstLine}>
         <span className={styles.symbol}>{anomaly.symbol}</span>
         <span className={styles.period}>{anomaly.period_minutes}分钟</span>
         <span className={styles.timestamp}>
           {formatTimestamp(anomaly.anomaly_time)}
         </span>
+        {anomaly.signal_score !== undefined && (
+          <span className={styles.signalScore}>
+            评分: {anomaly.signal_score.toFixed(1)}
+          </span>
+        )}
       </div>
 
       {/* 第二行：OI和价格变化百分比 */}

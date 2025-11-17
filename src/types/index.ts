@@ -97,6 +97,8 @@ export interface OIAnomaly {
   top_account_long_short_ratio?: string;
   global_long_short_ratio?: string;
   taker_buy_sell_ratio?: string;
+  // 信号评分
+  signal_score?: number;
 }
 
 // Anomalies API返回数据（apiClient自动解包）
