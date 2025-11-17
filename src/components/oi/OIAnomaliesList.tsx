@@ -121,9 +121,9 @@ const AnomalyItem = memo<{ anomaly: OIAnomaly; isNew?: boolean }>(({ anomaly, is
         <span className={styles.timestamp}>
           {formatTimestamp(anomaly.anomaly_time)}
         </span>
-        {anomaly.signal_score !== undefined && (
+        {anomaly.signal_score !== undefined && anomaly.signal_score !== null && (
           <span className={styles.signalScore}>
-            评分: {anomaly.signal_score.toFixed(1)}
+            评分: {typeof anomaly.signal_score === 'number' ? anomaly.signal_score.toFixed(1) : parseFloat(String(anomaly.signal_score)).toFixed(1)}
           </span>
         )}
       </div>
