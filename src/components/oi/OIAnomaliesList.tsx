@@ -99,16 +99,8 @@ export const OIAnomaliesList = memo<OIAnomaliesListProps>(({
         current={currentPage}
         pageSize={pageSize}
         total={data.length}
-        onChange={(page, newPageSize) => {
-          setCurrentPage(page);
-          if (newPageSize !== pageSize) {
-            setPageSize(newPageSize);
-          }
-        }}
-        showSizeChanger
-        showQuickJumper
+        onChange={setCurrentPage}
         showTotal={(total) => `共 ${total} 条`}
-        pageSizeOptions={[10, 20, 30, 50, 100]}
         size="small"
       />
     </div>
