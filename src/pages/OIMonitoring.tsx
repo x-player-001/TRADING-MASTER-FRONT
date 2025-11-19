@@ -82,8 +82,20 @@ const OIMonitoring: React.FC = () => {
     return () => clearInterval(timer);
   }, [refresh]);
 
+  // 滚动函数
+  const scrollToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const scrollToBottom = useCallback(() => {
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+  }, []);
+
   // 只在严重错误时显示错误页面，否则显示固定布局
   const hasError = error && !statistics && !anomalies;
+
+  // 判断是否需要显示滚动按钮（任一模块数据超过30条）
+  const showScrollButtons = (statistics && statistics.length > 30) || (anomalies && anomalies.length > 30);
 
   return (
     <div className={styles.oiMonitoring}>
@@ -220,6 +232,26 @@ const OIMonitoring: React.FC = () => {
           <OIAnomaliesList data={filteredAnomalies} />
         </DataSection>
       </div>
+
+      {/* 快速滚动按钮 */}
+      {showScrollButtons && (
+        <div className={styles.scrollButtons}>
+          <button
+            className={styles.scrollButton}
+            onClick={scrollToTop}
+            title="回到顶部"
+          >
+            ↑
+          </button>
+          <button
+            className={styles.scrollButton}
+            onClick={scrollToBottom}
+            title="移动到底部"
+          >
+            ↓
+          </button>
+        </div>
+      )}
         </>
       )}
     </div>

@@ -104,14 +104,6 @@ export const OIStatisticsTable = memo<OIStatisticsTableProps>(({
     );
   }
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const scrollToBottom = () => {
-    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
-  };
-
   const paginationElement = data && data.length > 0 && (
     <div className={styles.paginationContainer}>
       <Pagination
@@ -159,26 +151,6 @@ export const OIStatisticsTable = memo<OIStatisticsTableProps>(({
 
       {/* 底部分页 */}
       {paginationElement}
-
-      {/* 快速滚动按钮 */}
-      {data && data.length > pageSize && (
-        <div className={styles.scrollButtons}>
-          <button
-            className={styles.scrollButton}
-            onClick={scrollToTop}
-            title="回到顶部"
-          >
-            ↑
-          </button>
-          <button
-            className={styles.scrollButton}
-            onClick={scrollToBottom}
-            title="移动到底部"
-          >
-            ↓
-          </button>
-        </div>
-      )}
 
       <OICurveChart
         visible={curveModalVisible}
