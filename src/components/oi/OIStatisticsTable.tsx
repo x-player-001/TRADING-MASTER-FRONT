@@ -1,4 +1,5 @@
 import React, { memo, useState, useEffect, useRef } from 'react';
+import { Pagination } from 'antd';
 import { Dayjs } from 'dayjs';
 import { OIStatistics } from '../../types';
 import { formatPercentage, formatTimestamp } from '../../utils/oiFormatters';
@@ -7,7 +8,6 @@ import styles from './OIStatisticsTable.module.scss';
 
 interface OIStatisticsTableProps {
   data: OIStatistics[];
-  maxRows?: number;
   initialDate?: Dayjs | null;
 }
 
@@ -18,7 +18,6 @@ interface OIStatisticsTableProps {
  */
 export const OIStatisticsTable = memo<OIStatisticsTableProps>(({
   data,
-  maxRows = 30,
   initialDate
 }) => {
   const [curveModalVisible, setCurveModalVisible] = useState(false);
@@ -30,6 +29,15 @@ export const OIStatisticsTable = memo<OIStatisticsTableProps>(({
   const [newItemSymbols, setNewItemSymbols] = useState<Set<string>>(new Set());
   const prevDataRef = useRef<Map<string, OIStatistics>>(new Map());
 
+  // 分页状态
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(30);
+
+  // 当数据变化时重置到第一页
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [data]);
+
   useEffect(() => {
     if (!data || data.length === 0) {
       setDisplayData([]);
@@ -37,7 +45,11 @@ export const OIStatisticsTable = memo<OIStatisticsTableProps>(({
       return;
     }
 
-    const currentData = data.slice(0, maxRows);
+    // 分页逻辑
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const currentData = data.slice(startIndex, endIndex);
+
     const currentMap = new Map(currentData.map(item => [item.symbol, item]));
     const prevMap = prevDataRef.current;
 
@@ -65,7 +77,7 @@ export const OIStatisticsTable = memo<OIStatisticsTableProps>(({
       }, 300);
       return () => clearTimeout(timer);
     }
-  }, [data, maxRows]);
+  }, [data, currentPage, pageSize]);
 
   const handleViewCurve = (symbol: string, firstAnomaly: string | null, lastAnomaly: string | null) => {
     // API需要完整的symbol（带USDT后缀）
@@ -120,6 +132,27 @@ export const OIStatisticsTable = memo<OIStatisticsTableProps>(({
           </tbody>
         </table>
       </div>
+
+      {data && data.length > 0 && (
+        <div className={styles.paginationContainer}>
+          <Pagination
+            current={currentPage}
+            pageSize={pageSize}
+            total={data.length}
+            onChange={(page, newPageSize) => {
+              setCurrentPage(page);
+              if (newPageSize !== pageSize) {
+                setPageSize(newPageSize);
+              }
+            }}
+            showSizeChanger
+            showQuickJumper
+            showTotal={(total) => `共 ${total} 条`}
+            pageSizeOptions={[10, 20, 30, 50, 100]}
+            size="small"
+          />
+        </div>
+      )}
 
       <OICurveChart
         visible={curveModalVisible}

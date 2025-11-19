@@ -1,11 +1,11 @@
 import React, { memo, useState, useEffect, useRef } from 'react';
+import { Pagination } from 'antd';
 import { OIAnomaly } from '../../types';
 import { formatOIChange, formatTimestamp } from '../../utils/oiFormatters';
 import styles from './OIAnomaliesList.module.scss';
 
 interface OIAnomaliesListProps {
   data: OIAnomaly[];
-  maxRows?: number;
 }
 
 /**
@@ -21,12 +21,20 @@ const getAnomalyId = (anomaly: OIAnomaly): string => {
  * 支持增量更新和淡入动画
  */
 export const OIAnomaliesList = memo<OIAnomaliesListProps>(({
-  data,
-  maxRows = 30
+  data
 }) => {
   const [displayData, setDisplayData] = useState<OIAnomaly[]>([]);
   const [newItemIds, setNewItemIds] = useState<Set<string>>(new Set());
   const prevDataRef = useRef<Map<string, OIAnomaly>>(new Map());
+
+  // 分页状态
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(30);
+
+  // 当数据变化时重置到第一页
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [data]);
 
   useEffect(() => {
     if (!data || data.length === 0) {
@@ -35,7 +43,11 @@ export const OIAnomaliesList = memo<OIAnomaliesListProps>(({
       return;
     }
 
-    const currentData = data.slice(0, maxRows);
+    // 分页逻辑
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const currentData = data.slice(startIndex, endIndex);
+
     const currentMap = new Map(currentData.map(item => [getAnomalyId(item), item]));
     const prevMap = prevDataRef.current;
 
@@ -62,7 +74,7 @@ export const OIAnomaliesList = memo<OIAnomaliesListProps>(({
       }, 300);
       return () => clearTimeout(timer);
     }
-  }, [data, maxRows]);
+  }, [data, currentPage, pageSize]);
 
   if (!data || data.length === 0) {
     return (
@@ -74,19 +86,42 @@ export const OIAnomaliesList = memo<OIAnomaliesListProps>(({
   }
 
   return (
-    <div className={styles.anomalyList}>
-      {displayData.map((anomaly) => {
-        const id = getAnomalyId(anomaly);
-        const isNew = newItemIds.has(id);
-        return (
-          <AnomalyItem
-            key={id}
-            anomaly={anomaly}
-            isNew={isNew}
+    <>
+      <div className={styles.anomalyList}>
+        {displayData.map((anomaly) => {
+          const id = getAnomalyId(anomaly);
+          const isNew = newItemIds.has(id);
+          return (
+            <AnomalyItem
+              key={id}
+              anomaly={anomaly}
+              isNew={isNew}
+            />
+          );
+        })}
+      </div>
+
+      {data && data.length > 0 && (
+        <div className={styles.paginationContainer}>
+          <Pagination
+            current={currentPage}
+            pageSize={pageSize}
+            total={data.length}
+            onChange={(page, newPageSize) => {
+              setCurrentPage(page);
+              if (newPageSize !== pageSize) {
+                setPageSize(newPageSize);
+              }
+            }}
+            showSizeChanger
+            showQuickJumper
+            showTotal={(total) => `共 ${total} 条`}
+            pageSizeOptions={[10, 20, 30, 50, 100]}
+            size="small"
           />
-        );
-      })}
-    </div>
+        </div>
+      )}
+    </>
   );
 });
 
