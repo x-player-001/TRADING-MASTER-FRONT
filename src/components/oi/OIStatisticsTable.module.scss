@@ -287,25 +287,6 @@
         }
       }
 
-      :global(.ant-select-selector) {
-        background-color: #374151 !important;
-        border-color: #4b5563 !important;
-        color: #d1d5db !important;
-      }
-
-      :global(.ant-pagination-options-quick-jumper) {
-        input {
-          background-color: #374151;
-          border-color: #4b5563;
-          color: #d1d5db;
-
-          &:hover,
-          &:focus {
-            border-color: #3b82f6;
-          }
-        }
-      }
-
       :global(.ant-pagination-total-text) {
         color: #9ca3af;
       }
