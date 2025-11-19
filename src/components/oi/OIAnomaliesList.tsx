@@ -85,8 +85,40 @@ export const OIAnomaliesList = memo<OIAnomaliesListProps>(({
     );
   }
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const scrollToBottom = () => {
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+  };
+
+  const paginationElement = data && data.length > 0 && (
+    <div className={styles.paginationContainer}>
+      <Pagination
+        current={currentPage}
+        pageSize={pageSize}
+        total={data.length}
+        onChange={(page, newPageSize) => {
+          setCurrentPage(page);
+          if (newPageSize !== pageSize) {
+            setPageSize(newPageSize);
+          }
+        }}
+        showSizeChanger
+        showQuickJumper
+        showTotal={(total) => `共 ${total} 条`}
+        pageSizeOptions={[10, 20, 30, 50, 100]}
+        size="small"
+      />
+    </div>
+  );
+
   return (
     <>
+      {/* 顶部分页 */}
+      {paginationElement}
+
       <div className={styles.anomalyList}>
         {displayData.map((anomaly) => {
           const id = getAnomalyId(anomaly);
@@ -101,24 +133,26 @@ export const OIAnomaliesList = memo<OIAnomaliesListProps>(({
         })}
       </div>
 
-      {data && data.length > 0 && (
-        <div className={styles.paginationContainer}>
-          <Pagination
-            current={currentPage}
-            pageSize={pageSize}
-            total={data.length}
-            onChange={(page, newPageSize) => {
-              setCurrentPage(page);
-              if (newPageSize !== pageSize) {
-                setPageSize(newPageSize);
-              }
-            }}
-            showSizeChanger
-            showQuickJumper
-            showTotal={(total) => `共 ${total} 条`}
-            pageSizeOptions={[10, 20, 30, 50, 100]}
-            size="small"
-          />
+      {/* 底部分页 */}
+      {paginationElement}
+
+      {/* 快速滚动按钮 */}
+      {data && data.length > pageSize && (
+        <div className={styles.scrollButtons}>
+          <button
+            className={styles.scrollButton}
+            onClick={scrollToTop}
+            title="回到顶部"
+          >
+            ↑
+          </button>
+          <button
+            className={styles.scrollButton}
+            onClick={scrollToBottom}
+            title="移动到底部"
+          >
+            ↓
+          </button>
         </div>
       )}
     </>
