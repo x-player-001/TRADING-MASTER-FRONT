@@ -112,6 +112,8 @@ export const OIStatisticsTable = memo<OIStatisticsTableProps>(({
         total={data.length}
         onChange={setCurrentPage}
         showTotal={(total) => `共 ${total} 条`}
+        showSizeChanger={false}
+        showQuickJumper={false}
         size="small"
       />
     </div>
