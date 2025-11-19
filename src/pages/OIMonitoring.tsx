@@ -73,11 +73,11 @@ const OIMonitoring: React.FC = () => {
     }
   }, [isRefreshing, startProgress, finishProgress]);
 
-  // 定时刷新 - 每分钟自动刷新一次
+  // 定时刷新 - 每5分钟自动刷新一次
   useEffect(() => {
     const timer = setInterval(() => {
       refresh();
-    }, 60000); // 60秒 = 1分钟
+    }, 300000); // 300秒 = 5分钟
 
     return () => clearInterval(timer);
   }, [refresh]);
