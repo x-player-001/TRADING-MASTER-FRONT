@@ -84,11 +84,27 @@ const OIMonitoring: React.FC = () => {
 
   // 滚动函数
   const scrollToTop = useCallback(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    console.log('Scrolling to top');
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+    // 备用方案：使用document.body
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   }, []);
 
   const scrollToBottom = useCallback(() => {
-    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+    console.log('Scrolling to bottom, height:', document.documentElement.scrollHeight);
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior: 'smooth'
+    });
+    // 备用方案：使用document.body
+    setTimeout(() => {
+      document.documentElement.scrollTop = document.documentElement.scrollHeight;
+      document.body.scrollTop = document.body.scrollHeight;
+    }, 0);
   }, []);
 
   // 只在严重错误时显示错误页面，否则显示固定布局

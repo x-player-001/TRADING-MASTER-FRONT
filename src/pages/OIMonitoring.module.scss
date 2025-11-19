@@ -1392,7 +1392,13 @@ $warning: #f59e0b;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  z-index: 100;
+  z-index: 999;
+
+  // 移动端位置调整，避免与侧边栏触发器冲突
+  @media (max-width: 1024px) {
+    right: 1rem;
+    bottom: 6rem; // 移动端侧边栏按钮在2rem位置，我们放在6rem
+  }
 
   .scrollButton {
     width: 3rem;
@@ -1409,6 +1415,12 @@ $warning: #f59e0b;
     justify-content: center;
     transition: all 0.3s ease;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+    @media (max-width: 1024px) {
+      width: 2.5rem;
+      height: 2.5rem;
+      font-size: 1.25rem;
+    }
 
     &:hover {
       background: #3b82f6;
