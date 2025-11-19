@@ -82,29 +82,25 @@ const OIMonitoring: React.FC = () => {
     return () => clearInterval(timer);
   }, [refresh]);
 
-  // 滚动函数
+  // 滚动函数 - 滚动的是main元素而不是window
   const scrollToTop = useCallback(() => {
-    console.log('Scrolling to top');
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-    // 备用方案：使用document.body
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
+    const mainElement = document.querySelector('main');
+    if (mainElement) {
+      mainElement.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
   }, []);
 
   const scrollToBottom = useCallback(() => {
-    console.log('Scrolling to bottom, height:', document.documentElement.scrollHeight);
-    window.scrollTo({
-      top: document.documentElement.scrollHeight,
-      behavior: 'smooth'
-    });
-    // 备用方案：使用document.body
-    setTimeout(() => {
-      document.documentElement.scrollTop = document.documentElement.scrollHeight;
-      document.body.scrollTop = document.body.scrollHeight;
-    }, 0);
+    const mainElement = document.querySelector('main');
+    if (mainElement) {
+      mainElement.scrollTo({
+        top: mainElement.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
   }, []);
 
   // 只在严重错误时显示错误页面，否则显示固定布局
