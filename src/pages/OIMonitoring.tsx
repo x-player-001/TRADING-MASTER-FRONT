@@ -30,7 +30,7 @@ const OIMonitoring: React.FC = () => {
   // 状态管理
   const [selectedDate, setSelectedDate] = useState<Dayjs | null>(dayjs());
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [minScore, setMinScore] = useState<number>(0);
+  const [minScore, setMinScore] = useState<number | null>(null);
 
   // 使用自定义Hook管理数据获取
   const {
@@ -52,7 +52,7 @@ const OIMonitoring: React.FC = () => {
     statistics,
     anomalies,
     searchTerm,
-    minScore
+    minScore: minScore || 0
   });
 
   // 优化：使用useCallback缓存事件处理器
@@ -225,7 +225,7 @@ const OIMonitoring: React.FC = () => {
         {/* 异常监测 */}
         <DataSection
           title="异常监测"
-          subtitle={searchTerm || minScore > 0
+          subtitle={searchTerm || (minScore !== null && minScore > 0)
             ? `原始异常：${counts.originalAnomalies} 个，筛选后：${counts.filteredAnomalies} 个`
             : `共发现 ${counts.originalAnomalies} 个异常`
           }
@@ -238,12 +238,11 @@ const OIMonitoring: React.FC = () => {
               <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>最低评分:</span>
               <InputNumber
                 value={minScore}
-                onChange={(value) => setMinScore(value || 0)}
+                onChange={(value) => setMinScore(value)}
                 min={0}
                 max={10}
-                step={0.1}
-                precision={1}
-                placeholder="0"
+                step={1}
+                placeholder="不限"
                 size="small"
                 style={{ width: 80 }}
               />
