@@ -5,7 +5,7 @@ interface UseOIFiltersOptions {
   statistics: OIStatisticsResponse | null;
   anomalies: OIAnomaliesResponse | null;
   searchTerm: string;
-  severityFilter: 'all' | 'high' | 'medium' | 'low';
+  minScore: number;
 }
 
 interface UseOIFiltersReturn {
@@ -27,7 +27,7 @@ export const useOIFilters = ({
   statistics,
   anomalies,
   searchTerm,
-  severityFilter
+  minScore
 }: UseOIFiltersOptions): UseOIFiltersReturn => {
   // 筛选统计数据
   const filteredStatistics = useMemo(() => {
@@ -47,9 +47,14 @@ export const useOIFilters = ({
 
     let filtered = anomalies;
 
-    // 按严重程度筛选
-    if (severityFilter !== 'all') {
-      filtered = filtered.filter(anomaly => anomaly.severity === severityFilter);
+    // 按最低评分筛选
+    if (minScore > 0) {
+      filtered = filtered.filter(anomaly => {
+        const score = anomaly.signal_score !== undefined && anomaly.signal_score !== null
+          ? (typeof anomaly.signal_score === 'number' ? anomaly.signal_score : parseFloat(String(anomaly.signal_score)))
+          : 0;
+        return score >= minScore;
+      });
     }
 
     // 按搜索词筛选
@@ -61,7 +66,7 @@ export const useOIFilters = ({
     }
 
     return filtered;
-  }, [anomalies, searchTerm, severityFilter]);
+  }, [anomalies, searchTerm, minScore]);
 
   // 计算数量统计
   const counts = useMemo(() => ({

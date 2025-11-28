@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { DatePicker, Input } from 'antd';
+import { DatePicker, Input, InputNumber } from 'antd';
 import dayjs, { Dayjs } from 'dayjs';
 import styles from './OIMonitoring.module.scss';
 import PageHeader from '../components/ui/PageHeader';
-import { TopProgressBar, DataSection, CoolRefreshButton, SeverityFilter } from '../components/ui';
+import { TopProgressBar, DataSection, CoolRefreshButton } from '../components/ui';
 import { OIStatisticsTable } from '../components/oi/OIStatisticsTable';
 import { OIAnomaliesList } from '../components/oi/OIAnomaliesList';
 import OIRecentAlerts from '../components/oi/OIRecentAlerts';
@@ -30,7 +30,7 @@ const OIMonitoring: React.FC = () => {
   // 状态管理
   const [selectedDate, setSelectedDate] = useState<Dayjs | null>(dayjs());
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [severityFilter, setSeverityFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
+  const [minScore, setMinScore] = useState<number>(0);
 
   // 使用自定义Hook管理数据获取
   const {
@@ -52,7 +52,7 @@ const OIMonitoring: React.FC = () => {
     statistics,
     anomalies,
     searchTerm,
-    severityFilter
+    minScore
   });
 
   // 优化：使用useCallback缓存事件处理器
@@ -225,7 +225,7 @@ const OIMonitoring: React.FC = () => {
         {/* 异常监测 */}
         <DataSection
           title="异常监测"
-          subtitle={searchTerm || severityFilter !== 'all'
+          subtitle={searchTerm || minScore > 0
             ? `原始异常：${counts.originalAnomalies} 个，筛选后：${counts.filteredAnomalies} 个`
             : `共发现 ${counts.originalAnomalies} 个异常`
           }
@@ -234,11 +234,20 @@ const OIMonitoring: React.FC = () => {
           empty={!loading && (!filteredAnomalies || filteredAnomalies.length === 0)}
           emptyText="暂无异常检测"
           headerActions={
-            <SeverityFilter
-              value={severityFilter}
-              onChange={setSeverityFilter}
-              size="small"
-            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>最低评分:</span>
+              <InputNumber
+                value={minScore}
+                onChange={(value) => setMinScore(value || 0)}
+                min={0}
+                max={10}
+                step={0.1}
+                precision={1}
+                placeholder="0"
+                size="small"
+                style={{ width: 80 }}
+              />
+            </div>
           }
         >
           <OIAnomaliesList data={filteredAnomalies} />
