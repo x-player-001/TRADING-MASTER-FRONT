@@ -89,8 +89,8 @@ const OIRecentAlerts: React.FC<OIRecentAlertsProps> = ({ anomalies }) => {
               return styles.interval50;
             };
 
-            // 生成TradingView链接 (symbol已包含USDT后缀)
-            const tradingViewUrl = `https://cn.tradingview.com/chart/j4BQzamt/?symbol=BINANCE%3A${item.symbol}USDT.P`;
+            // 生成TradingView链接 (symbol已包含USDT后缀, 5分钟周期)
+            const tradingViewUrl = `https://cn.tradingview.com/chart/j4BQzamt/?symbol=BINANCE%3A${item.symbol}USDT.P&interval=5`;
 
             return (
               <a
