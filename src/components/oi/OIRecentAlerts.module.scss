@@ -132,14 +132,16 @@
   font-weight: 700;
   white-space: nowrap;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: default;
+  cursor: pointer;
   position: relative;
   overflow: hidden;
+  text-decoration: none;
 
   // 悬停效果
   &:hover {
     transform: translateY(-2px) scale(1.05);
     z-index: 10;
+    text-decoration: none;
   }
 
   // 光效

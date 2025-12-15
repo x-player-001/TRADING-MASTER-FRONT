@@ -89,14 +89,20 @@ const OIRecentAlerts: React.FC<OIRecentAlertsProps> = ({ anomalies }) => {
               return styles.interval50;
             };
 
+            // 生成TradingView链接
+            const tradingViewUrl = `https://cn.tradingview.com/chart/j4BQzamt/?symbol=BINANCE%3A${item.symbol}.P`;
+
             return (
-              <div
+              <a
                 key={`${item.symbol}-${index}`}
+                href={tradingViewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 className={`${styles.timelineItem} ${getColorClass(item.timeInterval)}`}
-                title={`${item.symbol} - ${typeLabels[item.type] || item.type} (${item.minutesAgo}分钟前)`}
+                title={`${item.symbol} - ${typeLabels[item.type] || item.type} (${item.minutesAgo}分钟前) - 点击打开TradingView`}
               >
                 <span className={styles.timelineSymbol}>{item.symbol}</span>
-              </div>
+              </a>
             );
           })}
         </div>
