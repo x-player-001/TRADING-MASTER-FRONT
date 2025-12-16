@@ -188,44 +188,15 @@ const BreakoutSignals: React.FC<BreakoutSignalsProps> = ({ isSidebarCollapsed })
               rel="noopener noreferrer"
               className={`${styles.signalCard} ${signal.direction === 'UP' ? styles.up : styles.down}`}
             >
-              <div className={styles.signalHeader}>
-                <div className={styles.symbolInfo}>
-                  <span className={styles.symbol}>{signal.symbol}</span>
-                  <span className={`${styles.direction} ${signal.direction === 'UP' ? styles.up : styles.down}`}>
-                    {signal.direction === 'UP' ? '📈 向上突破' : '📉 向下突破'}
-                  </span>
-                </div>
-                <div className={styles.time}>{formatTime(signal.signal_time)}</div>
-              </div>
-
-              <div className={styles.signalBody}>
-                <div className={styles.priceInfo}>
-                  <div className={styles.priceItem}>
-                    <span className={styles.priceLabel}>突破价格</span>
-                    <span className={styles.priceValue}>{formatPrice(signal.breakout_price)}</span>
-                  </div>
-                  <div className={styles.priceItem}>
-                    <span className={styles.priceLabel}>区间上沿</span>
-                    <span className={styles.priceValue}>{formatPrice(signal.zone.upper_bound)}</span>
-                  </div>
-                  <div className={styles.priceItem}>
-                    <span className={styles.priceLabel}>区间下沿</span>
-                    <span className={styles.priceValue}>{formatPrice(signal.zone.lower_bound)}</span>
-                  </div>
-                </div>
-
-                <div className={styles.extraInfo}>
-                  <span className={styles.tag}>突破幅度: {signal.breakout_pct.toFixed(2)}%</span>
-                  <span className={styles.tag}>成交量比: {signal.volume_ratio.toFixed(2)}x</span>
-                  <span className={styles.tag}>K线数: {signal.zone.kline_count}</span>
-                </div>
-              </div>
-
-              <div className={styles.signalFooter}>
-                <span className={styles.rangeTime}>
-                  区间: {formatTime(signal.zone.start_time)} - {formatTime(signal.zone.end_time)}
+              <div className={styles.signalRow}>
+                <span className={styles.symbol}>{signal.symbol}</span>
+                <span className={`${styles.direction} ${signal.direction === 'UP' ? styles.up : styles.down}`}>
+                  {signal.direction === 'UP' ? '↑' : '↓'}
                 </span>
-                <span className={styles.clickHint}>点击查看图表 →</span>
+                <span className={styles.price}>{formatPrice(signal.breakout_price)}</span>
+                <span className={styles.pct}>{signal.breakout_pct.toFixed(2)}%</span>
+                <span className={styles.volume}>{signal.volume_ratio.toFixed(1)}x</span>
+                <span className={styles.time}>{formatTime(signal.signal_time)}</span>
               </div>
             </a>
           ))
