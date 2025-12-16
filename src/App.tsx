@@ -4,6 +4,7 @@ import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
 import Dashboard from './pages/Dashboard';
 import OIMonitoring from './pages/OIMonitoring';
+import BreakoutSignals from './pages/BreakoutSignals';
 import SystemStatus from './pages/SystemStatus';
 import KlineChart from './pages/KlineChart';
 import SymbolConfig from './pages/SymbolConfig';
@@ -71,6 +72,8 @@ function App() {
 
       if (hash === 'oi-monitoring') {
         setCurrentPage('oi-monitoring');
+      } else if (hash === 'breakout-signals') {
+        setCurrentPage('breakout-signals');
       } else if (hash === 'system-status') {
         setCurrentPage('system-status');
       } else if (hash === 'kline-chart') {
@@ -154,6 +157,8 @@ function App() {
     switch (currentPage) {
       case 'oi-monitoring':
         return <OIMonitoring />;
+      case 'breakout-signals':
+        return <BreakoutSignals isSidebarCollapsed={isSidebarCollapsed} />;
       case 'system-status':
         return <SystemStatus />;
       case 'kline-chart':
