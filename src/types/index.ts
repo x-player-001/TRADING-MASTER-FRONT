@@ -128,21 +128,43 @@ export interface OIServiceStatusData {
 // OI服务状态API响应
 export type OIServiceStatus = APIResponse<OIServiceStatusData>;
 
+// 突破信号区间信息
+export interface BreakoutZone {
+  upper_bound: number;
+  lower_bound: number;
+  center_price: number;
+  start_time: string;
+  end_time: string;
+  kline_count: number;
+  atr: number;
+}
+
+// 突破信号K线信息
+export interface BreakoutKline {
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+}
+
 // 突破信号接口
 export interface BreakoutSignal {
   id: number;
   symbol: string;
   direction: 'UP' | 'DOWN';
   breakout_price: number;
-  range_high: number;
-  range_low: number;
-  breakout_time: string;
-  range_start_time: string;
-  range_end_time: string;
-  volume_ratio?: number;
-  oi_change_percent?: number;
-  signal_strength?: number;
+  breakout_pct: number;
+  volume_ratio: number;
+  zone: BreakoutZone;
+  kline: BreakoutKline;
+  signal_time: string;
   created_at: string;
+}
+
+// 突破信号API响应
+export interface BreakoutSignalsResponse {
+  count: number;
+  signals: BreakoutSignal[];
 }
 
 // 突破信号统计
@@ -150,17 +172,13 @@ export interface BreakoutStatistics {
   total_signals: number;
   up_signals: number;
   down_signals: number;
-  avg_signal_strength: number;
-  symbols_count: number;
-  time_range: {
+  avg_signal_strength?: number;
+  symbols_count?: number;
+  time_range?: {
     start: string;
     end: string;
   };
 }
-
-// 突破信号API响应（apiClient自动解包）
-export type BreakoutSignalsResponse = BreakoutSignal[];
-export type BreakoutStatisticsResponse = BreakoutStatistics;
 
 // 币种对象接口
 export interface SymbolData {

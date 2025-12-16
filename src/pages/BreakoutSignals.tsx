@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Select, Input, Spin, Empty, message } from 'antd';
 import styles from './BreakoutSignals.module.scss';
 import PageHeader from '../components/ui/PageHeader';
 import { CoolRefreshButton } from '../components/ui';
 import { breakoutAPI } from '../services/breakoutAPI';
-import { BreakoutSignal, BreakoutStatistics } from '../types';
+import { BreakoutSignal } from '../types';
 
 interface BreakoutSignalsProps {
   isSidebarCollapsed?: boolean;
@@ -12,7 +12,6 @@ interface BreakoutSignalsProps {
 
 const BreakoutSignals: React.FC<BreakoutSignalsProps> = ({ isSidebarCollapsed }) => {
   const [signals, setSignals] = useState<BreakoutSignal[]>([]);
-  const [statistics, setStatistics] = useState<BreakoutStatistics | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [directionFilter, setDirectionFilter] = useState<'all' | 'UP' | 'DOWN'>('all');
@@ -24,22 +23,20 @@ const BreakoutSignals: React.FC<BreakoutSignalsProps> = ({ isSidebarCollapsed })
     setRefreshing(true);
 
     try {
-      const [signalsData, statsData] = await Promise.all([
-        breakoutAPI.getRecentSignals({ limit: 100 }),
-        breakoutAPI.getStatistics({ hours: 24 })
-      ]);
+      const response = await breakoutAPI.getRecentSignals({ limit: 100 });
 
-      // 处理signals数据 - 可能是数组或包含data属性的对象
-      const signalsArray = Array.isArray(signalsData)
-        ? signalsData
-        : (signalsData as any)?.data || [];
+      // 处理signals数据 - API返回 { count, signals } 格式
+      let signalsArray: BreakoutSignal[] = [];
+      if (response) {
+        if (Array.isArray(response)) {
+          signalsArray = response;
+        } else if ((response as any).signals && Array.isArray((response as any).signals)) {
+          signalsArray = (response as any).signals;
+        } else if ((response as any).data?.signals) {
+          signalsArray = (response as any).data.signals;
+        }
+      }
       setSignals(signalsArray);
-
-      // 处理statistics数据
-      const stats = statsData && typeof statsData === 'object' && !Array.isArray(statsData)
-        ? statsData
-        : null;
-      setStatistics(stats);
     } catch (error) {
       console.error('获取突破信号失败:', error);
       message.error('获取数据失败');
@@ -59,17 +56,34 @@ const BreakoutSignals: React.FC<BreakoutSignalsProps> = ({ isSidebarCollapsed })
   }, [fetchData]);
 
   // 过滤数据 - 确保signals是数组
-  const filteredSignals = Array.isArray(signals) ? signals.filter(signal => {
-    // 方向过滤
-    if (directionFilter !== 'all' && signal.direction !== directionFilter) {
-      return false;
-    }
-    // 搜索过滤
-    if (searchTerm && !signal.symbol.toLowerCase().includes(searchTerm.toLowerCase())) {
-      return false;
-    }
-    return true;
-  }) : [];
+  const filteredSignals = useMemo(() => {
+    if (!Array.isArray(signals)) return [];
+    return signals.filter(signal => {
+      // 方向过滤
+      if (directionFilter !== 'all' && signal.direction !== directionFilter) {
+        return false;
+      }
+      // 搜索过滤
+      if (searchTerm && !signal.symbol.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return false;
+      }
+      return true;
+    });
+  }, [signals, directionFilter, searchTerm]);
+
+  // 统计数据 - 从signals计算
+  const statistics = useMemo(() => {
+    if (!Array.isArray(signals) || signals.length === 0) return null;
+    const upCount = signals.filter(s => s.direction === 'UP').length;
+    const downCount = signals.filter(s => s.direction === 'DOWN').length;
+    const uniqueSymbols = new Set(signals.map(s => s.symbol)).size;
+    return {
+      total: signals.length,
+      up: upCount,
+      down: downCount,
+      symbols: uniqueSymbols
+    };
+  }, [signals]);
 
   // 格式化时间
   const formatTime = (timeStr: string) => {
@@ -91,7 +105,9 @@ const BreakoutSignals: React.FC<BreakoutSignalsProps> = ({ isSidebarCollapsed })
 
   // 生成TradingView链接
   const getTradingViewUrl = (symbol: string) => {
-    return `https://cn.tradingview.com/chart/j4BQzamt/?symbol=BINANCE%3A${symbol}USDT.P&interval=5`;
+    // 去掉USDT后缀（如果有）再拼接
+    const baseSymbol = symbol.replace(/USDT$/i, '');
+    return `https://cn.tradingview.com/chart/j4BQzamt/?symbol=BINANCE%3A${baseSymbol}USDT.P&interval=5`;
   };
 
   return (
@@ -112,19 +128,19 @@ const BreakoutSignals: React.FC<BreakoutSignalsProps> = ({ isSidebarCollapsed })
       {statistics && (
         <div className={styles.statsGrid}>
           <div className={styles.statCard}>
-            <div className={styles.statValue}>{statistics.total_signals}</div>
-            <div className={styles.statLabel}>24h总信号</div>
+            <div className={styles.statValue}>{statistics.total}</div>
+            <div className={styles.statLabel}>总信号</div>
           </div>
           <div className={`${styles.statCard} ${styles.up}`}>
-            <div className={styles.statValue}>{statistics.up_signals}</div>
+            <div className={styles.statValue}>{statistics.up}</div>
             <div className={styles.statLabel}>向上突破</div>
           </div>
           <div className={`${styles.statCard} ${styles.down}`}>
-            <div className={styles.statValue}>{statistics.down_signals}</div>
+            <div className={styles.statValue}>{statistics.down}</div>
             <div className={styles.statLabel}>向下突破</div>
           </div>
           <div className={styles.statCard}>
-            <div className={styles.statValue}>{statistics.symbols_count}</div>
+            <div className={styles.statValue}>{statistics.symbols}</div>
             <div className={styles.statLabel}>涉及币种</div>
           </div>
         </div>
@@ -179,7 +195,7 @@ const BreakoutSignals: React.FC<BreakoutSignalsProps> = ({ isSidebarCollapsed })
                     {signal.direction === 'UP' ? '📈 向上突破' : '📉 向下突破'}
                   </span>
                 </div>
-                <div className={styles.time}>{formatTime(signal.breakout_time)}</div>
+                <div className={styles.time}>{formatTime(signal.signal_time)}</div>
               </div>
 
               <div className={styles.signalBody}>
@@ -189,33 +205,25 @@ const BreakoutSignals: React.FC<BreakoutSignalsProps> = ({ isSidebarCollapsed })
                     <span className={styles.priceValue}>{formatPrice(signal.breakout_price)}</span>
                   </div>
                   <div className={styles.priceItem}>
-                    <span className={styles.priceLabel}>区间高点</span>
-                    <span className={styles.priceValue}>{formatPrice(signal.range_high)}</span>
+                    <span className={styles.priceLabel}>区间上沿</span>
+                    <span className={styles.priceValue}>{formatPrice(signal.zone.upper_bound)}</span>
                   </div>
                   <div className={styles.priceItem}>
-                    <span className={styles.priceLabel}>区间低点</span>
-                    <span className={styles.priceValue}>{formatPrice(signal.range_low)}</span>
+                    <span className={styles.priceLabel}>区间下沿</span>
+                    <span className={styles.priceValue}>{formatPrice(signal.zone.lower_bound)}</span>
                   </div>
                 </div>
 
-                {(signal.volume_ratio || signal.oi_change_percent || signal.signal_strength) && (
-                  <div className={styles.extraInfo}>
-                    {signal.volume_ratio && (
-                      <span className={styles.tag}>成交量比: {signal.volume_ratio.toFixed(2)}x</span>
-                    )}
-                    {signal.oi_change_percent && (
-                      <span className={styles.tag}>OI变化: {signal.oi_change_percent.toFixed(2)}%</span>
-                    )}
-                    {signal.signal_strength && (
-                      <span className={styles.tag}>强度: {signal.signal_strength.toFixed(1)}</span>
-                    )}
-                  </div>
-                )}
+                <div className={styles.extraInfo}>
+                  <span className={styles.tag}>突破幅度: {signal.breakout_pct.toFixed(2)}%</span>
+                  <span className={styles.tag}>成交量比: {signal.volume_ratio.toFixed(2)}x</span>
+                  <span className={styles.tag}>K线数: {signal.zone.kline_count}</span>
+                </div>
               </div>
 
               <div className={styles.signalFooter}>
                 <span className={styles.rangeTime}>
-                  区间: {formatTime(signal.range_start_time)} - {formatTime(signal.range_end_time)}
+                  区间: {formatTime(signal.zone.start_time)} - {formatTime(signal.zone.end_time)}
                 </span>
                 <span className={styles.clickHint}>点击查看图表 →</span>
               </div>
