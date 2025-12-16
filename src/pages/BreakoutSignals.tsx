@@ -195,7 +195,9 @@ const BreakoutSignals: React.FC<BreakoutSignalsProps> = ({ isSidebarCollapsed })
                 </span>
                 <span className={styles.price}>{formatPrice(signal.breakout_price)}</span>
                 <span className={styles.pct}>{signal.breakout_pct.toFixed(2)}%</span>
+                <span className={styles.zone}>{formatPrice(signal.zone.lower_bound)} - {formatPrice(signal.zone.upper_bound)}</span>
                 <span className={styles.volume}>{signal.volume_ratio.toFixed(1)}x</span>
+                <span className={styles.klineCount}>{signal.zone.kline_count}K</span>
                 <span className={styles.time}>{formatTime(signal.signal_time)}</span>
               </div>
             </a>

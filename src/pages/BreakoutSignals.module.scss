@@ -242,13 +242,41 @@
   }
 }
 
+.zone {
+  font-size: 0.75rem;
+  color: #6b7280;
+  min-width: 120px;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
 .volume {
   font-size: 0.8125rem;
   color: #3b82f6;
-  min-width: 50px;
+  min-width: 45px;
 
   :global(.dark) & {
     color: #60a5fa;
+  }
+}
+
+.klineCount {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  min-width: 30px;
+
+  :global(.dark) & {
+    color: #6b7280;
+  }
+
+  @media (max-width: 768px) {
+    display: none;
   }
 }
 
@@ -256,14 +284,14 @@
   font-size: 0.75rem;
   color: #9ca3af;
   margin-left: auto;
+  min-width: 90px;
+  text-align: right;
 
   :global(.dark) & {
     color: #6b7280;
   }
 
   @media (max-width: 768px) {
-    margin-left: 0;
-    width: 100%;
-    text-align: right;
+    min-width: auto;
   }
 }
