@@ -29,8 +29,17 @@ const BreakoutSignals: React.FC<BreakoutSignalsProps> = ({ isSidebarCollapsed })
         breakoutAPI.getStatistics({ hours: 24 })
       ]);
 
-      setSignals(signalsData || []);
-      setStatistics(statsData || null);
+      // 处理signals数据 - 可能是数组或包含data属性的对象
+      const signalsArray = Array.isArray(signalsData)
+        ? signalsData
+        : (signalsData as any)?.data || [];
+      setSignals(signalsArray);
+
+      // 处理statistics数据
+      const stats = statsData && typeof statsData === 'object' && !Array.isArray(statsData)
+        ? statsData
+        : null;
+      setStatistics(stats);
     } catch (error) {
       console.error('获取突破信号失败:', error);
       message.error('获取数据失败');
@@ -49,8 +58,8 @@ const BreakoutSignals: React.FC<BreakoutSignalsProps> = ({ isSidebarCollapsed })
     fetchData(false);
   }, [fetchData]);
 
-  // 过滤数据
-  const filteredSignals = signals.filter(signal => {
+  // 过滤数据 - 确保signals是数组
+  const filteredSignals = Array.isArray(signals) ? signals.filter(signal => {
     // 方向过滤
     if (directionFilter !== 'all' && signal.direction !== directionFilter) {
       return false;
@@ -60,7 +69,7 @@ const BreakoutSignals: React.FC<BreakoutSignalsProps> = ({ isSidebarCollapsed })
       return false;
     }
     return true;
-  });
+  }) : [];
 
   // 格式化时间
   const formatTime = (timeStr: string) => {
