@@ -133,6 +133,7 @@ export interface BreakoutZone {
   upper_bound: number;
   lower_bound: number;
   center_price: number;
+  zone_score: number;
   start_time: string;
   end_time: string;
   kline_count: number;

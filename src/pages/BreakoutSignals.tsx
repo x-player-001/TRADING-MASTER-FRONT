@@ -198,6 +198,10 @@ const BreakoutSignals: React.FC<BreakoutSignalsProps> = ({ isSidebarCollapsed })
                 <span className={styles.zone}>{formatPrice(signal.zone.lower_bound)} - {formatPrice(signal.zone.upper_bound)}</span>
                 <span className={styles.volume}>{signal.volume_ratio.toFixed(1)}x</span>
                 <span className={styles.klineCount}>{signal.zone.kline_count}K</span>
+                <span className={styles.rangeTime}>{formatTime(signal.zone.start_time)} ~ {formatTime(signal.zone.end_time)}</span>
+                <span className={`${styles.zoneScore} ${signal.zone.zone_score >= 90 ? styles.scoreHigh : signal.zone.zone_score >= 80 ? styles.scoreMedium : ''}`}>
+                  {signal.zone.zone_score}分
+                </span>
                 <span className={styles.time}>{formatTime(signal.signal_time)}</span>
               </div>
             </a>

@@ -256,6 +256,37 @@
   }
 }
 
+.zoneScore {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #6b7280;
+  min-width: 40px;
+
+  :global(.dark) & {
+    color: #9ca3af;
+  }
+
+  &.scoreHigh {
+    color: #22c55e;
+
+    :global(.dark) & {
+      color: #4ade80;
+    }
+  }
+
+  &.scoreMedium {
+    color: #16a34a;
+
+    :global(.dark) & {
+      color: #22c55e;
+    }
+  }
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
 .volume {
   font-size: 0.8125rem;
   color: #3b82f6;
@@ -276,6 +307,20 @@
   }
 
   @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+.rangeTime {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  min-width: 160px;
+
+  :global(.dark) & {
+    color: #6b7280;
+  }
+
+  @media (max-width: 1024px) {
     display: none;
   }
 }
