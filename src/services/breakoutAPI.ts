@@ -1,4 +1,4 @@
-import { BreakoutSignalsResponse, BreakoutStatisticsResponse } from '../types';
+import { BreakoutSignalsResponse, BreakoutStatistics } from '../types';
 import { apiGet } from './apiClient';
 
 class BreakoutAPIService {
@@ -35,8 +35,8 @@ class BreakoutAPIService {
   // 获取统计信息
   async getStatistics(params?: {
     hours?: number;
-  }): Promise<BreakoutStatisticsResponse> {
-    return apiGet<BreakoutStatisticsResponse>('/api/breakout/statistics', { params });
+  }): Promise<BreakoutStatistics> {
+    return apiGet<BreakoutStatistics>('/api/breakout/statistics', { params });
   }
 }
 

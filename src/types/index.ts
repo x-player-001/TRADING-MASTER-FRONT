@@ -181,6 +181,54 @@ export interface BreakoutStatistics {
   };
 }
 
+// 边界报警区间信息
+export interface BoundaryAlertZone {
+  upper_bound: number;
+  lower_bound: number;
+  extended_high: number;
+  extended_low: number;
+  zone_score: number;
+  start_time: string;
+  end_time: string;
+  kline_count: number;
+}
+
+// 边界报警K线信息
+export interface BoundaryAlertKline {
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+// 边界报警接口
+export interface BoundaryAlert {
+  id: number;
+  symbol: string;
+  alert_type: 'TOUCH_UPPER' | 'TOUCH_LOWER';
+  alert_price: number;
+  zone: BoundaryAlertZone;
+  kline: BoundaryAlertKline;
+  alert_time: string;
+  created_at: string;
+}
+
+// 边界报警API响应
+export interface BoundaryAlertsResponse {
+  count: number;
+  alerts: BoundaryAlert[];
+}
+
+// 边界报警统计
+export interface BoundaryAlertStatistics {
+  period: string;
+  total_alerts: number;
+  upper_alerts: number;
+  lower_alerts: number;
+  unique_symbols: number;
+}
+
 // 币种对象接口
 export interface SymbolData {
   id: number;
