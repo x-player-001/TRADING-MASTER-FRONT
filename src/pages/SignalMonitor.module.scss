@@ -227,6 +227,19 @@
   }
 }
 
+.klineCount {
+  font-size: 0.7rem;
+  color: #9ca3af;
+
+  :global(.dark) & {
+    color: #6b7280;
+  }
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
 .score {
   font-size: 0.8125rem;
   font-weight: 700;

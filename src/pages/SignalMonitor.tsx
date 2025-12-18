@@ -228,6 +228,7 @@ const SignalMonitor: React.FC<SignalMonitorProps> = ({ isSidebarCollapsed }) => 
                     <span className={styles.zone}>
                       {formatPrice(signal.zone.lower_bound)}-{formatPrice(signal.zone.upper_bound)}
                     </span>
+                    <span className={styles.klineCount}>{signal.zone.kline_count}K</span>
                     <span className={`${styles.score} ${signal.zone.zone_score >= 90 ? styles.scoreHigh : signal.zone.zone_score >= 80 ? styles.scoreMedium : ''}`}>
                       {signal.zone.zone_score}分
                     </span>
