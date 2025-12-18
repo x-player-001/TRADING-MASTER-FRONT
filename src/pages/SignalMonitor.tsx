@@ -225,6 +225,9 @@ const SignalMonitor: React.FC<SignalMonitorProps> = ({ isSidebarCollapsed }) => 
                     </span>
                     <span className={styles.price}>{formatPrice(signal.breakout_price)}</span>
                     <span className={styles.pct}>{signal.breakout_pct.toFixed(2)}%</span>
+                    <span className={styles.zone}>
+                      {formatPrice(signal.zone.lower_bound)}-{formatPrice(signal.zone.upper_bound)}
+                    </span>
                     <span className={`${styles.score} ${signal.zone.zone_score >= 90 ? styles.scoreHigh : signal.zone.zone_score >= 80 ? styles.scoreMedium : ''}`}>
                       {signal.zone.zone_score}分
                     </span>
