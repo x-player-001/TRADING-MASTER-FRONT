@@ -17,6 +17,7 @@ import PositionMonitor from './quantitative/pages/PositionMonitor';
 import RiskManagement from './quantitative/pages/RiskManagement';
 import QuantSignalMonitor from './quantitative/pages/SignalMonitor';
 import SignalMonitor from './pages/SignalMonitor';
+import SRMonitor from './pages/SRMonitor';
 // 链上数据模块
 import PotentialTokens from './pages/PotentialTokens';
 import MonitorTokens from './pages/MonitorTokens';
@@ -97,6 +98,8 @@ function App() {
         setCurrentPage('quant-signals');
       } else if (hash === 'signal-monitor') {
         setCurrentPage('signal-monitor');
+      } else if (hash === 'sr-monitor') {
+        setCurrentPage('sr-monitor');
       } else if (hash === 'potential-tokens') {
         setCurrentPage('potential-tokens');
       } else if (hash === 'monitor-tokens') {
@@ -185,6 +188,8 @@ function App() {
         return <QuantSignalMonitor isSidebarCollapsed={isSidebarCollapsed} />;
       case 'signal-monitor':
         return <SignalMonitor isSidebarCollapsed={isSidebarCollapsed} />;
+      case 'sr-monitor':
+        return <SRMonitor isSidebarCollapsed={isSidebarCollapsed} />;
       // 链上数据模块页面
       case 'potential-tokens':
         return <PotentialTokens isSidebarCollapsed={isSidebarCollapsed} />;

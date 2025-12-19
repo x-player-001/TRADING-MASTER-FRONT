@@ -229,6 +229,51 @@ export interface BoundaryAlertStatistics {
   unique_symbols: number;
 }
 
+// 支撑阻力位报警
+export interface SRAlert {
+  id: number;
+  symbol: string;
+  interval: string;
+  alert_type: 'APPROACHING' | 'TOUCHED';
+  level_type: 'SUPPORT' | 'RESISTANCE';
+  level_price: number;
+  current_price: number;
+  distance_pct: number;
+  strength: number;
+  touch_count: number;
+  alert_time: string;
+  created_at: string;
+}
+
+// 支撑阻力位报警响应
+export interface SRAlertsResponse {
+  count: number;
+  alerts: SRAlert[];
+}
+
+// 支撑阻力位
+export interface SRLevel {
+  id: number;
+  symbol: string;
+  interval: string;
+  level_type: 'SUPPORT' | 'RESISTANCE';
+  price: number;
+  strength: number;
+  touch_count: number;
+  last_touch_time: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// 支撑阻力位响应
+export interface SRLevelsResponse {
+  symbol: string;
+  interval: string;
+  count: number;
+  levels: SRLevel[];
+}
+
 // 币种对象接口
 export interface SymbolData {
   id: number;

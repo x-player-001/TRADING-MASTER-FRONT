@@ -39,8 +39,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         { icon: '📊', label: '仪表板', href: '#', page: 'dashboard' },
         { icon: '💹', label: 'K线图表', href: '#kline-chart', page: 'kline-chart' },
         { icon: '📊', label: 'OI监控', href: '#oi-monitoring', page: 'oi-monitoring' },
-        { icon: '🚀', label: '突破信号', href: '#breakout-signals', page: 'breakout-signals' },
-        { icon: '📡', label: '信号监控', href: '#signal-monitor', page: 'signal-monitor' }
+        { icon: '📍', label: '支撑阻力', href: '#sr-monitor', page: 'sr-monitor' }
       ]
     },
     {
