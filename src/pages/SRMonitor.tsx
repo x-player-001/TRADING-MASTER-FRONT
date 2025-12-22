@@ -16,7 +16,7 @@ const SRMonitor: React.FC<SRMonitorProps> = ({ isSidebarCollapsed }) => {
   const [refreshing, setRefreshing] = useState(false);
 
   // 筛选条件
-  const [alertTypeFilter, setAlertTypeFilter] = useState<'all' | 'APPROACHING' | 'TOUCHED'>('all');
+  const [alertTypeFilter, setAlertTypeFilter] = useState<'all' | 'SQUEEZE' | 'APPROACHING' | 'TOUCHED'>('all');
   const [levelTypeFilter, setLevelTypeFilter] = useState<'all' | 'SUPPORT' | 'RESISTANCE'>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -75,6 +75,7 @@ const SRMonitor: React.FC<SRMonitorProps> = ({ isSidebarCollapsed }) => {
   // 统计数据
   const statistics = useMemo(() => {
     if (!Array.isArray(alerts) || alerts.length === 0) return null;
+    const squeezeCount = alerts.filter(a => a.alert_type === 'SQUEEZE').length;
     const approachingCount = alerts.filter(a => a.alert_type === 'APPROACHING').length;
     const touchedCount = alerts.filter(a => a.alert_type === 'TOUCHED').length;
     const supportCount = alerts.filter(a => a.level_type === 'SUPPORT').length;
@@ -82,6 +83,7 @@ const SRMonitor: React.FC<SRMonitorProps> = ({ isSidebarCollapsed }) => {
     const uniqueSymbols = new Set(alerts.map(a => a.symbol)).size;
     return {
       total: alerts.length,
+      squeeze: squeezeCount,
       approaching: approachingCount,
       touched: touchedCount,
       support: supportCount,
@@ -123,6 +125,26 @@ const SRMonitor: React.FC<SRMonitorProps> = ({ isSidebarCollapsed }) => {
     return `https://cn.tradingview.com/chart/j4BQzamt/?symbol=BINANCE%3A${baseSymbol}USDT.P&interval=${tvInterval}`;
   };
 
+  // 获取报警类型显示
+  const getAlertTypeDisplay = (alertType: string) => {
+    switch (alertType) {
+      case 'SQUEEZE': return '收敛';
+      case 'APPROACHING': return '接近';
+      case 'TOUCHED': return '触及';
+      default: return alertType;
+    }
+  };
+
+  // 获取报警类型样式
+  const getAlertTypeClass = (alertType: string) => {
+    switch (alertType) {
+      case 'SQUEEZE': return styles.squeeze;
+      case 'APPROACHING': return styles.approaching;
+      case 'TOUCHED': return styles.touched;
+      default: return '';
+    }
+  };
+
   return (
     <div className={`${styles.srMonitor} ${isSidebarCollapsed ? styles.sidebarCollapsed : ''}`}>
       <PageHeader
@@ -144,6 +166,10 @@ const SRMonitor: React.FC<SRMonitorProps> = ({ isSidebarCollapsed }) => {
             <div className={styles.statValue}>{statistics.total}</div>
             <div className={styles.statLabel}>总报警</div>
           </div>
+          <div className={`${styles.statCard} ${styles.squeeze}`}>
+            <div className={styles.statValue}>{statistics.squeeze}</div>
+            <div className={styles.statLabel}>波动收敛</div>
+          </div>
           <div className={`${styles.statCard} ${styles.approaching}`}>
             <div className={styles.statValue}>{statistics.approaching}</div>
             <div className={styles.statLabel}>接近中</div>
@@ -160,10 +186,6 @@ const SRMonitor: React.FC<SRMonitorProps> = ({ isSidebarCollapsed }) => {
             <div className={styles.statValue}>{statistics.resistance}</div>
             <div className={styles.statLabel}>阻力位</div>
           </div>
-          <div className={styles.statCard}>
-            <div className={styles.statValue}>{statistics.symbols}</div>
-            <div className={styles.statLabel}>涉及币种</div>
-          </div>
         </div>
       )}
 
@@ -179,9 +201,10 @@ const SRMonitor: React.FC<SRMonitorProps> = ({ isSidebarCollapsed }) => {
         <Select
           value={alertTypeFilter}
           onChange={setAlertTypeFilter}
-          style={{ width: 120 }}
+          style={{ width: 130 }}
           options={[
             { value: 'all', label: '全部类型' },
+            { value: 'SQUEEZE', label: '🔄 波动收敛' },
             { value: 'APPROACHING', label: '🔔 接近中' },
             { value: 'TOUCHED', label: '🎯 已触及' }
           ]}
@@ -225,8 +248,8 @@ const SRMonitor: React.FC<SRMonitorProps> = ({ isSidebarCollapsed }) => {
                 <span className={`${styles.levelType} ${alert.level_type === 'SUPPORT' ? styles.support : styles.resistance}`}>
                   {alert.level_type === 'SUPPORT' ? '支撑' : '阻力'}
                 </span>
-                <span className={`${styles.alertType} ${alert.alert_type === 'TOUCHED' ? styles.touched : styles.approaching}`}>
-                  {alert.alert_type === 'TOUCHED' ? '触及' : '接近'}
+                <span className={`${styles.alertType} ${getAlertTypeClass(alert.alert_type)}`}>
+                  {getAlertTypeDisplay(alert.alert_type)}
                 </span>
                 <span className={styles.price}>
                   {formatPrice(alert.current_price)} → {formatPrice(alert.level_price)}
@@ -235,12 +258,12 @@ const SRMonitor: React.FC<SRMonitorProps> = ({ isSidebarCollapsed }) => {
                   {alert.distance_pct.toFixed(2)}%
                 </span>
                 <span className={styles.strength}>
-                  强度{alert.strength}
+                  强度{alert.level_strength}
                 </span>
-                <span className={styles.touchCount}>
-                  {alert.touch_count}次
+                <span className={styles.description} title={alert.description}>
+                  {alert.description.split('|')[1]?.trim() || ''}
                 </span>
-                <span className={styles.time}>{formatTime(alert.alert_time)}</span>
+                <span className={styles.time}>{formatTime(alert.kline_time_str)}</span>
               </div>
             </a>
           ))

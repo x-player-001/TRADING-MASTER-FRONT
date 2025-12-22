@@ -234,14 +234,15 @@ export interface SRAlert {
   id: number;
   symbol: string;
   interval: string;
-  alert_type: 'APPROACHING' | 'TOUCHED';
+  alert_type: 'SQUEEZE' | 'APPROACHING' | 'TOUCHED';
   level_type: 'SUPPORT' | 'RESISTANCE';
   level_price: number;
   current_price: number;
   distance_pct: number;
-  strength: number;
-  touch_count: number;
-  alert_time: string;
+  level_strength: number;
+  kline_time: number;
+  kline_time_str: string;
+  description: string;
   created_at: string;
 }
 

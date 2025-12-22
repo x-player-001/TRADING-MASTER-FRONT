@@ -48,6 +48,10 @@
     border-color: #374151;
   }
 
+  &.squeeze {
+    border-left: 3px solid #3b82f6;
+  }
+
   &.approaching {
     border-left: 3px solid #f59e0b;
   }
@@ -236,6 +240,15 @@
   padding: 0.125rem 0.5rem;
   border-radius: 0.25rem;
 
+  &.squeeze {
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
+
+    :global(.dark) & {
+      background: rgba(59, 130, 246, 0.2);
+    }
+  }
+
   &.approaching {
     color: #f59e0b;
     background: rgba(245, 158, 11, 0.1);
@@ -290,15 +303,21 @@
   }
 }
 
-.touchCount {
+.description {
   font-size: 0.7rem;
-  color: #9ca3af;
+  color: #6b7280;
+  flex: 1;
+  min-width: 120px;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 
   :global(.dark) & {
-    color: #6b7280;
+    color: #9ca3af;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 1024px) {
     display: none;
   }
 }
