@@ -19,6 +19,7 @@ const SRMonitor: React.FC<SRMonitorProps> = ({ isSidebarCollapsed }) => {
   const [alertTypeFilter, setAlertTypeFilter] = useState<'all' | 'SQUEEZE' | 'APPROACHING' | 'TOUCHED'>('all');
   const [levelTypeFilter, setLevelTypeFilter] = useState<'all' | 'SUPPORT' | 'RESISTANCE'>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [descSearch, setDescSearch] = useState('');
 
   // 获取数据
   const fetchData = useCallback(async (showLoading = true) => {
@@ -68,9 +69,12 @@ const SRMonitor: React.FC<SRMonitorProps> = ({ isSidebarCollapsed }) => {
       if (searchTerm && !alert.symbol.toLowerCase().includes(searchTerm.toLowerCase())) {
         return false;
       }
+      if (descSearch && !alert.description.toLowerCase().includes(descSearch.toLowerCase())) {
+        return false;
+      }
       return true;
     });
-  }, [alerts, searchTerm]);
+  }, [alerts, searchTerm, descSearch]);
 
   // 统计数据
   const statistics = useMemo(() => {
@@ -195,6 +199,13 @@ const SRMonitor: React.FC<SRMonitorProps> = ({ isSidebarCollapsed }) => {
           placeholder="搜索币种..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ width: 120 }}
+          allowClear
+        />
+        <Input
+          placeholder="搜索特征描述..."
+          value={descSearch}
+          onChange={(e) => setDescSearch(e.target.value)}
           style={{ width: 160 }}
           allowClear
         />
