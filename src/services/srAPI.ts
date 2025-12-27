@@ -5,8 +5,11 @@ class SRAPIService {
   // 获取最近报警信号
   async getRecentAlerts(params?: {
     limit?: number;
-    alert_type?: 'APPROACHING' | 'TOUCHED';
+    symbol?: string;
+    keyword?: string;
+    alert_type?: 'SQUEEZE' | 'APPROACHING' | 'TOUCHED' | 'BULLISH_STREAK' | 'PULLBACK_READY';
     level_type?: 'SUPPORT' | 'RESISTANCE';
+    group_by?: 'symbol';
   }): Promise<SRAlertsResponse> {
     return apiGet<SRAlertsResponse>('/api/sr/alerts/recent', { params });
   }

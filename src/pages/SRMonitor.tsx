@@ -10,40 +10,50 @@ interface SRMonitorProps {
   isSidebarCollapsed?: boolean;
 }
 
+// 按币种分组的数据结构
+interface SymbolGroup {
+  symbol: string;
+  alert_count: number;
+  latest_alert_time: string;
+  alert_types: Record<string, number>;
+  alerts: SRAlert[];
+}
+
+interface GroupedResponse {
+  symbol_count: number;
+  total_alerts: number;
+  symbols: Record<string, SymbolGroup>;
+}
+
 const SRMonitor: React.FC<SRMonitorProps> = ({ isSidebarCollapsed }) => {
-  const [alerts, setAlerts] = useState<SRAlert[]>([]);
+  const [groupedData, setGroupedData] = useState<GroupedResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [expandedSymbols, setExpandedSymbols] = useState<Set<string>>(new Set());
 
-  // 筛选条件
-  const [alertTypeFilter, setAlertTypeFilter] = useState<'all' | 'SQUEEZE' | 'APPROACHING' | 'TOUCHED'>('all');
+  // 筛选条件（前端筛选）
+  const [alertTypeFilter, setAlertTypeFilter] = useState<'all' | 'SQUEEZE' | 'APPROACHING' | 'TOUCHED' | 'BULLISH_STREAK' | 'PULLBACK_READY'>('all');
   const [levelTypeFilter, setLevelTypeFilter] = useState<'all' | 'SUPPORT' | 'RESISTANCE'>('all');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [descSearch, setDescSearch] = useState('');
+  const [symbolSearch, setSymbolSearch] = useState('');
+  const [keywordSearch, setKeywordSearch] = useState('');
 
-  // 获取数据
+  // 获取数据（只传limit和group_by）
   const fetchData = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
     setRefreshing(true);
 
     try {
-      const params: any = { limit: 100 };
-      if (alertTypeFilter !== 'all') params.alert_type = alertTypeFilter;
-      if (levelTypeFilter !== 'all') params.level_type = levelTypeFilter;
-
+      const params: any = { limit: 500, group_by: 'symbol' };
       const response = await srAPI.getRecentAlerts(params);
 
-      let alertsArray: SRAlert[] = [];
-      if (response) {
-        if (Array.isArray(response)) {
-          alertsArray = response;
-        } else if ((response as any).alerts && Array.isArray((response as any).alerts)) {
-          alertsArray = (response as any).alerts;
-        } else if ((response as any).data?.alerts) {
-          alertsArray = (response as any).data.alerts;
-        }
+      // 解析分组响应
+      if (response && (response as any).symbols) {
+        setGroupedData(response as unknown as GroupedResponse);
+      } else if (response && (response as any).data?.symbols) {
+        setGroupedData((response as any).data as GroupedResponse);
+      } else {
+        setGroupedData(null);
       }
-      setAlerts(alertsArray);
     } catch (error) {
       console.error('获取支撑阻力位报警失败:', error);
       message.error('获取数据失败');
@@ -51,8 +61,9 @@ const SRMonitor: React.FC<SRMonitorProps> = ({ isSidebarCollapsed }) => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [alertTypeFilter, levelTypeFilter]);
+  }, []);
 
+  // 初始加载
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -62,39 +73,108 @@ const SRMonitor: React.FC<SRMonitorProps> = ({ isSidebarCollapsed }) => {
     fetchData(false);
   }, [fetchData]);
 
-  // 过滤数据（搜索）
-  const filteredAlerts = useMemo(() => {
-    if (!Array.isArray(alerts)) return [];
-    return alerts.filter(alert => {
-      if (searchTerm && !alert.symbol.toLowerCase().includes(searchTerm.toLowerCase())) {
-        return false;
+  // 切换展开/折叠
+  const toggleExpand = (symbol: string) => {
+    setExpandedSymbols(prev => {
+      const next = new Set(prev);
+      if (next.has(symbol)) {
+        next.delete(symbol);
+      } else {
+        next.add(symbol);
       }
-      if (descSearch && !alert.description.toLowerCase().includes(descSearch.toLowerCase())) {
-        return false;
-      }
-      return true;
+      return next;
     });
-  }, [alerts, searchTerm, descSearch]);
+  };
 
-  // 统计数据
+  // 前端筛选后的分组数据
+  const filteredGroups = useMemo(() => {
+    if (!groupedData) return [];
+
+    return Object.values(groupedData.symbols)
+      .map(group => {
+        // 筛选币种名称
+        if (symbolSearch && !group.symbol.toLowerCase().includes(symbolSearch.toLowerCase())) {
+          return null;
+        }
+
+        // 筛选alerts
+        const filteredAlerts = group.alerts.filter(alert => {
+          // 类型筛选
+          if (alertTypeFilter !== 'all' && alert.alert_type !== alertTypeFilter) {
+            return false;
+          }
+          // 价位筛选
+          if (levelTypeFilter !== 'all' && alert.level_type !== levelTypeFilter) {
+            return false;
+          }
+          // 描述关键字筛选
+          if (keywordSearch && !alert.description.toLowerCase().includes(keywordSearch.toLowerCase())) {
+            return false;
+          }
+          return true;
+        });
+
+        // 如果没有符合条件的alerts，跳过这个分组
+        if (filteredAlerts.length === 0) {
+          return null;
+        }
+
+        // 重新计算类型统计
+        const alertTypes: Record<string, number> = {};
+        filteredAlerts.forEach(alert => {
+          alertTypes[alert.alert_type] = (alertTypes[alert.alert_type] || 0) + 1;
+        });
+
+        return {
+          ...group,
+          alerts: filteredAlerts,
+          alert_count: filteredAlerts.length,
+          alert_types: alertTypes,
+          latest_alert_time: filteredAlerts[0]?.kline_time_str || group.latest_alert_time
+        };
+      })
+      .filter((g): g is SymbolGroup => g !== null)
+      .sort((a, b) => new Date(b.latest_alert_time).getTime() - new Date(a.latest_alert_time).getTime());
+  }, [groupedData, symbolSearch, keywordSearch, alertTypeFilter, levelTypeFilter]);
+
+  // 统计数据（基于筛选后的数据）
   const statistics = useMemo(() => {
-    if (!Array.isArray(alerts) || alerts.length === 0) return null;
-    const squeezeCount = alerts.filter(a => a.alert_type === 'SQUEEZE').length;
-    const approachingCount = alerts.filter(a => a.alert_type === 'APPROACHING').length;
-    const touchedCount = alerts.filter(a => a.alert_type === 'TOUCHED').length;
-    const supportCount = alerts.filter(a => a.level_type === 'SUPPORT').length;
-    const resistanceCount = alerts.filter(a => a.level_type === 'RESISTANCE').length;
-    const uniqueSymbols = new Set(alerts.map(a => a.symbol)).size;
+    if (filteredGroups.length === 0) return null;
+
+    let squeezeCount = 0;
+    let approachingCount = 0;
+    let touchedCount = 0;
+    let bullishStreakCount = 0;
+    let pullbackReadyCount = 0;
+    let supportCount = 0;
+    let resistanceCount = 0;
+    let totalAlerts = 0;
+
+    filteredGroups.forEach(group => {
+      totalAlerts += group.alert_count;
+      group.alerts.forEach(alert => {
+        if (alert.alert_type === 'SQUEEZE') squeezeCount++;
+        if (alert.alert_type === 'APPROACHING') approachingCount++;
+        if (alert.alert_type === 'TOUCHED') touchedCount++;
+        if (alert.alert_type === 'BULLISH_STREAK') bullishStreakCount++;
+        if (alert.alert_type === 'PULLBACK_READY') pullbackReadyCount++;
+        if (alert.level_type === 'SUPPORT') supportCount++;
+        if (alert.level_type === 'RESISTANCE') resistanceCount++;
+      });
+    });
+
     return {
-      total: alerts.length,
+      total: totalAlerts,
+      symbols: filteredGroups.length,
       squeeze: squeezeCount,
       approaching: approachingCount,
       touched: touchedCount,
+      bullishStreak: bullishStreakCount,
+      pullbackReady: pullbackReadyCount,
       support: supportCount,
-      resistance: resistanceCount,
-      symbols: uniqueSymbols
+      resistance: resistanceCount
     };
-  }, [alerts]);
+  }, [filteredGroups]);
 
   // 格式化时间
   const formatTime = (timeStr: string) => {
@@ -115,9 +195,8 @@ const SRMonitor: React.FC<SRMonitorProps> = ({ isSidebarCollapsed }) => {
   };
 
   // 生成TradingView链接
-  const getTradingViewUrl = (symbol: string, interval: string) => {
+  const getTradingViewUrl = (symbol: string, interval: string = '5m') => {
     const baseSymbol = symbol.replace(/USDT$/i, '');
-    // 转换interval格式
     let tvInterval = '5';
     if (interval === '1m') tvInterval = '1';
     else if (interval === '5m') tvInterval = '5';
@@ -135,6 +214,8 @@ const SRMonitor: React.FC<SRMonitorProps> = ({ isSidebarCollapsed }) => {
       case 'SQUEEZE': return '收敛';
       case 'APPROACHING': return '接近';
       case 'TOUCHED': return '触及';
+      case 'BULLISH_STREAK': return '连涨';
+      case 'PULLBACK_READY': return '回调';
       default: return alertType;
     }
   };
@@ -145,6 +226,8 @@ const SRMonitor: React.FC<SRMonitorProps> = ({ isSidebarCollapsed }) => {
       case 'SQUEEZE': return styles.squeeze;
       case 'APPROACHING': return styles.approaching;
       case 'TOUCHED': return styles.touched;
+      case 'BULLISH_STREAK': return styles.bullishStreak;
+      case 'PULLBACK_READY': return styles.pullbackReady;
       default: return '';
     }
   };
@@ -182,6 +265,14 @@ const SRMonitor: React.FC<SRMonitorProps> = ({ isSidebarCollapsed }) => {
             <div className={styles.statValue}>{statistics.touched}</div>
             <div className={styles.statLabel}>已触及</div>
           </div>
+          <div className={`${styles.statCard} ${styles.bullishStreak}`}>
+            <div className={styles.statValue}>{statistics.bullishStreak}</div>
+            <div className={styles.statLabel}>连涨</div>
+          </div>
+          <div className={`${styles.statCard} ${styles.pullbackReady}`}>
+            <div className={styles.statValue}>{statistics.pullbackReady}</div>
+            <div className={styles.statLabel}>回调待发</div>
+          </div>
           <div className={`${styles.statCard} ${styles.support}`}>
             <div className={styles.statValue}>{statistics.support}</div>
             <div className={styles.statLabel}>支撑位</div>
@@ -197,15 +288,15 @@ const SRMonitor: React.FC<SRMonitorProps> = ({ isSidebarCollapsed }) => {
       <div className={styles.filters}>
         <Input
           placeholder="搜索币种..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          value={symbolSearch}
+          onChange={(e) => setSymbolSearch(e.target.value)}
           style={{ width: 120 }}
           allowClear
         />
         <Input
-          placeholder="搜索特征描述..."
-          value={descSearch}
-          onChange={(e) => setDescSearch(e.target.value)}
+          placeholder="搜索描述(如:粘合)..."
+          value={keywordSearch}
+          onChange={(e) => setKeywordSearch(e.target.value)}
           style={{ width: 160 }}
           allowClear
         />
@@ -217,7 +308,9 @@ const SRMonitor: React.FC<SRMonitorProps> = ({ isSidebarCollapsed }) => {
             { value: 'all', label: '全部类型' },
             { value: 'SQUEEZE', label: '🔄 波动收敛' },
             { value: 'APPROACHING', label: '🔔 接近中' },
-            { value: 'TOUCHED', label: '🎯 已触及' }
+            { value: 'TOUCHED', label: '🎯 已触及' },
+            { value: 'BULLISH_STREAK', label: '🚀 连涨' },
+            { value: 'PULLBACK_READY', label: '📉 回调待发' }
           ]}
         />
         <Select
@@ -231,52 +324,93 @@ const SRMonitor: React.FC<SRMonitorProps> = ({ isSidebarCollapsed }) => {
           ]}
         />
         <span className={styles.resultCount}>
-          共 {filteredAlerts.length} 条报警
+          {statistics ? `${statistics.symbols} 个币种，${statistics.total} 条报警` : '加载中...'}
         </span>
       </div>
 
-      {/* 报警列表 */}
+      {/* 报警列表 - 按币种分组 */}
       <div className={styles.alertList}>
         {loading ? (
           <div className={styles.loadingContainer}>
             <Spin size="large" />
             <p>加载中...</p>
           </div>
-        ) : filteredAlerts.length === 0 ? (
+        ) : filteredGroups.length === 0 ? (
           <Empty description="暂无报警信号" />
         ) : (
-          filteredAlerts.map((alert) => (
-            <a
-              key={alert.id}
-              href={getTradingViewUrl(alert.symbol, alert.interval)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`${styles.alertCard} ${alert.level_type === 'SUPPORT' ? styles.support : styles.resistance}`}
-            >
-              <div className={styles.alertRow}>
-                <span className={styles.symbol}>{alert.symbol}</span>
-                <span className={styles.interval}>{alert.interval}</span>
-                <span className={`${styles.levelType} ${alert.level_type === 'SUPPORT' ? styles.support : styles.resistance}`}>
-                  {alert.level_type === 'SUPPORT' ? '支撑' : '阻力'}
+          filteredGroups.map((group) => (
+            <div key={group.symbol} className={styles.symbolGroup}>
+              {/* 币种头部 */}
+              <div
+                className={styles.symbolHeader}
+                onClick={() => toggleExpand(group.symbol)}
+              >
+                <span className={styles.expandIcon}>
+                  {expandedSymbols.has(group.symbol) ? '▼' : '▶'}
                 </span>
-                <span className={`${styles.alertType} ${getAlertTypeClass(alert.alert_type)}`}>
-                  {getAlertTypeDisplay(alert.alert_type)}
+                <a
+                  href={getTradingViewUrl(group.symbol)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.symbolName}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {group.symbol}
+                </a>
+                <span className={styles.alertCount}>{group.alert_count}条</span>
+                <div className={styles.alertTypeTags}>
+                  {Object.entries(group.alert_types).map(([type, count]) => (
+                    <span
+                      key={type}
+                      className={`${styles.typeTag} ${getAlertTypeClass(type)}`}
+                    >
+                      {getAlertTypeDisplay(type)} {count}
+                    </span>
+                  ))}
+                </div>
+                <span className={styles.latestTime}>
+                  最新: {formatTime(group.latest_alert_time)}
                 </span>
-                <span className={styles.price}>
-                  {formatPrice(alert.current_price)} → {formatPrice(alert.level_price)}
-                </span>
-                <span className={styles.distance}>
-                  {alert.distance_pct.toFixed(2)}%
-                </span>
-                <span className={styles.strength}>
-                  强度{alert.level_strength}
-                </span>
-                <span className={styles.description} title={alert.description}>
-                  {alert.description.split('|')[1]?.trim() || ''}
-                </span>
-                <span className={styles.time}>{formatTime(alert.kline_time_str)}</span>
               </div>
-            </a>
+
+              {/* 展开的报警详情 */}
+              {expandedSymbols.has(group.symbol) && (
+                <div className={styles.alertDetails}>
+                  {group.alerts.map((alert) => (
+                    <a
+                      key={alert.id}
+                      href={getTradingViewUrl(alert.symbol, alert.interval)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`${styles.alertCard} ${alert.level_type === 'SUPPORT' ? styles.support : styles.resistance}`}
+                    >
+                      <div className={styles.alertRow}>
+                        <span className={styles.interval}>{alert.interval}</span>
+                        <span className={`${styles.levelType} ${alert.level_type === 'SUPPORT' ? styles.support : styles.resistance}`}>
+                          {alert.level_type === 'SUPPORT' ? '支撑' : '阻力'}
+                        </span>
+                        <span className={`${styles.alertType} ${getAlertTypeClass(alert.alert_type)}`}>
+                          {getAlertTypeDisplay(alert.alert_type)}
+                        </span>
+                        <span className={styles.price}>
+                          {formatPrice(alert.current_price)} → {formatPrice(alert.level_price)}
+                        </span>
+                        <span className={styles.distance}>
+                          {alert.distance_pct.toFixed(2)}%
+                        </span>
+                        <span className={styles.strength}>
+                          强度{alert.level_strength}
+                        </span>
+                        <span className={styles.description} title={alert.description}>
+                          {alert.description}
+                        </span>
+                        <span className={styles.time}>{formatTime(alert.kline_time_str)}</span>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
           ))
         )}
       </div>
