@@ -12,6 +12,7 @@ interface DataSectionProps {
   headerActions?: ReactNode;
   children?: ReactNode;
   className?: string;
+  compact?: boolean;
 }
 
 /**
@@ -28,7 +29,8 @@ export const DataSection: React.FC<DataSectionProps> = ({
   emptyIcon = '📊',
   headerActions,
   children,
-  className = ''
+  className = '',
+  compact = false
 }) => {
   const renderContent = () => {
     // 错误状态
@@ -68,13 +70,13 @@ export const DataSection: React.FC<DataSectionProps> = ({
   };
 
   return (
-    <div className={`${styles.dataSection} ${className}`}>
+    <div className={`${styles.dataSection} ${compact ? styles.compact : ''} ${className}`}>
       {/* 标题区域 */}
       {(title || headerActions) && (
-        <div className={styles.header}>
-          <div className={styles.titleArea}>
-            {title && <h2 className={styles.title}>{title}</h2>}
-            {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
+        <div className={`${styles.header} ${compact ? styles.headerCompact : ''}`}>
+          <div className={`${styles.titleArea} ${compact ? styles.titleAreaCompact : ''}`}>
+            {title && <h2 className={`${styles.title} ${compact ? styles.titleCompact : ''}`}>{title}</h2>}
+            {subtitle && <span className={`${compact ? styles.subtitleCompact : styles.subtitle}`}>{compact ? ` · ${subtitle}` : subtitle}</span>}
           </div>
           {headerActions && (
             <div className={styles.actions}>

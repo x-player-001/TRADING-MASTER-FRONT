@@ -2,6 +2,7 @@ import React, { memo, useState, useEffect, useRef } from 'react';
 import { Pagination } from 'antd';
 import { OIAnomaly } from '../../types';
 import { formatOIChange, formatTimestamp } from '../../utils/oiFormatters';
+import OIImportantAlerts from './OIImportantAlerts';
 import styles from './OIAnomaliesList.module.scss';
 
 interface OIAnomaliesListProps {
@@ -102,6 +103,9 @@ export const OIAnomaliesList = memo<OIAnomaliesListProps>(({
 
   return (
     <>
+      {/* 重要OI异动 */}
+      <OIImportantAlerts anomalies={data} />
+
       {/* 顶部分页 */}
       {paginationElement}
 
@@ -149,9 +153,14 @@ const AnomalyItem = memo<{ anomaly: OIAnomaly; isNew?: boolean }>(({ anomaly, is
 
   return (
     <div className={`${styles.anomalyItem} ${severityClass} ${isNew ? styles.newItem : ''}`}>
-      {/* 第一行：币种 + 时间段 + 时间戳 + 信号评分 */}
+      {/* 第一行：币种 + 报警次数 + 时间段 + 时间戳 + 信号评分 */}
       <div className={styles.firstLine}>
         <span className={styles.symbol}>{anomaly.symbol}</span>
+        {(anomaly.daily_alert_index ?? anomaly.alert_count) !== undefined && (anomaly.daily_alert_index ?? anomaly.alert_count) !== null && (
+          <span className={styles.alertCount}>
+            第{anomaly.daily_alert_index ?? anomaly.alert_count}次
+          </span>
+        )}
         <span className={styles.period}>{anomaly.period_minutes}分钟</span>
         <span className={styles.timestamp}>
           {formatTimestamp(anomaly.anomaly_time)}
@@ -163,13 +172,14 @@ const AnomalyItem = memo<{ anomaly: OIAnomaly; isNew?: boolean }>(({ anomaly, is
         )}
       </div>
 
-      {/* 第二行：OI和价格变化百分比 */}
+      {/* 第二行：OI、价格、资金费率变化百分比 */}
       <div className={styles.secondLine}>
         <span className={styles.changeItem}>
           OI:
           <span className={`${styles.changeText} ${anomaly.percent_change > 0 ? styles.increase : styles.decrease}`}>
             {anomaly.percent_change > 0 ? '+' : '-'}{oiChangeInfo.percentage}%
           </span>
+          <span className={styles.oiRange}>({oiChangeInfo.beforeFormatted} → {oiChangeInfo.afterFormatted})</span>
         </span>
         <span className={styles.changeItem}>
           {priceChangePercent ? (
@@ -193,27 +203,6 @@ const AnomalyItem = memo<{ anomaly: OIAnomaly; isNew?: boolean }>(({ anomaly, is
             </>
           ) : (
             <span style={{ opacity: 0.5 }}>funding: -</span>
-          )}
-        </span>
-      </div>
-
-      {/* 第三行：详细数值变化 */}
-      <div className={styles.thirdLine}>
-        <span className={styles.detailItem}>
-          {oiChangeInfo.beforeFormatted} → {oiChangeInfo.afterFormatted}
-        </span>
-        <span className={styles.detailItem}>
-          {anomaly.price_before && anomaly.price_after ? (
-            `${parseFloat(anomaly.price_before).toFixed(6)} → ${parseFloat(anomaly.price_after).toFixed(6)}`
-          ) : (
-            <span style={{ opacity: 0.5 }}>-</span>
-          )}
-        </span>
-        <span className={styles.detailItem}>
-          {anomaly.funding_rate_before && anomaly.funding_rate_after ? (
-            `${(parseFloat(anomaly.funding_rate_before) * 100).toFixed(4)}% → ${(parseFloat(anomaly.funding_rate_after) * 100).toFixed(4)}%`
-          ) : (
-            <span style={{ opacity: 0.5 }}>-</span>
           )}
         </span>
       </div>

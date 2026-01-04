@@ -99,6 +99,9 @@ export interface OIAnomaly {
   taker_buy_sell_ratio?: string;
   // 信号评分
   signal_score?: number;
+  // 该币种的第几次报警
+  alert_count?: number;
+  daily_alert_index?: number;
 }
 
 // Anomalies API返回数据（apiClient自动解包）

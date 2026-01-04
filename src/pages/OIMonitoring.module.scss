@@ -442,6 +442,15 @@ $warning: #f59e0b;
   }
 }
 
+// OI统计数据区域 - 单独一行，紧凑显示
+.statisticsSection {
+  margin-bottom: 1.5rem;
+
+  @media (max-width: 640px) {
+    margin-bottom: 1rem;
+  }
+}
+
 .card {
   background: white;
   border-radius: 0.5rem;

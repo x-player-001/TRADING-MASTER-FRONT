@@ -6,6 +6,7 @@ interface UseOIFiltersOptions {
   anomalies: OIAnomaliesResponse | null;
   searchTerm: string;
   minScore: number;
+  exactMatch?: boolean;
 }
 
 interface UseOIFiltersReturn {
@@ -27,7 +28,8 @@ export const useOIFilters = ({
   statistics,
   anomalies,
   searchTerm,
-  minScore
+  minScore,
+  exactMatch = false
 }: UseOIFiltersOptions): UseOIFiltersReturn => {
   // 筛选统计数据
   const filteredStatistics = useMemo(() => {
@@ -36,10 +38,11 @@ export const useOIFilters = ({
     if (!searchTerm.trim()) return statistics;
 
     const term = searchTerm.toLowerCase().trim();
-    return statistics.filter(stat =>
-      stat.symbol.toLowerCase().includes(term)
-    );
-  }, [statistics, searchTerm]);
+    return statistics.filter(stat => {
+      const symbol = stat.symbol.toLowerCase();
+      return exactMatch ? symbol === term : symbol.includes(term);
+    });
+  }, [statistics, searchTerm, exactMatch]);
 
   // 筛选异常数据
   const filteredAnomalies = useMemo(() => {
@@ -60,13 +63,14 @@ export const useOIFilters = ({
     // 按搜索词筛选
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase().trim();
-      filtered = filtered.filter(anomaly =>
-        anomaly.symbol.toLowerCase().includes(term)
-      );
+      filtered = filtered.filter(anomaly => {
+        const symbol = anomaly.symbol.toLowerCase();
+        return exactMatch ? symbol === term : symbol.includes(term);
+      });
     }
 
     return filtered;
-  }, [anomalies, searchTerm, minScore]);
+  }, [anomalies, searchTerm, minScore, exactMatch]);
 
   // 计算数量统计
   const counts = useMemo(() => ({

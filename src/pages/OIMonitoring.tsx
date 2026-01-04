@@ -1,12 +1,12 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { DatePicker, Input, InputNumber } from 'antd';
+import { DatePicker, Input, InputNumber, Checkbox } from 'antd';
 import dayjs, { Dayjs } from 'dayjs';
 import styles from './OIMonitoring.module.scss';
 import PageHeader from '../components/ui/PageHeader';
 import { TopProgressBar, DataSection, CoolRefreshButton } from '../components/ui';
 import { OIStatisticsTable } from '../components/oi/OIStatisticsTable';
 import { OIAnomaliesList } from '../components/oi/OIAnomaliesList';
-import OIRecentAlerts from '../components/oi/OIRecentAlerts';
+import { VolumeAlertsList } from '../components/oi/VolumeAlertsList';
 import { useOIMonitoring } from '../hooks/useOIMonitoring';
 import { useOIFilters } from '../hooks/useOIFilters';
 import { useTopProgress } from '../hooks/useTopProgress';
@@ -31,6 +31,7 @@ const OIMonitoring: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Dayjs | null>(dayjs());
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [minScore, setMinScore] = useState<number | null>(null);
+  const [exactMatch, setExactMatch] = useState<boolean>(false);
 
   // 使用自定义Hook管理数据获取
   const {
@@ -52,7 +53,8 @@ const OIMonitoring: React.FC = () => {
     statistics,
     anomalies,
     searchTerm,
-    minScore: minScore || 0
+    minScore: minScore || 0,
+    exactMatch
   });
 
   // 优化：使用useCallback缓存事件处理器
@@ -161,11 +163,18 @@ const OIMonitoring: React.FC = () => {
               onChange={handleSearchChange}
               allowClear
               style={{
-                width: 250,
+                width: 180,
                 background: 'transparent',
                 backgroundColor: 'transparent'
               }}
             />
+            <Checkbox
+              checked={exactMatch}
+              onChange={(e) => setExactMatch(e.target.checked)}
+              style={{ fontSize: '0.75rem', marginLeft: '0.5rem' }}
+            >
+              <span style={{ fontSize: '0.75rem' }}>完全匹配</span>
+            </Checkbox>
           </div>
 
           <div className={styles.filterItem}>
@@ -201,13 +210,8 @@ const OIMonitoring: React.FC = () => {
         </div>
       </div>
 
-      {/* 最近异常报警时间轴 */}
-      <div className={styles.recentAlertsSection}>
-        <OIRecentAlerts anomalies={anomalies} />
-      </div>
-
-      <div className={styles.mainGrid}>
-        {/* OI统计数据 */}
+      {/* OI统计数据 - 单独一行，紧凑显示 */}
+      <div className={styles.statisticsSection}>
         <DataSection
           title="OI统计数据"
           subtitle={searchTerm
@@ -218,24 +222,29 @@ const OIMonitoring: React.FC = () => {
           error={null}
           empty={!loading && (!filteredStatistics || filteredStatistics.length === 0)}
           emptyText="暂无统计数据"
+          compact
         >
-          <OIStatisticsTable data={filteredStatistics} initialDate={selectedDate} />
+          <OIStatisticsTable data={filteredStatistics} initialDate={selectedDate} defaultPageSize={5} />
         </DataSection>
+      </div>
 
-        {/* 异常监测 */}
+      {/* 异常监测和成交量报警并排展示 */}
+      <div className={styles.mainGrid}>
+        {/* OI异常监测 */}
         <DataSection
-          title="异常监测"
+          title="OI异常监测"
           subtitle={searchTerm || (minScore !== null && minScore > 0)
-            ? `原始异常：${counts.originalAnomalies} 个，筛选后：${counts.filteredAnomalies} 个`
-            : `共发现 ${counts.originalAnomalies} 个异常`
+            ? `原始：${counts.originalAnomalies}，筛选后：${counts.filteredAnomalies}`
+            : `共 ${counts.originalAnomalies} 个`
           }
           loading={loading && !anomalies}
           error={null}
           empty={!loading && (!filteredAnomalies || filteredAnomalies.length === 0)}
           emptyText="暂无异常检测"
+          compact
           headerActions={
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>最低评分:</span>
+              <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>最低评分:</span>
               <InputNumber
                 value={minScore}
                 onChange={(value) => setMinScore(value)}
@@ -244,12 +253,25 @@ const OIMonitoring: React.FC = () => {
                 step={1}
                 placeholder="不限"
                 size="small"
-                style={{ width: 80 }}
+                style={{ width: 60 }}
               />
             </div>
           }
         >
           <OIAnomaliesList data={filteredAnomalies} />
+        </DataSection>
+
+        {/* 成交量报警记录 */}
+        <DataSection
+          title="成交量报警"
+          subtitle="监控成交量异常"
+          loading={false}
+          error={null}
+          empty={false}
+          emptyText=""
+          compact
+        >
+          <VolumeAlertsList searchTerm={searchTerm} selectedDate={selectedDate} exactMatch={exactMatch} />
         </DataSection>
       </div>
 

@@ -9,6 +9,7 @@ import styles from './OIStatisticsTable.module.scss';
 interface OIStatisticsTableProps {
   data: OIStatistics[];
   initialDate?: Dayjs | null;
+  defaultPageSize?: number;
 }
 
 /**
@@ -18,7 +19,8 @@ interface OIStatisticsTableProps {
  */
 export const OIStatisticsTable = memo<OIStatisticsTableProps>(({
   data,
-  initialDate
+  initialDate,
+  defaultPageSize = 30
 }) => {
   const [curveModalVisible, setCurveModalVisible] = useState(false);
   const [selectedSymbol, setSelectedSymbol] = useState<string>('');
@@ -31,7 +33,7 @@ export const OIStatisticsTable = memo<OIStatisticsTableProps>(({
 
   // 分页状态
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(30);
+  const [pageSize, setPageSize] = useState(defaultPageSize);
 
   // 当数据变化时重置到第一页
   useEffect(() => {
