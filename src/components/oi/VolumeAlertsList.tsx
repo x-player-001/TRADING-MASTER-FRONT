@@ -109,7 +109,9 @@ export const VolumeAlertsList = memo<VolumeAlertsListProps>(({ searchTerm = '', 
             className={`${styles.alertItem} ${alert.direction === 'UP' ? styles.spike : styles.drop}`}
           >
             <div className={styles.alertHeader}>
-              <span className={styles.alertSymbol}>{alert.symbol}</span>
+              <span className={styles.alertSymbol}>
+                {alert.symbol}
+              </span>
               {alert.daily_alert_index && (
                 <span className={styles.alertIndex}>第{alert.daily_alert_index}次</span>
               )}

@@ -155,7 +155,9 @@ const AnomalyItem = memo<{ anomaly: OIAnomaly; isNew?: boolean }>(({ anomaly, is
     <div className={`${styles.anomalyItem} ${severityClass} ${isNew ? styles.newItem : ''}`}>
       {/* 第一行：币种 + 报警次数 + 时间段 + 时间戳 + 信号评分 */}
       <div className={styles.firstLine}>
-        <span className={styles.symbol}>{anomaly.symbol}</span>
+        <span className={styles.symbol}>
+          {anomaly.symbol}
+        </span>
         {(anomaly.daily_alert_index ?? anomaly.alert_count) !== undefined && (anomaly.daily_alert_index ?? anomaly.alert_count) !== null && (
           <span className={styles.alertCount}>
             第{anomaly.daily_alert_index ?? anomaly.alert_count}次

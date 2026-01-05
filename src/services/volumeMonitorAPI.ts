@@ -33,6 +33,20 @@ export interface VolumeMonitorConfig {
   min_volume_usdt?: number;
 }
 
+export interface PatternAlert {
+  symbol: string;
+  kline_time: number;
+  pattern_type: string;
+  current_price: number;
+  price_change_pct: number;
+  ema120: number;
+  lower_shadow_pct: number;
+  upper_shadow_pct: number;
+  is_final: boolean;
+  daily_alert_index: number;
+  created_at: string;
+}
+
 class VolumeMonitorAPIService {
   private baseUrl = '/api/volume-monitor';
 
@@ -81,6 +95,19 @@ class VolumeMonitorAPIService {
     date?: string;  // 日期参数，格式 YYYY-MM-DD
   }): Promise<VolumeAlert[]> {
     return apiGet<VolumeAlert[]>(`${this.baseUrl}/alerts`, { params });
+  }
+
+  // 查询形态报警记录
+  async getPatternAlerts(params?: {
+    symbol?: string;
+    date?: string;
+    start_time?: number;
+    end_time?: number;
+    pattern_type?: string;
+    is_final?: boolean;
+    limit?: number;
+  }): Promise<PatternAlert[]> {
+    return apiGet<PatternAlert[]>(`${this.baseUrl}/pattern-alerts`, { params });
   }
 }
 

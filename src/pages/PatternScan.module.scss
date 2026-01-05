@@ -39,6 +39,19 @@ $warning: #f59e0b;
   }
 }
 
+.scanTabs {
+  margin-bottom: 1rem;
+
+  :global(.ant-tabs-nav) {
+    margin-bottom: 0;
+  }
+
+  :global(.ant-tabs-tab) {
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+  }
+}
+
 .controlRow {
   display: flex;
   flex-wrap: wrap;
@@ -275,6 +288,23 @@ $warning: #f59e0b;
 
   @media (max-width: 768px) {
     margin-left: 0;
+  }
+}
+
+// 历史区域
+.historySection {
+  .historyTitle {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px dashed #e5e7eb;
+
+    :global(.dark) & {
+      color: #9ca3af;
+      border-color: #374151;
+    }
   }
 }
 

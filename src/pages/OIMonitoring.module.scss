@@ -451,6 +451,15 @@ $warning: #f59e0b;
   }
 }
 
+// 形态报警区域
+.patternSection {
+  margin-bottom: 1.5rem;
+
+  @media (max-width: 640px) {
+    margin-bottom: 1rem;
+  }
+}
+
 .card {
   background: white;
   border-radius: 0.5rem;

@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useState } from 'react';
 import styles from './DataSection.module.scss';
 
 interface DataSectionProps {
@@ -13,6 +13,10 @@ interface DataSectionProps {
   children?: ReactNode;
   className?: string;
   compact?: boolean;
+  /** 是否可折叠 */
+  collapsible?: boolean;
+  /** 默认是否折叠 */
+  defaultCollapsed?: boolean;
 }
 
 /**
@@ -30,8 +34,11 @@ export const DataSection: React.FC<DataSectionProps> = ({
   headerActions,
   children,
   className = '',
-  compact = false
+  compact = false,
+  collapsible = false,
+  defaultCollapsed = false
 }) => {
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   const renderContent = () => {
     // 错误状态
     if (error) {
@@ -69,17 +76,31 @@ export const DataSection: React.FC<DataSectionProps> = ({
     return children;
   };
 
+  const handleToggleCollapse = () => {
+    if (collapsible) {
+      setIsCollapsed(!isCollapsed);
+    }
+  };
+
   return (
-    <div className={`${styles.dataSection} ${compact ? styles.compact : ''} ${className}`}>
+    <div className={`${styles.dataSection} ${compact ? styles.compact : ''} ${isCollapsed ? styles.collapsed : ''} ${className}`}>
       {/* 标题区域 */}
       {(title || headerActions) && (
-        <div className={`${styles.header} ${compact ? styles.headerCompact : ''}`}>
+        <div
+          className={`${styles.header} ${compact ? styles.headerCompact : ''} ${collapsible ? styles.headerClickable : ''}`}
+          onClick={collapsible ? handleToggleCollapse : undefined}
+        >
           <div className={`${styles.titleArea} ${compact ? styles.titleAreaCompact : ''}`}>
+            {collapsible && (
+              <span className={`${styles.collapseIcon} ${isCollapsed ? styles.collapseIconCollapsed : ''}`}>
+                ▼
+              </span>
+            )}
             {title && <h2 className={`${styles.title} ${compact ? styles.titleCompact : ''}`}>{title}</h2>}
             {subtitle && <span className={`${compact ? styles.subtitleCompact : styles.subtitle}`}>{compact ? ` · ${subtitle}` : subtitle}</span>}
           </div>
           {headerActions && (
-            <div className={styles.actions}>
+            <div className={styles.actions} onClick={(e) => e.stopPropagation()}>
               {headerActions}
             </div>
           )}
@@ -87,8 +108,8 @@ export const DataSection: React.FC<DataSectionProps> = ({
       )}
 
       {/* 内容区域 */}
-      <div className={styles.content}>
-        {renderContent()}
+      <div className={`${styles.content} ${isCollapsed ? styles.contentCollapsed : ''}`}>
+        {!isCollapsed && renderContent()}
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import { TopProgressBar, DataSection, CoolRefreshButton } from '../components/ui
 import { OIStatisticsTable } from '../components/oi/OIStatisticsTable';
 import { OIAnomaliesList } from '../components/oi/OIAnomaliesList';
 import { VolumeAlertsList } from '../components/oi/VolumeAlertsList';
+import { PatternAlertsList } from '../components/oi/PatternAlertsList';
 import { useOIMonitoring } from '../hooks/useOIMonitoring';
 import { useOIFilters } from '../hooks/useOIFilters';
 import { useTopProgress } from '../hooks/useTopProgress';
@@ -210,7 +211,7 @@ const OIMonitoring: React.FC = () => {
         </div>
       </div>
 
-      {/* OI统计数据 - 单独一行，紧凑显示 */}
+      {/* OI统计数据 - 单独一行，紧凑显示，可折叠 */}
       <div className={styles.statisticsSection}>
         <DataSection
           title="OI统计数据"
@@ -223,8 +224,25 @@ const OIMonitoring: React.FC = () => {
           empty={!loading && (!filteredStatistics || filteredStatistics.length === 0)}
           emptyText="暂无统计数据"
           compact
+          collapsible
+          defaultCollapsed
         >
           <OIStatisticsTable data={filteredStatistics} initialDate={selectedDate} defaultPageSize={5} />
+        </DataSection>
+      </div>
+
+      {/* 形态报警 - 单独一行 */}
+      <div className={styles.patternSection}>
+        <DataSection
+          title="形态报警"
+          subtitle="监控锤子线等K线形态信号"
+          loading={false}
+          error={null}
+          empty={false}
+          emptyText=""
+          compact
+        >
+          <PatternAlertsList searchTerm={searchTerm} selectedDate={selectedDate} exactMatch={exactMatch} />
         </DataSection>
       </div>
 
