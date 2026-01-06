@@ -16,7 +16,7 @@ const INTERVALS = [
   { value: '4h', label: '4小时' },
 ];
 
-type ScanType = 'pullback' | 'consolidation' | 'double-bottom';
+type ScanType = 'pullback' | 'consolidation' | 'double-bottom' | 'surge-w-bottom';
 
 const PatternScan: React.FC<PatternScanProps> = () => {
   // 扫描类型
@@ -44,6 +44,13 @@ const PatternScan: React.FC<PatternScanProps> = () => {
   const [doubleBottomLookback, setDoubleBottomLookback] = useState(100);
   const [minBarsBetween, setMinBarsBetween] = useState(10);
   const [bottomTolerancePct, setBottomTolerancePct] = useState(2);
+
+  // 上涨后W底参数
+  const [surgeWBottomInterval, setSurgeWBottomInterval] = useState('1h');
+  const [surgeWBottomLookback, setSurgeWBottomLookback] = useState(100);
+  const [surgeWBottomMinSurgePct, setSurgeWBottomMinSurgePct] = useState(20);
+  const [surgeWBottomMaxRetracePct, setSurgeWBottomMaxRetracePct] = useState(50);
+  const [maxDistanceToBottomPct, setMaxDistanceToBottomPct] = useState(5);
 
   // 筛选
   const [filterSymbol, setFilterSymbol] = useState('');
@@ -102,6 +109,15 @@ const PatternScan: React.FC<PatternScanProps> = () => {
             bottom_tolerance_pct: bottomTolerancePct,
           });
           break;
+        case 'surge-w-bottom':
+          data = await patternScanAPI.scanSurgeWBottom({
+            interval: surgeWBottomInterval,
+            lookback_bars: surgeWBottomLookback,
+            min_surge_pct: surgeWBottomMinSurgePct,
+            max_retrace_pct: surgeWBottomMaxRetracePct,
+            max_distance_to_bottom_pct: maxDistanceToBottomPct,
+          });
+          break;
       }
       // 确保data是数组
       const resultArray = Array.isArray(data) ? data : [];
@@ -129,6 +145,7 @@ const PatternScan: React.FC<PatternScanProps> = () => {
       case 'pullback': return '回调扫描';
       case 'consolidation': return '横盘震荡';
       case 'double-bottom': return '双底形态';
+      case 'surge-w-bottom': return '上涨后W底';
     }
   };
 
@@ -265,12 +282,68 @@ const PatternScan: React.FC<PatternScanProps> = () => {
     </>
   );
 
+  // 渲染上涨后W底参数
+  const renderSurgeWBottomParams = () => (
+    <>
+      <div className={styles.controlItem}>
+        <label className={styles.controlLabel}>周期</label>
+        <Select
+          value={surgeWBottomInterval}
+          onChange={setSurgeWBottomInterval}
+          options={INTERVALS}
+          style={{ width: 100 }}
+        />
+      </div>
+      <div className={styles.controlItem}>
+        <label className={styles.controlLabel}>回溯K线数</label>
+        <InputNumber
+          min={50}
+          max={500}
+          value={surgeWBottomLookback}
+          onChange={v => setSurgeWBottomLookback(v || 100)}
+          style={{ width: 80 }}
+        />
+      </div>
+      <div className={styles.controlItem}>
+        <label className={styles.controlLabel}>最小上涨幅度(%)</label>
+        <InputNumber
+          min={5}
+          max={200}
+          value={surgeWBottomMinSurgePct}
+          onChange={v => setSurgeWBottomMinSurgePct(v || 20)}
+          style={{ width: 80 }}
+        />
+      </div>
+      <div className={styles.controlItem}>
+        <label className={styles.controlLabel}>最大回调幅度(%)</label>
+        <InputNumber
+          min={10}
+          max={80}
+          value={surgeWBottomMaxRetracePct}
+          onChange={v => setSurgeWBottomMaxRetracePct(v || 50)}
+          style={{ width: 80 }}
+        />
+      </div>
+      <div className={styles.controlItem}>
+        <label className={styles.controlLabel}>距W底最大距离(%)</label>
+        <InputNumber
+          min={1}
+          max={20}
+          value={maxDistanceToBottomPct}
+          onChange={v => setMaxDistanceToBottomPct(v || 5)}
+          style={{ width: 80 }}
+        />
+      </div>
+    </>
+  );
+
   // 渲染参数面板
   const renderParams = () => {
     switch (scanType) {
       case 'pullback': return renderPullbackParams();
       case 'consolidation': return renderConsolidationParams();
       case 'double-bottom': return renderDoubleBottomParams();
+      case 'surge-w-bottom': return renderSurgeWBottomParams();
     }
   };
 
@@ -378,6 +451,7 @@ const PatternScan: React.FC<PatternScanProps> = () => {
     { key: 'pullback', label: '回调扫描' },
     { key: 'consolidation', label: '横盘震荡' },
     { key: 'double-bottom', label: '双底形态' },
+    { key: 'surge-w-bottom', label: '上涨后W底' },
   ];
 
   return (

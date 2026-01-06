@@ -65,6 +65,15 @@ export interface DoubleBottomScanParams {
   bottom_tolerance_pct?: number;
 }
 
+// 上涨后W底扫描参数
+export interface SurgeWBottomScanParams {
+  interval?: string;
+  lookback_bars?: number;
+  min_surge_pct?: number;
+  max_retrace_pct?: number;
+  max_distance_to_bottom_pct?: number;
+}
+
 // 扫描结果项
 export interface ScanResultItem {
   symbol: string;
@@ -193,6 +202,17 @@ class PatternScanAPIService {
   async scanDoubleBottom(params?: DoubleBottomScanParams): Promise<ScanResultItem[]> {
     const response = await apiPost<{ params: DoubleBottomScanParams; results: ScanResultItem[] } | ScanResultItem[]>(
       `${this.baseUrl}/double-bottom`, params || {}
+    );
+    if (response && typeof response === 'object' && 'results' in response) {
+      return response.results || [];
+    }
+    return Array.isArray(response) ? response : [];
+  }
+
+  // 上涨后W底扫描
+  async scanSurgeWBottom(params?: SurgeWBottomScanParams): Promise<ScanResultItem[]> {
+    const response = await apiPost<{ params: SurgeWBottomScanParams; results: ScanResultItem[] } | ScanResultItem[]>(
+      `${this.baseUrl}/surge-w-bottom`, params || {}
     );
     if (response && typeof response === 'object' && 'results' in response) {
       return response.results || [];
