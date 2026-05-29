@@ -19,6 +19,7 @@ import QuantSignalMonitor from './quantitative/pages/SignalMonitor';
 import SignalMonitor from './pages/SignalMonitor';
 import VolumeMonitor from './pages/VolumeMonitor';
 import PatternScan from './pages/PatternScan';
+import TrendFollow from './pages/TrendFollow';
 // 链上数据模块
 import PotentialTokens from './pages/PotentialTokens';
 import MonitorTokens from './pages/MonitorTokens';
@@ -103,6 +104,8 @@ function App() {
         setCurrentPage('volume-monitor');
       } else if (hash === 'pattern-scan') {
         setCurrentPage('pattern-scan');
+      } else if (hash === 'trend-follow') {
+        setCurrentPage('trend-follow');
       } else if (hash === 'potential-tokens') {
         setCurrentPage('potential-tokens');
       } else if (hash === 'monitor-tokens') {
@@ -195,6 +198,8 @@ function App() {
         return <VolumeMonitor isSidebarCollapsed={isSidebarCollapsed} />;
       case 'pattern-scan':
         return <PatternScan isSidebarCollapsed={isSidebarCollapsed} />;
+      case 'trend-follow':
+        return <TrendFollow isSidebarCollapsed={isSidebarCollapsed} />;
       // 链上数据模块页面
       case 'potential-tokens':
         return <PotentialTokens isSidebarCollapsed={isSidebarCollapsed} />;

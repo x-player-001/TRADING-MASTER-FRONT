@@ -65,6 +65,16 @@ export interface DoubleBottomScanParams {
   bottom_tolerance_pct?: number;
 }
 
+// 回调V2扫描参数
+export interface PullbackV2ScanParams {
+  interval?: string;
+  lookback_bars?: number;
+  min_surge_pct?: number;
+  max_retrace_pct?: number;
+  max_bars_from_high?: number;
+  max_interim_retrace_pct?: number;
+}
+
 // 上涨后W底扫描参数
 export interface SurgeWBottomScanParams {
   interval?: string;
@@ -202,6 +212,17 @@ class PatternScanAPIService {
   async scanDoubleBottom(params?: DoubleBottomScanParams): Promise<ScanResultItem[]> {
     const response = await apiPost<{ params: DoubleBottomScanParams; results: ScanResultItem[] } | ScanResultItem[]>(
       `${this.baseUrl}/double-bottom`, params || {}
+    );
+    if (response && typeof response === 'object' && 'results' in response) {
+      return response.results || [];
+    }
+    return Array.isArray(response) ? response : [];
+  }
+
+  // 回调V2扫描
+  async scanPullbackV2(params?: PullbackV2ScanParams): Promise<ScanResultItem[]> {
+    const response = await apiPost<{ params: PullbackV2ScanParams; results: ScanResultItem[] } | ScanResultItem[]>(
+      `${this.baseUrl}/pullback-v2`, params || {}
     );
     if (response && typeof response === 'object' && 'results' in response) {
       return response.results || [];

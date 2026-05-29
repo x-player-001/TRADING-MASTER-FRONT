@@ -16,7 +16,7 @@ const INTERVALS = [
   { value: '4h', label: '4小时' },
 ];
 
-type ScanType = 'pullback' | 'consolidation' | 'double-bottom' | 'surge-w-bottom';
+type ScanType = 'pullback' | 'pullback-v2' | 'consolidation' | 'double-bottom' | 'surge-w-bottom';
 
 const PatternScan: React.FC<PatternScanProps> = () => {
   // 扫描类型
@@ -44,6 +44,14 @@ const PatternScan: React.FC<PatternScanProps> = () => {
   const [doubleBottomLookback, setDoubleBottomLookback] = useState(100);
   const [minBarsBetween, setMinBarsBetween] = useState(10);
   const [bottomTolerancePct, setBottomTolerancePct] = useState(2);
+
+  // 回调V2参数
+  const [pullbackV2Interval, setPullbackV2Interval] = useState('1h');
+  const [pullbackV2Lookback, setPullbackV2Lookback] = useState(150);
+  const [pullbackV2MinSurgePct, setPullbackV2MinSurgePct] = useState(20);
+  const [pullbackV2MaxRetracePct, setPullbackV2MaxRetracePct] = useState(50);
+  const [pullbackV2MaxBarsFromHigh, setPullbackV2MaxBarsFromHigh] = useState(60);
+  const [pullbackV2MaxInterimRetracePct, setPullbackV2MaxInterimRetracePct] = useState(40);
 
   // 上涨后W底参数
   const [surgeWBottomInterval, setSurgeWBottomInterval] = useState('1h');
@@ -109,6 +117,16 @@ const PatternScan: React.FC<PatternScanProps> = () => {
             bottom_tolerance_pct: bottomTolerancePct,
           });
           break;
+        case 'pullback-v2':
+          data = await patternScanAPI.scanPullbackV2({
+            interval: pullbackV2Interval,
+            lookback_bars: pullbackV2Lookback,
+            min_surge_pct: pullbackV2MinSurgePct,
+            max_retrace_pct: pullbackV2MaxRetracePct,
+            max_bars_from_high: pullbackV2MaxBarsFromHigh,
+            max_interim_retrace_pct: pullbackV2MaxInterimRetracePct,
+          });
+          break;
         case 'surge-w-bottom':
           data = await patternScanAPI.scanSurgeWBottom({
             interval: surgeWBottomInterval,
@@ -143,6 +161,7 @@ const PatternScan: React.FC<PatternScanProps> = () => {
   const getScanTypeName = (type: ScanType) => {
     switch (type) {
       case 'pullback': return '回调扫描';
+      case 'pullback-v2': return '回调V2';
       case 'consolidation': return '横盘震荡';
       case 'double-bottom': return '双底形态';
       case 'surge-w-bottom': return '上涨后W底';
@@ -188,6 +207,71 @@ const PatternScan: React.FC<PatternScanProps> = () => {
           max={100}
           value={maxRetracePct}
           onChange={v => setMaxRetracePct(v || 50)}
+          style={{ width: 80 }}
+        />
+      </div>
+    </>
+  );
+
+  // 渲染回调V2参数
+  const renderPullbackV2Params = () => (
+    <>
+      <div className={styles.controlItem}>
+        <label className={styles.controlLabel}>周期</label>
+        <Select
+          value={pullbackV2Interval}
+          onChange={setPullbackV2Interval}
+          options={INTERVALS}
+          style={{ width: 100 }}
+        />
+      </div>
+      <div className={styles.controlItem}>
+        <label className={styles.controlLabel}>回溯K线数</label>
+        <InputNumber
+          min={30}
+          max={500}
+          value={pullbackV2Lookback}
+          onChange={v => setPullbackV2Lookback(v || 150)}
+          style={{ width: 80 }}
+        />
+      </div>
+      <div className={styles.controlItem}>
+        <label className={styles.controlLabel}>最小上涨幅度(%)</label>
+        <InputNumber
+          min={5}
+          max={200}
+          value={pullbackV2MinSurgePct}
+          onChange={v => setPullbackV2MinSurgePct(v || 20)}
+          style={{ width: 80 }}
+        />
+      </div>
+      <div className={styles.controlItem}>
+        <label className={styles.controlLabel}>最大回调幅度(%)</label>
+        <InputNumber
+          min={10}
+          max={100}
+          value={pullbackV2MaxRetracePct}
+          onChange={v => setPullbackV2MaxRetracePct(v || 50)}
+          style={{ width: 80 }}
+        />
+      </div>
+      <div className={styles.controlItem}>
+        <label className={styles.controlLabel}>高点距当前最多根</label>
+        <InputNumber
+          min={1}
+          max={200}
+          value={pullbackV2MaxBarsFromHigh}
+          onChange={v => setPullbackV2MaxBarsFromHigh(v || 60)}
+          style={{ width: 80 }}
+        />
+      </div>
+      <div className={styles.controlItem}>
+        <label className={styles.controlLabel}>中途回撤占涨幅(%)</label>
+        <InputNumber
+          min={5}
+          max={100}
+          value={pullbackV2MaxInterimRetracePct}
+          onChange={v => setPullbackV2MaxInterimRetracePct(v || 40)}
           style={{ width: 80 }}
         />
       </div>
@@ -341,6 +425,7 @@ const PatternScan: React.FC<PatternScanProps> = () => {
   const renderParams = () => {
     switch (scanType) {
       case 'pullback': return renderPullbackParams();
+      case 'pullback-v2': return renderPullbackV2Params();
       case 'consolidation': return renderConsolidationParams();
       case 'double-bottom': return renderDoubleBottomParams();
       case 'surge-w-bottom': return renderSurgeWBottomParams();
@@ -449,6 +534,7 @@ const PatternScan: React.FC<PatternScanProps> = () => {
 
   const tabItems = [
     { key: 'pullback', label: '回调扫描' },
+    { key: 'pullback-v2', label: '回调V2' },
     { key: 'consolidation', label: '横盘震荡' },
     { key: 'double-bottom', label: '双底形态' },
     { key: 'surge-w-bottom', label: '上涨后W底' },
