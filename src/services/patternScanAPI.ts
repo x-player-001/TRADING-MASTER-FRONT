@@ -75,6 +75,31 @@ export interface PullbackV2ScanParams {
   max_interim_retrace_pct?: number;
 }
 
+// EMA推动扫描参数
+export interface Ema20PushScanParams {
+  interval?: string;
+  ema_period?: number;
+  lookback_bars?: number;
+  min_push_count?: number;
+  support_range?: number;
+  min_push_interval?: number;
+}
+
+// EMA推动单次详情
+export interface Ema20PushDetail {
+  time: number;
+  price: number;
+  ema20: number;
+}
+
+// EMA推动扫描结果项
+export interface Ema20PushResultItem {
+  symbol: string;
+  push_count: number;
+  amplitude_pct: number;
+  pushes: Ema20PushDetail[];
+}
+
 // 上涨后W底扫描参数
 export interface SurgeWBottomScanParams {
   interval?: string;
@@ -212,6 +237,17 @@ class PatternScanAPIService {
   async scanDoubleBottom(params?: DoubleBottomScanParams): Promise<ScanResultItem[]> {
     const response = await apiPost<{ params: DoubleBottomScanParams; results: ScanResultItem[] } | ScanResultItem[]>(
       `${this.baseUrl}/double-bottom`, params || {}
+    );
+    if (response && typeof response === 'object' && 'results' in response) {
+      return response.results || [];
+    }
+    return Array.isArray(response) ? response : [];
+  }
+
+  // EMA推动扫描
+  async scanEma20Push(params?: Ema20PushScanParams): Promise<Ema20PushResultItem[]> {
+    const response = await apiPost<{ params: Ema20PushScanParams; results: Ema20PushResultItem[] } | Ema20PushResultItem[]>(
+      `${this.baseUrl}/ema20-push`, params || {}
     );
     if (response && typeof response === 'object' && 'results' in response) {
       return response.results || [];

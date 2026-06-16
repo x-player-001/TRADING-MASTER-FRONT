@@ -3,7 +3,7 @@ import { Select, InputNumber, Tag, message, Input, Switch, Tabs } from 'antd';
 import styles from './PatternScan.module.scss';
 import PageHeader from '../components/ui/PageHeader';
 import { TopProgressBar, DataSection } from '../components/ui';
-import { patternScanAPI, ScanResultItem, PatternResult } from '../services/patternScanAPI';
+import { patternScanAPI, ScanResultItem, PatternResult, Ema20PushResultItem } from '../services/patternScanAPI';
 
 interface PatternScanProps {
   isSidebarCollapsed?: boolean;
@@ -16,7 +16,7 @@ const INTERVALS = [
   { value: '4h', label: '4小时' },
 ];
 
-type ScanType = 'pullback' | 'pullback-v2' | 'consolidation' | 'double-bottom' | 'surge-w-bottom';
+type ScanType = 'pullback' | 'pullback-v2' | 'consolidation' | 'double-bottom' | 'surge-w-bottom' | 'ema20-push';
 
 const PatternScan: React.FC<PatternScanProps> = () => {
   // 扫描类型
@@ -52,6 +52,17 @@ const PatternScan: React.FC<PatternScanProps> = () => {
   const [pullbackV2MaxRetracePct, setPullbackV2MaxRetracePct] = useState(50);
   const [pullbackV2MaxBarsFromHigh, setPullbackV2MaxBarsFromHigh] = useState(60);
   const [pullbackV2MaxInterimRetracePct, setPullbackV2MaxInterimRetracePct] = useState(40);
+
+  // EMA推动扫描参数
+  const [ema20PushInterval, setEma20PushInterval] = useState('1h');
+  const [ema20PushEmaPeriod, setEma20PushEmaPeriod] = useState(20);
+  const [ema20PushLookback, setEma20PushLookback] = useState(300);
+  const [ema20PushMinPushCount, setEma20PushMinPushCount] = useState(2);
+  const [ema20PushSupportRange, setEma20PushSupportRange] = useState(0.05);
+  const [ema20PushMinInterval, setEma20PushMinInterval] = useState(3);
+
+  // EMA推动扫描结果（独立存储）
+  const [ema20PushResults, setEma20PushResults] = useState<import('../services/patternScanAPI').Ema20PushResultItem[]>([]);
 
   // 上涨后W底参数
   const [surgeWBottomInterval, setSurgeWBottomInterval] = useState('1h');
@@ -127,6 +138,22 @@ const PatternScan: React.FC<PatternScanProps> = () => {
             max_interim_retrace_pct: pullbackV2MaxInterimRetracePct,
           });
           break;
+        case 'ema20-push': {
+          const emaData = await patternScanAPI.scanEma20Push({
+            interval: ema20PushInterval,
+            ema_period: ema20PushEmaPeriod,
+            lookback_bars: ema20PushLookback,
+            min_push_count: ema20PushMinPushCount,
+            support_range: ema20PushSupportRange,
+            min_push_interval: ema20PushMinInterval,
+          });
+          const emaArray = Array.isArray(emaData) ? emaData : [];
+          setEma20PushResults(emaArray);
+          message.success(`扫描完成，发现 ${emaArray.length} 个符合条件的币种`);
+          setIsScanning(false);
+          setLoading(false);
+          return;
+        }
         case 'surge-w-bottom':
           data = await patternScanAPI.scanSurgeWBottom({
             interval: surgeWBottomInterval,
@@ -165,6 +192,7 @@ const PatternScan: React.FC<PatternScanProps> = () => {
       case 'consolidation': return '横盘震荡';
       case 'double-bottom': return '双底形态';
       case 'surge-w-bottom': return '上涨后W底';
+      case 'ema20-push': return 'EMA推动';
     }
   };
 
@@ -274,6 +302,36 @@ const PatternScan: React.FC<PatternScanProps> = () => {
           onChange={v => setPullbackV2MaxInterimRetracePct(v || 40)}
           style={{ width: 80 }}
         />
+      </div>
+    </>
+  );
+
+  // 渲染EMA推动参数
+  const renderEma20PushParams = () => (
+    <>
+      <div className={styles.controlItem}>
+        <label className={styles.controlLabel}>周期</label>
+        <Select value={ema20PushInterval} onChange={setEma20PushInterval} options={INTERVALS} style={{ width: 100 }} />
+      </div>
+      <div className={styles.controlItem}>
+        <label className={styles.controlLabel}>EMA周期</label>
+        <InputNumber min={5} max={200} value={ema20PushEmaPeriod} onChange={v => setEma20PushEmaPeriod(v || 20)} style={{ width: 70 }} />
+      </div>
+      <div className={styles.controlItem}>
+        <label className={styles.controlLabel}>回溯K线数</label>
+        <InputNumber min={50} max={1000} value={ema20PushLookback} onChange={v => setEma20PushLookback(v || 300)} style={{ width: 80 }} />
+      </div>
+      <div className={styles.controlItem}>
+        <label className={styles.controlLabel}>最小推动次数</label>
+        <InputNumber min={1} max={20} value={ema20PushMinPushCount} onChange={v => setEma20PushMinPushCount(v || 2)} style={{ width: 70 }} />
+      </div>
+      <div className={styles.controlItem}>
+        <label className={styles.controlLabel}>支撑范围</label>
+        <InputNumber min={0.01} max={0.5} step={0.01} value={ema20PushSupportRange} onChange={v => setEma20PushSupportRange(v || 0.05)} style={{ width: 80 }} />
+      </div>
+      <div className={styles.controlItem}>
+        <label className={styles.controlLabel}>最小推动间隔(根)</label>
+        <InputNumber min={1} max={50} value={ema20PushMinInterval} onChange={v => setEma20PushMinInterval(v || 3)} style={{ width: 70 }} />
       </div>
     </>
   );
@@ -429,6 +487,7 @@ const PatternScan: React.FC<PatternScanProps> = () => {
       case 'consolidation': return renderConsolidationParams();
       case 'double-bottom': return renderDoubleBottomParams();
       case 'surge-w-bottom': return renderSurgeWBottomParams();
+      case 'ema20-push': return renderEma20PushParams();
     }
   };
 
@@ -538,6 +597,7 @@ const PatternScan: React.FC<PatternScanProps> = () => {
     { key: 'consolidation', label: '横盘震荡' },
     { key: 'double-bottom', label: '双底形态' },
     { key: 'surge-w-bottom', label: '上涨后W底' },
+    { key: 'ema20-push', label: 'EMA推动' },
   ];
 
   return (
@@ -608,8 +668,85 @@ const PatternScan: React.FC<PatternScanProps> = () => {
         </div>
       )}
 
-      {/* 扫描结果 */}
-      <DataSection
+      {/* EMA推动扫描结果 */}
+      {scanType === 'ema20-push' && (
+        <DataSection
+          title="EMA推动扫描结果"
+          subtitle={`共 ${ema20PushResults.length} 个币种，按推动次数倒序`}
+          loading={loading && isScanning}
+          error={null}
+          empty={!loading && !isScanning && ema20PushResults.length === 0}
+          emptyText="点击上方按钮开始扫描"
+          compact
+        >
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #e5e7eb', background: '#f9fafb' }}>
+                  {['币种', '推动次数', '涨幅', '每次推动时间/价格'].map(h => (
+                    <th key={h} style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontSize: '0.72rem', fontWeight: 600, color: '#6b7280', whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {ema20PushResults.map((item, idx) => (
+                  <tr key={idx} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                    <td style={{ padding: '0.5rem 0.75rem', fontWeight: 700, color: '#3b82f6' }}>
+                      {item.symbol.toUpperCase().endsWith('USDT') ? item.symbol.slice(0, -4) : item.symbol}
+                    </td>
+                    <td style={{ padding: '0.5rem 0.75rem' }}>
+                      <span style={{
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        minWidth: '1.5rem', height: '1.5rem', padding: '0 0.375rem',
+                        borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 700,
+                        background: item.push_count >= 5 ? '#fee2e2' : item.push_count >= 3 ? '#fef3c7' : '#eff6ff',
+                        color: item.push_count >= 5 ? '#dc2626' : item.push_count >= 3 ? '#d97706' : '#3b82f6',
+                      }}>{item.push_count}</span>
+                    </td>
+                    <td style={{ padding: '0.5rem 0.75rem', color: '#10b981', fontWeight: 500 }}>
+                      {item.amplitude_pct != null ? `${item.amplitude_pct.toFixed(2)}%` : '—'}
+                    </td>
+                    <td style={{ padding: '0.5rem 0.75rem' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+                        {(item.pushes || []).map((p, pi) => (
+                          <span key={pi} style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+                            padding: '0.15rem 0.5rem', background: '#f3f4f6',
+                            borderRadius: '0.375rem', fontSize: '0.72rem',
+                          }}>
+                            <span style={{ color: '#111827', fontWeight: 500 }}>
+                              {p.price != null
+                                ? p.price >= 1000
+                                  ? p.price.toLocaleString('en-US', { maximumFractionDigits: 2 })
+                                  : p.price >= 1 ? p.price.toFixed(4) : p.price.toFixed(6)
+                                : '—'}
+                            </span>
+                            <span style={{ color: '#f59e0b' }}>
+                              {p.ema20 != null
+                                ? `EMA ${p.ema20 >= 1000
+                                  ? p.ema20.toLocaleString('en-US', { maximumFractionDigits: 2 })
+                                  : p.ema20 >= 1 ? p.ema20.toFixed(4) : p.ema20.toFixed(6)}`
+                                : ''}
+                            </span>
+                            {p.time != null && (
+                              <span style={{ color: '#9ca3af', fontSize: '0.68rem' }}>
+                                {new Date(p.time).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            )}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </DataSection>
+      )}
+
+      {/* 其他扫描结果 */}
+      {scanType !== 'ema20-push' && <DataSection
         title="扫描结果"
         subtitle={`${getScanTypeName(scanType)}结果`}
         loading={loading && results.length === 0 && historyResults.length === 0}
@@ -672,7 +809,7 @@ const PatternScan: React.FC<PatternScanProps> = () => {
             </div>
           </div>
         ) : null}
-      </DataSection>
+      </DataSection>}
     </div>
   );
 };

@@ -1,0 +1,425 @@
+@use 'sass:color';
+
+$primary: #3b82f6;
+$success: #10b981;
+$danger: #ef4444;
+$warning: #f59e0b;
+
+.astockPicks {
+  position: relative;
+  padding: 2rem;
+  min-height: 100%;
+  background: #f9fafb;
+
+  :global(.dark) & {
+    background: #111827;
+  }
+
+  @media (max-width: 1024px) { padding: 1rem; }
+  @media (max-width: 640px)  { padding: 0.75rem; }
+}
+
+// 缩小标题字号 + 标题与操作区竖直居中 + 压缩标题区内边距（仅A股页面）
+.section {
+  :global(h2) {
+    font-size: 0.95rem !important;
+  }
+
+  // DataSection 的 header 默认 align-items: flex-start + 较大 padding，
+  // 这里改为竖直居中并压缩内边距，折叠后更紧凑
+  > div:first-child {
+    align-items: center !important;
+    padding: 0.875rem 1rem 0 !important;
+    margin-bottom: 0.75rem !important;
+  }
+}
+
+// ── 顶部操作区 ─────────────────────────────────────────
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+// ── 市场状态条 ─────────────────────────────────────────
+.marketBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(135deg, #f0f9ff 0%, #f8fafc 100%);
+  border: 1px solid #e0f2fe;
+  border-radius: 0.625rem;
+
+  :global(.dark) & {
+    background: linear-gradient(135deg, #0c1e2e 0%, #1e293b 100%);
+    border-color: #1e3a5f;
+  }
+
+  @media (max-width: 768px) {
+    gap: 1rem;
+  }
+}
+
+.marketBarWarn {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef9c3 100%);
+  border-color: #fde68a;
+
+  :global(.dark) & {
+    background: linear-gradient(135deg, #1c1a07 0%, #292410 100%);
+    border-color: #854d0e;
+  }
+}
+
+.marketItem {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.marketLabel {
+  font-size: 0.8rem;
+  color: #6b7280;
+  :global(.dark) & { color: #9ca3af; }
+}
+
+.marketValue {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+  :global(.dark) & { color: #f9fafb; }
+}
+
+.marketDecision {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+
+  @media (max-width: 768px) {
+    margin-left: 0;
+  }
+}
+
+.marketReason {
+  font-size: 0.78rem;
+  color: #92400e;
+  :global(.dark) & { color: #fbbf24; }
+}
+
+// ── 表格内通用元素 ─────────────────────────────────────
+.code {
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  font-weight: 600;
+  color: #374151;
+  :global(.dark) & { color: #d1d5db; }
+}
+
+.nameLink {
+  font-weight: 600;
+  color: $primary;
+  cursor: pointer;
+
+  &:hover { text-decoration: underline; }
+}
+
+.codeLink {
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  font-weight: 600;
+  color: $primary;
+  cursor: pointer;
+
+  &:hover { text-decoration: underline; }
+}
+
+.versionCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.dualBadge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0.14rem 0.38rem;
+  border-radius: 0.3rem;
+  color: #d97706;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  cursor: default;
+  white-space: nowrap;
+
+  :global(.dark) & {
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.08);
+    border-color: #854d0e;
+  }
+}
+
+.muted {
+  color: #9ca3af;
+  font-size: 0.82rem;
+}
+
+.reasons {
+  font-size: 0.82rem;
+  color: #6b7280;
+  :global(.dark) & { color: #9ca3af; }
+}
+
+.positive { color: $success !important; font-weight: 600; }
+.negative { color: $danger !important; font-weight: 600; }
+
+// 排名徽章
+.rankBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: #f3f4f6;
+  color: #6b7280;
+
+  :global(.dark) & { background: #374151; color: #d1d5db; }
+
+  &.rankTop {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: #fff;
+  }
+}
+
+// 评分条
+.scoreCell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.scoreBarTrack {
+  flex: 1;
+  height: 6px;
+  min-width: 50px;
+  background: #e5e7eb;
+  border-radius: 9999px;
+  overflow: hidden;
+  :global(.dark) & { background: #374151; }
+}
+
+.scoreBarFill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #3b82f6 0%, #6366f1 100%);
+}
+
+.scoreVal {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #111827;
+  min-width: 34px;
+  text-align: right;
+  :global(.dark) & { color: #f9fafb; }
+}
+
+.tagGroup {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.edge {
+  font-weight: 700;
+}
+
+// ── 参数版本卡片 ───────────────────────────────────────
+.versionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.versionCard {
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.625rem;
+  background: #fff;
+
+  :global(.dark) & {
+    background: #1f2937;
+    border-color: #374151;
+  }
+}
+
+.versionActive {
+  border-color: #86efac;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+
+  :global(.dark) & {
+    background: linear-gradient(135deg, #052e16 0%, #0f2b1a 100%);
+    border-color: #166534;
+  }
+}
+
+.versionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.versionName {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111827;
+  :global(.dark) & { color: #f9fafb; }
+}
+
+.versionDesc {
+  font-size: 0.82rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+  :global(.dark) & { color: #9ca3af; }
+}
+
+.versionTime {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+// ── 个股详情抽屉 ───────────────────────────────────────
+.detail {
+  display: flex;
+  flex-direction: column;
+}
+
+.detailMeta {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.detailSectionTitle {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 1.25rem 0 0.75rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid #e5e7eb;
+
+  :global(.dark) & {
+    color: #f9fafb;
+    border-color: #374151;
+  }
+
+  &:first-child { margin-top: 0; }
+}
+
+.rejectBox {
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
+  color: #b91c1c;
+  background: #fee2e2;
+  border-radius: 0.5rem;
+  :global(.dark) & { background: #7f1d1d; color: #fca5a5; }
+}
+
+.factorList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.factorRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.factorLabel {
+  font-size: 0.82rem;
+  color: #374151;
+  width: 72px;
+  flex-shrink: 0;
+  :global(.dark) & { color: #d1d5db; }
+}
+
+.factorBarTrack {
+  flex: 1;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 9999px;
+  overflow: hidden;
+  :global(.dark) & { background: #374151; }
+}
+
+.factorBarFill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+}
+
+.factorVal {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #111827;
+  width: 36px;
+  text-align: right;
+  :global(.dark) & { color: #f9fafb; }
+}
+
+.factorTotal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed #e5e7eb;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #111827;
+  :global(.dark) & { color: #f9fafb; border-color: #374151; }
+}
+
+.factorTotalVal {
+  color: $primary;
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.historyRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  font-size: 0.82rem;
+  :global(.dark) & { background: #1f2937; }
+}
+
+.historyDate {
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  color: #374151;
+  :global(.dark) & { color: #d1d5db; }
+}
+
+.historyRank {
+  font-weight: 700;
+  color: $primary;
+}
+
+.historyScore {
+  color: #6b7280;
+  margin-left: auto;
+  :global(.dark) & { color: #9ca3af; }
+}

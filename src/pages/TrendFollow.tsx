@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Input, Select, Popconfirm, message } from 'antd';
+import { Input, Select, message } from 'antd';
+import KlineModal from '../components/trend/KlineModal';
+import SignalStats from '../components/trend/SignalStats';
 import styles from './TrendFollow.module.scss';
 import PageHeader from '../components/ui/PageHeader';
 import { TopProgressBar, DataSection, CoolRefreshButton } from '../components/ui';
@@ -65,7 +67,7 @@ const AlertTooltip: React.FC<{ alert: TrendAlert; formatPrice: (p: number) => st
   </div>
 );
 
-const TrendFollow: React.FC<TrendFollowProps> = () => {
+const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false }) => {
   const [contexts, setContexts] = useState<WatchContext[]>([]);
   // alertsMap: symbol+timeframe -> 最近一条报警
   const [alertsMap, setAlertsMap] = useState<Map<string, TrendAlert>>(new Map());
@@ -79,7 +81,16 @@ const TrendFollow: React.FC<TrendFollowProps> = () => {
 
   // tooltip 状态
   const [tooltipCtxId, setTooltipCtxId] = useState<number | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const tooltipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+
+  // 状态列 tooltip
+  const [stateTooltipId, setStateTooltipId] = useState<number | null>(null);
+  const stateTooltipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // K线弹窗
+  const [klineModalCtx, setKlineModalCtx] = useState<WatchContext | null>(null);
 
   // 备注展开行
   const [remarkOpenId, setRemarkOpenId] = useState<number | null>(null);
@@ -211,8 +222,10 @@ const TrendFollow: React.FC<TrendFollowProps> = () => {
     !searchTerm || c.symbol.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleMouseEnter = (id: number) => {
+  const handleMouseEnter = (id: number, e: React.MouseEvent<HTMLDivElement>) => {
     if (tooltipTimer.current) clearTimeout(tooltipTimer.current);
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltipPos({ x: rect.left, y: rect.top + rect.height / 2 });
     setTooltipCtxId(id);
   };
 
@@ -284,6 +297,11 @@ const TrendFollow: React.FC<TrendFollowProps> = () => {
         </div>
       </div>
 
+      {/* 信号统计（默认折叠） */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <SignalStats />
+      </div>
+
       {/* 公告栏 - 仅在观察中状态下显示1h内报警滚动播报 */}
       {(!stateFilter || stateFilter === 'WATCHING') && (() => {
         const oneHourAgo = Date.now() - 60 * 60 * 1000;
@@ -327,6 +345,43 @@ const TrendFollow: React.FC<TrendFollowProps> = () => {
         );
       })()}
 
+      {/* 突破滚动条 */}
+      {(() => {
+        const halfHourAgo = Date.now() - 30 * 60 * 1000;
+        const recentBreakthroughs = contexts.filter(c => {
+          if (c.state !== 'BREAKTHROUGH') return false;
+          const ts = c.updated_at.endsWith('Z') ? c.updated_at.slice(0, -1) : c.updated_at;
+          return new Date(ts).getTime() > halfHourAgo;
+        });
+        if (recentBreakthroughs.length === 0) return null;
+        const shouldScroll = recentBreakthroughs.length > 2;
+        const items = shouldScroll ? [...recentBreakthroughs, ...recentBreakthroughs] : recentBreakthroughs;
+        return (
+          <div className={`${styles.announcementBar} ${styles.breakthroughBar}`}>
+            <span className={styles.announcementIcon}>🚀</span>
+            <div className={styles.announcementTrack}>
+              <div
+                className={styles.announcementInner}
+                style={shouldScroll ? { animationDuration: `${recentBreakthroughs.length * 12}s` } : { animation: 'none' }}
+              >
+                {items.map((c, i) => (
+                  <span key={i} className={styles.announcementItem}>
+                    <span className={styles.annBreakthrough}>突破</span>
+                    <span className={styles.annSymbol}>{stripUsdt(c.symbol)}</span>
+                    <span className={styles.annTf}>{c.timeframe}</span>
+                    <span className={styles.annDesc}>
+                      波段+{c.wave_amplitude_pct.toFixed(2)}%
+                      {` · ${alertElapsedMins(c.updated_at)}`}
+                    </span>
+                    <span className={styles.annSep}>·</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* 观察区表格 */}
       <DataSection
         title="观察区状态"
@@ -343,7 +398,6 @@ const TrendFollow: React.FC<TrendFollowProps> = () => {
               <tr>
                 <th>币种</th>
                 <th>24h量</th>
-                <th>周期</th>
                 <th>状态</th>
                 <th>进入价</th>
                 <th>进入时长</th>
@@ -364,42 +418,61 @@ const TrendFollow: React.FC<TrendFollowProps> = () => {
                   <React.Fragment key={ctx.id}>
                   <tr>
                     <td>
-                      <Popconfirm
-                        title={`删除 ${stripUsdt(ctx.symbol)} (${ctx.timeframe}) 观察区？`}
-                        onConfirm={() => handleDelete(ctx.id)}
-                        okText="删除"
-                        cancelText="取消"
-                        okButtonProps={{ danger: true }}
+                      <span
+                        className={styles.symbolCell}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => setKlineModalCtx(ctx)}
                       >
-                        <span className={styles.symbolCell} style={{ cursor: 'pointer' }}>
-                          {stripUsdt(ctx.symbol)}
-                        </span>
-                      </Popconfirm>
+                        {stripUsdt(ctx.symbol)}
+                      </span>
+                      <span className={styles.timeframeBadge} style={{ marginLeft: '0.375rem' }}>{ctx.timeframe}</span>
                     </td>
                     <td className={styles.numCell}>
                       {(() => { const v = formatVolume(ctx.quote_volume_24h); return <span className={v.highlight ? styles.volumeHigh : undefined}>{v.text}</span>; })()}
                     </td>
                     <td>
-                      <span className={styles.timeframeBadge}>{ctx.timeframe}</span>
-                    </td>
-                    <td>
-                      <span
-                        className={`${styles.stateBadge} ${styles.stateBadgeClickable} ${
-                          ctx.state === 'WATCHING' ? styles.watching :
-                          ctx.state === 'ALERTED' ? styles.alerted :
-                          ctx.state === 'DELETED' ? styles.deleted :
-                        ctx.state === 'BREAKTHROUGH' ? styles.breakthrough : styles.abandoned
-                        }`}
-                        onClick={() => handleRemarkOpen(ctx)}
-                      >
-                        {STATE_LABELS[ctx.state]}
-                        {ctx.remark && <span className={styles.remarkDot} />}
-                      </span>
+                      <div style={{ position: 'relative', display: 'inline-block' }}>
+                        <span
+                          className={`${styles.stateBadge} ${styles.stateBadgeClickable} ${
+                            ctx.state === 'WATCHING' ? styles.watching :
+                            ctx.state === 'ALERTED' ? styles.alerted :
+                            ctx.state === 'DELETED' ? styles.deleted :
+                            ctx.state === 'BREAKTHROUGH' ? styles.breakthrough : styles.abandoned
+                          }`}
+                          onClick={() => handleRemarkOpen(ctx)}
+                          onMouseEnter={() => {
+                            if (ctx.state !== 'BREAKTHROUGH') return;
+                            if (stateTooltipTimer.current) clearTimeout(stateTooltipTimer.current);
+                            setStateTooltipId(ctx.id);
+                          }}
+                          onMouseLeave={() => {
+                            stateTooltipTimer.current = setTimeout(() => setStateTooltipId(null), 150);
+                          }}
+                        >
+                          {STATE_LABELS[ctx.state]}
+                          {ctx.remark && <span className={styles.remarkDot} />}
+                        </span>
+                        {stateTooltipId === ctx.id && ctx.state === 'BREAKTHROUGH' && (
+                          <div className={styles.tooltip}>
+                            <div className={styles.tooltipContent}>
+                              <div className={styles.tooltipRow}>
+                                <span className={styles.tooltipLabel}>突破时间</span>
+                                <span className={styles.tooltipValue}>{formatTimeStr(ctx.updated_at)}</span>
+                              </div>
+                              <div className={styles.tooltipRow}>
+                                <span className={styles.tooltipLabel}>已突破</span>
+                                <span className={styles.tooltipValue}>{calcElapsed(new Date(ctx.updated_at.endsWith('Z') ? ctx.updated_at.slice(0, -1) : ctx.updated_at).getTime())}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className={styles.numCell}>{formatPrice(ctx.wave_end_price)}</td>
                     <td className={styles.numCell}>
-                      <span className={styles.elapsedCell} data-time={formatTime(ctx.watch_start_time)}>
+                      <span className={styles.elapsedCell}>
                         {calcElapsed(ctx.watch_start_time)}
+                        <span className={styles.elapsedTime}>{formatTime(ctx.watch_start_time)}</span>
                       </span>
                     </td>
                     <td className={styles.numCell}>{ctx.current_price ? formatPrice(ctx.current_price) : '—'}</td>
@@ -411,11 +484,9 @@ const TrendFollow: React.FC<TrendFollowProps> = () => {
                       ) : '—'}
                     </td>
                     <td className={styles.numCell}>
-                      <span
-                        className={styles.waveBarCell}
-                        data-wave={`+${ctx.wave_amplitude_pct.toFixed(2)}%  结束 ${formatTime(ctx.wave_end_time)}`}
-                      >
+                      <span className={styles.waveBarCell}>
                         {ctx.wave_bar_count}
+                        <span className={styles.waveAmp}>{ctx.wave_amplitude_pct.toFixed(2)}%</span>
                       </span>
                     </td>
                     <td className={styles.numCell}>{ctx.pullback_bar_count}</td>
@@ -423,28 +494,19 @@ const TrendFollow: React.FC<TrendFollowProps> = () => {
                       {ctx.last_alert_level > 0 ? (
                         <div
                           className={styles.alertCell}
-                          onMouseEnter={() => handleMouseEnter(ctx.id)}
+                          onMouseEnter={(e) => handleMouseEnter(ctx.id, e)}
                           onMouseLeave={handleMouseLeave}
                         >
                           <span className={styles.levelBadge}>{alertLevelLabel(ctx.last_alert_level)}</span>
                           {latestAlert && (
                             <span className={styles.alertAgo}>{alertElapsedMins(latestAlert.created_at)}</span>
                           )}
-                          {showTooltip && (
-                            <div className={styles.tooltip}>
-                              <AlertTooltip
-                                alert={latestAlert!}
-                                formatPrice={formatPrice}
-                                formatTimeStr={formatTimeStr}
-                              />
-                            </div>
-                          )}
                         </div>
                       ) : '—'}
                     </td>
                   </tr>
                   <tr className={styles.remarkRow}>
-                    <td colSpan={11}>
+                    <td colSpan={10}>
                       <div className={`${styles.remarkSlider} ${remarkOpenId === ctx.id ? styles.open : ''}`}>
                         <div className={styles.remarkSliderInner}>
                           <div className={styles.remarkPanel}>
@@ -484,6 +546,44 @@ const TrendFollow: React.FC<TrendFollowProps> = () => {
           </table>
         </div>
       </DataSection>
+
+      {/* 报警级别 tooltip - fixed 定位避免撑开表格 */}
+      {tooltipCtxId !== null && (() => {
+        const ctx = contexts.find(c => c.id === tooltipCtxId);
+        const alertKey = ctx ? `${ctx.symbol}:${ctx.timeframe}` : '';
+        const alert = alertsMap.get(alertKey);
+        if (!ctx || !alert) return null;
+        const TOOLTIP_WIDTH = 200;
+        const TOOLTIP_HEIGHT = 160;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        let x = tooltipPos.x - TOOLTIP_WIDTH - 8;
+        if (x < 8) x = tooltipPos.x + 8;
+        let y = tooltipPos.y - TOOLTIP_HEIGHT / 2;
+        if (y < 8) y = 8;
+        if (y + TOOLTIP_HEIGHT > vh - 8) y = vh - TOOLTIP_HEIGHT - 8;
+        return (
+          <div
+            ref={tooltipRef}
+            className={styles.tooltipFixed}
+            style={{ left: x, top: y }}
+            onMouseEnter={() => { if (tooltipTimer.current) clearTimeout(tooltipTimer.current); }}
+            onMouseLeave={handleMouseLeave}
+          >
+            <AlertTooltip alert={alert} formatPrice={formatPrice} formatTimeStr={formatTimeStr} />
+          </div>
+        );
+      })()}
+
+      {klineModalCtx && (
+        <KlineModal
+          ctx={klineModalCtx}
+          onClose={() => setKlineModalCtx(null)}
+          onDelete={handleDelete}
+          isDark={document.documentElement.classList.contains('dark')}
+          sidebarCollapsed={isSidebarCollapsed}
+        />
+      )}
     </div>
   );
 };

@@ -91,12 +91,16 @@ export const DataSection: React.FC<DataSectionProps> = ({
           onClick={collapsible ? handleToggleCollapse : undefined}
         >
           <div className={`${styles.titleArea} ${compact ? styles.titleAreaCompact : ''}`}>
-            {collapsible && (
-              <span className={`${styles.collapseIcon} ${isCollapsed ? styles.collapseIconCollapsed : ''}`}>
-                ▼
-              </span>
+            {title && (
+              <h2 className={`${styles.title} ${compact ? styles.titleCompact : ''}`}>
+                {collapsible && (
+                  <span className={`${styles.collapseIcon} ${isCollapsed ? styles.collapseIconCollapsed : ''}`}>
+                    ▼
+                  </span>
+                )}
+                {title}
+              </h2>
             )}
-            {title && <h2 className={`${styles.title} ${compact ? styles.titleCompact : ''}`}>{title}</h2>}
             {subtitle && <span className={`${compact ? styles.subtitleCompact : styles.subtitle}`}>{compact ? ` · ${subtitle}` : subtitle}</span>}
           </div>
           {headerActions && (

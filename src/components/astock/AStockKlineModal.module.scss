@@ -1,0 +1,220 @@
+$danger: #ef4444;
+$primary: #3b82f6;
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal {
+  background: white;
+  border-radius: 0.875rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+
+  :global(.dark) & {
+    background: #1e2433;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid #e5e7eb;
+
+  :global(.dark) & { border-bottom-color: #374151; }
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.symbol {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+  :global(.dark) & { color: #f9fafb; }
+}
+
+.code {
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  font-size: 0.8rem;
+  padding: 0.15rem 0.5rem;
+  background: #e0f2fe;
+  color: #0369a1;
+  border-radius: 9999px;
+  font-weight: 500;
+  :global(.dark) & { background: #0c4a6e; color: #7dd3fc; }
+}
+
+.subtitle {
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.closeBtn {
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: #f3f4f6;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: #6b7280;
+  transition: all 0.15s;
+
+  &:hover { background: #e5e7eb; color: #111827; }
+
+  :global(.dark) & {
+    background: #374151;
+    color: #9ca3af;
+    &:hover { background: #4b5563; color: #f9fafb; }
+  }
+}
+
+.body {
+  display: flex;
+
+  @media (max-width: 900px) {
+    flex-direction: column;
+  }
+}
+
+.chartWrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 500px;
+}
+
+.loading,
+.errorMsg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  color: #9ca3af;
+}
+
+.errorMsg { color: $danger; }
+
+// ── 右侧选中记录面板 ───────────────────────────────────
+.marksPanel {
+  width: 260px;
+  flex-shrink: 0;
+  border-left: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+
+  :global(.dark) & { border-left-color: #374151; }
+
+  @media (max-width: 900px) {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid #e5e7eb;
+    max-height: 220px;
+    :global(.dark) & { border-top-color: #374151; }
+  }
+}
+
+.marksTitle {
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #111827;
+  border-bottom: 1px solid #e5e7eb;
+  :global(.dark) & { color: #f9fafb; border-bottom-color: #374151; }
+}
+
+.marksList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 9999px;
+    :global(.dark) & { background: #4b5563; }
+  }
+}
+
+.markItem {
+  padding: 0.5rem 0.625rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: #f9fafb; :global(.dark) & { background: #1f2937; } }
+}
+
+.markActive {
+  background: #eff6ff;
+  :global(.dark) & { background: #1e293b; }
+}
+
+.markHead {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.markDate {
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  font-size: 0.8rem;
+  color: #374151;
+  :global(.dark) & { color: #d1d5db; }
+}
+
+.markRank {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: $danger;
+}
+
+.markScore {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-left: auto;
+  :global(.dark) & { color: #9ca3af; }
+}
+
+.markReasons {
+  margin-top: 0.4rem;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: #6b7280;
+  :global(.dark) & { color: #9ca3af; }
+}

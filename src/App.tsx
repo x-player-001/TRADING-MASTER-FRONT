@@ -20,6 +20,9 @@ import SignalMonitor from './pages/SignalMonitor';
 import VolumeMonitor from './pages/VolumeMonitor';
 import PatternScan from './pages/PatternScan';
 import TrendFollow from './pages/TrendFollow';
+import Ema20Push from './pages/Ema20Push';
+import TradeJournal from './pages/TradeJournal';
+import AStockPicks from './pages/AStockPicks';
 // 链上数据模块
 import PotentialTokens from './pages/PotentialTokens';
 import MonitorTokens from './pages/MonitorTokens';
@@ -106,6 +109,12 @@ function App() {
         setCurrentPage('pattern-scan');
       } else if (hash === 'trend-follow') {
         setCurrentPage('trend-follow');
+      } else if (hash === 'ema20-push') {
+        setCurrentPage('ema20-push');
+      } else if (hash === 'trade-journal') {
+        setCurrentPage('trade-journal');
+      } else if (hash === 'astock-picks') {
+        setCurrentPage('astock-picks');
       } else if (hash === 'potential-tokens') {
         setCurrentPage('potential-tokens');
       } else if (hash === 'monitor-tokens') {
@@ -200,6 +209,12 @@ function App() {
         return <PatternScan isSidebarCollapsed={isSidebarCollapsed} />;
       case 'trend-follow':
         return <TrendFollow isSidebarCollapsed={isSidebarCollapsed} />;
+      case 'ema20-push':
+        return <Ema20Push isSidebarCollapsed={isSidebarCollapsed} />;
+      case 'trade-journal':
+        return <TradeJournal isSidebarCollapsed={isSidebarCollapsed} />;
+      case 'astock-picks':
+        return <AStockPicks isSidebarCollapsed={isSidebarCollapsed} />;
       // 链上数据模块页面
       case 'potential-tokens':
         return <PotentialTokens isSidebarCollapsed={isSidebarCollapsed} />;
