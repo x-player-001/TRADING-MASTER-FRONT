@@ -284,23 +284,43 @@ interface ReassessModalProps {
   onSaved: () => void;
 }
 
+const countReassess = (d?: JournalEntry) =>
+  (d?.analyses ?? []).filter(a => a.analysis_type === 'reassess').length;
+
 const ReassessModal: React.FC<ReassessModalProps> = ({ entry, onClose, onSaved }) => {
   const [currentPrice, setCurrentPrice] = useState<number | undefined>();
   const [concern, setConcern] = useState('');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState('');
+  const [result, setResult] = useState<Analysis | null>(null);
+  const pollRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // 卸载时清除轮询
+  useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
 
   const handleReassess = async () => {
     if (!currentPrice) { message.warning('请填写当前价格'); return; }
     if (!concern.trim()) { message.warning('请填写关注点或疑虑'); return; }
     setLoading(true);
     try {
-      const res = await journalAPI.reassess(entry.id, { current_price: currentPrice, concern });
-      setResult(res.assessment);
+      // 记录提交前已有的再评估记录数作为基线
+      const baseline = countReassess(await journalAPI.detail(entry.id));
+      await journalAPI.reassess(entry.id, { current_price: currentPrice, concern });
       onSaved();
+      // 轮询，直到出现新的 reassess 记录
+      pollRef.current = setInterval(async () => {
+        try {
+          const detail = await journalAPI.detail(entry.id);
+          const reassesses = (detail.analyses ?? []).filter(a => a.analysis_type === 'reassess');
+          if (reassesses.length > baseline) {
+            if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+            setResult(reassesses[reassesses.length - 1]);
+            setLoading(false);
+            onSaved();
+          }
+        } catch { /* 轮询失败忽略，下次重试 */ }
+      }, 3000);
     } catch (e: any) {
       message.error(e.message || '再评估失败');
-    } finally {
       setLoading(false);
     }
   };
@@ -319,13 +339,13 @@ const ReassessModal: React.FC<ReassessModalProps> = ({ entry, onClose, onSaved }
           </div>
           <div className={styles.formItem}>
             <span className={styles.formLabel}>当前价格</span>
-            <InputNumber style={{ width: '100%' }} placeholder="输入当前价格" min={0} autoFocus disabled={!!result}
+            <InputNumber style={{ width: '100%' }} placeholder="输入当前价格" min={0} autoFocus disabled={loading || !!result}
               onChange={v => setCurrentPrice(v ?? undefined)} />
           </div>
 
           <div className={`${styles.formItem} ${styles.fullWidth}`}>
             <span className={styles.formLabel}>关注点 / 疑虑</span>
-            <TextArea rows={3} placeholder="如：价格到达关键阻力位，是否需要减仓？" disabled={!!result}
+            <TextArea rows={3} placeholder="如：价格到达关键阻力位，是否需要减仓？" disabled={loading || !!result}
               value={concern} onChange={e => setConcern(e.target.value)} />
           </div>
 
@@ -342,7 +362,8 @@ const ReassessModal: React.FC<ReassessModalProps> = ({ entry, onClose, onSaved }
             <div className={`${styles.formItem} ${styles.fullWidth}`}>
               <div className={styles.assessmentResult}>
                 <div className={styles.assessmentResultTitle}>🤖 再评估结果</div>
-                <div className={styles.assessmentResultText}>{result}</div>
+                <div className={styles.assessmentResultText}>{result.claude_analysis}</div>
+                <RiskReview items={result.risk_review} />
               </div>
             </div>
           )}

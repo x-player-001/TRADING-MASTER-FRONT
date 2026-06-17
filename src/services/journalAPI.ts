@@ -112,7 +112,8 @@ export const journalAPI = {
   dismiss: (id: number): Promise<JournalEntry> =>
     apiPost(`/api/journal/${id}/dismiss`),
 
-  reassess: (id: number, req: ReassessRequest): Promise<{ assessment: string; risk_review?: RiskReviewItem[] | null }> =>
+  // 异步：立即返回 { journal_id }，前端轮询 detail，analyses 出现新 reassess 记录即完成
+  reassess: (id: number, req: ReassessRequest): Promise<AnalyzeResponse> =>
     apiPost(`/api/journal/${id}/reassess`, req),
 
   close: (id: number, req: CloseRequest): Promise<JournalEntry> =>
