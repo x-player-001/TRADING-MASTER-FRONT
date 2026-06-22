@@ -68,11 +68,18 @@ const AStockPicks: React.FC<AStockPicksProps> = ({ isSidebarCollapsed = false })
   const [detail, setDetail] = useState<StockDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  // 验证回测
+  // 验证回测（逐股收益合并进榜单 + 周期报告）
   const [activeTab, setActiveTab] = useState('picks');
   const [reports, setReports] = useState<ValidationReport[]>([]);
   const [validationRows, setValidationRows] = useState<DailyValidation[]>([]);
   const [validationLoading, setValidationLoading] = useState(false);
+
+  // code → 当日验证明细，用于把回测收益合并进选股榜行
+  const validationByCode = React.useMemo(() => {
+    const m = new Map<string, DailyValidation>();
+    validationRows.forEach((r) => m.set(r.code, r));
+    return m;
+  }, [validationRows]);
 
   // 参数版本
   const [paramVersions, setParamVersions] = useState<ParamVersion[]>([]);
@@ -130,20 +137,14 @@ const AStockPicks: React.FC<AStockPicksProps> = ({ isSidebarCollapsed = false })
     }
   }, []);
 
-  // 初始化 / 切换版本时重新加载选股
+  // 初始化 / 切换版本时重新加载选股 + 验证数据（验证收益已合并进榜单，需随榜单一起加载）
   useEffect(() => {
     loadDates();
     loadDailyPicks(date, version);
+    loadValidation(date, version);
     loadParamVersions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [version]);
-
-  // 切到验证Tab / 日期 / 版本变化时按需加载验证数据
-  useEffect(() => {
-    if (activeTab === 'validation') {
-      loadValidation(date, version);
-    }
-  }, [activeTab, date, version, loadValidation]);
 
   // 刷新
   const handleRefresh = async () => {
@@ -151,7 +152,7 @@ const AStockPicks: React.FC<AStockPicksProps> = ({ isSidebarCollapsed = false })
     await Promise.all([
       loadDates(),
       loadDailyPicks(date, version),
-      activeTab === 'validation' ? loadValidation(date, version) : Promise.resolve(),
+      loadValidation(date, version),
     ]);
     setIsRefreshing(false);
   };
@@ -160,6 +161,7 @@ const AStockPicks: React.FC<AStockPicksProps> = ({ isSidebarCollapsed = false })
   const handleDateChange = (d: Dayjs | null) => {
     setDate(d);
     loadDailyPicks(d, version);
+    loadValidation(d, version);
   };
 
   // 打开个股详情
@@ -205,55 +207,82 @@ const AStockPicks: React.FC<AStockPicksProps> = ({ isSidebarCollapsed = false })
       key: 'name',
       width: 120,
       render: (name: string, row) => (
-        <a className={styles.nameLink} onClick={() => openDetail(row.code)}>{name}</a>
+        <Tooltip title={row.reasons || '无入选理由'}>
+          <a className={styles.nameLink} onClick={() => openDetail(row.code)}>{name}</a>
+        </Tooltip>
       ),
     },
     {
       title: '综合评分',
       dataIndex: 'total_score',
       key: 'total_score',
-      width: 130,
+      width: 90,
+      align: 'right',
       sorter: (a, b) => a.total_score - b.total_score,
-      render: (score: number) => {
-        const val = score * 100;
-        const pct = Math.max(0, Math.min(100, val));
-        return (
-          <div className={styles.scoreCell}>
-            <div className={styles.scoreBarTrack}>
-              <div className={styles.scoreBarFill} style={{ width: `${pct}%` }} />
-            </div>
-            <span className={styles.scoreVal}>{val.toFixed(1)}</span>
-          </div>
-        );
-      },
+      render: (score: number) => <span className={styles.scoreVal}>{(score * 100).toFixed(1)}</span>,
     },
     {
       title: '收盘价',
       dataIndex: 'decision_raw_close',
       key: 'decision_raw_close',
-      width: 90,
+      width: 80,
       align: 'right',
       render: (v: number | null) => fmtNum(v),
     },
     {
-      title: '入选理由',
-      dataIndex: 'reasons',
-      key: 'reasons',
-      ellipsis: true,
-      render: (reasons: string | null) =>
-        reasons ? (
-          <Tooltip title={reasons}>
-            <span className={styles.reasons}>{reasons}</span>
-          </Tooltip>
-        ) : (
-          <span className={styles.muted}>—</span>
-        ),
+      title: 'T1最高',
+      key: 't1_high_ret',
+      width: 84,
+      align: 'right',
+      render: (_, row) => {
+        const v = validationByCode.get(row.code)?.t1_high_ret;
+        return <span className={retClass(v)}>{fmtPct(v, true)}</span>;
+      },
+    },
+    {
+      title: 'T2最高',
+      key: 't2_high_ret',
+      width: 84,
+      align: 'right',
+      render: (_, row) => {
+        const v = validationByCode.get(row.code)?.t2_high_ret;
+        return <span className={retClass(v)}>{fmtPct(v, true)}</span>;
+      },
+    },
+    {
+      title: 'T3最高',
+      key: 't3_high_ret',
+      width: 84,
+      align: 'right',
+      render: (_, row) => {
+        const v = validationByCode.get(row.code)?.t3_high_ret;
+        return <span className={retClass(v)}>{fmtPct(v, true)}</span>;
+      },
+    },
+    {
+      title: 'T3收盘',
+      key: 't3_close_ret',
+      width: 84,
+      align: 'right',
+      render: (_, row) => {
+        const v = validationByCode.get(row.code)?.t3_close_ret;
+        return <span className={retClass(v)}>{fmtPct(v, true)}</span>;
+      },
+    },
+    {
+      title: '最大回撤',
+      key: 'max_drawdown',
+      width: 90,
+      align: 'right',
+      render: (_, row) => {
+        const v = validationByCode.get(row.code)?.max_drawdown;
+        return v == null ? <span className={styles.muted}>—</span> : <span className={styles.negative}>{fmtPct(v)}</span>;
+      },
     },
     {
       title: '参数版本',
       dataIndex: 'param_version',
       key: 'param_version',
-      width: 150,
       render: (v: string, row) => {
         const dual = row.also_in_versions && row.also_in_versions.length > 0;
         const allVersions = [v, ...(row.also_in_versions ?? [])];
@@ -324,43 +353,6 @@ const AStockPicks: React.FC<AStockPicksProps> = ({ isSidebarCollapsed = false })
     },
   ];
 
-  // ── 每日验证明细表格列 ────────────────────────────────
-  const validationColumns: ColumnsType<DailyValidation> = [
-    {
-      title: '排名',
-      dataIndex: 'rank',
-      key: 'rank',
-      width: 70,
-      align: 'center',
-      render: (rank: number) => (
-        <span className={`${styles.rankBadge} ${rank <= 3 ? styles.rankTop : ''}`}>{rank}</span>
-      ),
-    },
-    { title: '代码', dataIndex: 'code', key: 'code', width: 100, render: (c: string, row) => <a className={styles.codeLink} onClick={() => setKlineStock({ code: c, name: row.name })}>{c}</a> },
-    { title: '名称', dataIndex: 'name', key: 'name', width: 110, render: (name: string, row) => <a className={styles.nameLink} onClick={() => openDetail(row.code)}>{name}</a> },
-    {
-      title: '评分',
-      dataIndex: 'total_score',
-      key: 'total_score',
-      width: 80,
-      align: 'right',
-      render: (s: number) => <span className={styles.scoreVal}>{(s * 100).toFixed(1)}</span>,
-    },
-    {
-      title: '板块',
-      dataIndex: 'board_group',
-      key: 'board_group',
-      width: 80,
-      align: 'center',
-      render: (g: string) => <Tag color={g === 'main' ? 'blue' : 'default'}>{g === 'main' ? '主板' : '非主板'}</Tag>,
-    },
-    { title: 'T1最高', dataIndex: 't1_high_ret', key: 't1_high_ret', width: 90, align: 'right', render: (v) => <span className={retClass(v)}>{fmtPct(v, true)}</span> },
-    { title: 'T2最高', dataIndex: 't2_high_ret', key: 't2_high_ret', width: 90, align: 'right', render: (v) => <span className={retClass(v)}>{fmtPct(v, true)}</span> },
-    { title: 'T3最高', dataIndex: 't3_high_ret', key: 't3_high_ret', width: 90, align: 'right', render: (v) => <span className={retClass(v)}>{fmtPct(v, true)}</span> },
-    { title: 'T3收盘', dataIndex: 't3_close_ret', key: 't3_close_ret', width: 90, align: 'right', render: (v) => <span className={retClass(v)}>{fmtPct(v, true)}</span> },
-    { title: '最大回撤', dataIndex: 'max_drawdown', key: 'max_drawdown', width: 100, align: 'right', render: (v) => <span className={styles.negative}>{fmtPct(v)}</span> },
-  ];
-
   // ── 选股榜 Tab 内容 ───────────────────────────────────
   const picksTab = (
     <>
@@ -409,22 +401,14 @@ const AStockPicks: React.FC<AStockPicksProps> = ({ isSidebarCollapsed = false })
           rowKey="id"
           columns={pickColumns}
           dataSource={(boardGroup === 'main' ? dailyPicks?.main : dailyPicks?.other) ?? []}
-          loading={loading}
+          loading={loading || validationLoading}
           size="middle"
           pagination={false}
-          scroll={{ x: 980 }}
+          tableLayout="fixed"
           locale={{ emptyText: <Empty description={`当日无${boardGroup === 'main' ? '主板' : '非主板'}选股`} /> }}
         />
       </DataSection>
-    </>
-  );
 
-  // ── 验证回测 Tab 内容 ─────────────────────────────────
-  const mainValidationRows = validationRows.filter((r) => r.board_group === 'main');
-  const otherValidationRows = validationRows.filter((r) => r.board_group === 'other');
-
-  const validationTab = (
-    <>
       <DataSection className={styles.section} title="周期验证报告" collapsible defaultCollapsed>
         <Table<ValidationReport>
           rowKey="id"
@@ -434,31 +418,6 @@ const AStockPicks: React.FC<AStockPicksProps> = ({ isSidebarCollapsed = false })
           size="middle"
           pagination={false}
           scroll={{ x: 1000 }}
-        />
-      </DataSection>
-      <DataSection
-        className={styles.section}
-        title={`每日验证明细${date ? ` · ${date.format('YYYY-MM-DD')}` : ''}`}
-        headerActions={
-          <Segmented
-            value={boardGroup}
-            onChange={(v) => setBoardGroup(v as BoardGroup)}
-            options={[
-              { label: `主板 (${mainValidationRows.length})`, value: 'main' },
-              { label: `非主板 (${otherValidationRows.length})`, value: 'other' },
-            ]}
-          />
-        }
-      >
-        <Table<DailyValidation>
-          rowKey="snapshot_id"
-          columns={validationColumns}
-          dataSource={boardGroup === 'main' ? mainValidationRows : otherValidationRows}
-          loading={validationLoading}
-          size="middle"
-          pagination={false}
-          scroll={{ x: 960 }}
-          locale={{ emptyText: <Empty description={date ? `当日无${boardGroup === 'main' ? '主板' : '非主板'}验证明细` : '选择上方日期查看当日验证明细'} /> }}
         />
       </DataSection>
     </>
@@ -510,7 +469,6 @@ const AStockPicks: React.FC<AStockPicksProps> = ({ isSidebarCollapsed = false })
         onChange={setActiveTab}
         items={[
           { key: 'picks', label: '每日选股', children: picksTab },
-          { key: 'validation', label: '验证回测', children: validationTab },
           { key: 'params', label: '参数版本', children: paramTab },
         ]}
       />
