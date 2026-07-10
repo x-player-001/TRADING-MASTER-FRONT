@@ -122,7 +122,7 @@ $purple: #8b5cf6;
 // ── 两栏布局 ──────────────────────────────────────────
 .split {
   display: grid;
-  grid-template-columns: 320px 1fr;
+  grid-template-columns: 260px 1fr;
   gap: 1rem;
   align-items: start;
 
@@ -178,9 +178,10 @@ $purple: #8b5cf6;
   flex-direction: column;
   gap: 0.75rem;
 
-  scrollbar-width: thin;
-  &::-webkit-scrollbar { width: 5px; }
-  &::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 9999px; :global(.dark) & { background: #4b5563; } }
+  // 隐藏滚动条但保留滚动
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar { width: 0; height: 0; display: none; }
 
   @media (max-width: 900px) { max-height: none; }
 }

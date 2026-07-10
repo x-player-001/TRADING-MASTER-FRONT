@@ -328,6 +328,64 @@ $warning: #f59e0b;
   :global(.dark) & { background: #0c4a6e; color: #7dd3fc; }
 }
 
+// 同币种分组：展开/折叠三角
+.groupToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 0.35rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.6rem;
+  cursor: pointer;
+  transition: transform 0.15s, color 0.15s;
+  vertical-align: middle;
+
+  &:hover { color: $primary; }
+  &.groupToggleOpen { transform: rotate(90deg); }
+
+  :global(.dark) & { color: #64748b; }
+}
+
+.groupTogglePlaceholder {
+  display: inline-block;
+  width: 16px;
+  margin-right: 0.35rem;
+  vertical-align: middle;
+}
+
+// 折叠时代表行上的条数徽标
+.groupCountBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  margin-left: 0.375rem;
+  padding: 0 0.3rem;
+  background: #e2e8f0;
+  color: #475569;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  vertical-align: middle;
+
+  :global(.dark) & { background: #334155; color: #cbd5e1; }
+}
+
+// 组内子行（展开出来的非最新记录）淡背景区分
+.groupChildRow {
+  background: #f8fafc;
+
+  :global(.dark) & { background: #172033; }
+
+  td:first-child { padding-left: 0.5rem; }
+}
+
 // 备注展开行
 .remarkRow td {
   padding: 0 !important;

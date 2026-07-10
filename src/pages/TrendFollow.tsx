@@ -97,6 +97,15 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
   const [remarkDraft, setRemarkDraft] = useState('');
   const [remarkSaving, setRemarkSaving] = useState(false);
 
+  // 同币种分组的展开状态（key 为 symbol，默认折叠只显示最新一条）
+  const [expandedSymbols, setExpandedSymbols] = useState<Set<string>>(new Set());
+  const toggleSymbol = (symbol: string) =>
+    setExpandedSymbols(prev => {
+      const next = new Set(prev);
+      next.has(symbol) ? next.delete(symbol) : next.add(symbol);
+      return next;
+    });
+
   const fetchData = useCallback(async () => {
     try {
       const [ctxData, alertData] = await Promise.all([
@@ -221,6 +230,23 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
   const filteredContexts = contexts.filter(c =>
     !searchTerm || c.symbol.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // 按币种分组，每组按进入时间倒序，代表行（最新）在前
+  const symbolGroups = React.useMemo(() => {
+    const map = new Map<string, WatchContext[]>();
+    for (const c of filteredContexts) {
+      const arr = map.get(c.symbol) ?? [];
+      arr.push(c);
+      map.set(c.symbol, arr);
+    }
+    // 组内按进入时间倒序
+    const groups = Array.from(map.values()).map(arr =>
+      [...arr].sort((a, b) => b.watch_start_time - a.watch_start_time)
+    );
+    // 组间按各自最新一条的进入时间倒序
+    groups.sort((a, b) => b[0].watch_start_time - a[0].watch_start_time);
+    return groups;
+  }, [filteredContexts]);
 
   const handleMouseEnter = (id: number, e: React.MouseEvent<HTMLDivElement>) => {
     if (tooltipTimer.current) clearTimeout(tooltipTimer.current);
@@ -409,15 +435,32 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
               </tr>
             </thead>
             <tbody>
-              {filteredContexts.map(ctx => {
+              {symbolGroups.flatMap(group => {
+                const groupCount = group.length;
+                const isExpanded = expandedSymbols.has(group[0].symbol);
+                // 折叠时只渲染代表行（最新），展开时渲染全部
+                const visible = isExpanded ? group : [group[0]];
+                return visible.map((ctx, idxInGroup) => {
+                const isLead = idxInGroup === 0;
+                const hasMore = groupCount > 1;
                 const pnl = calcPnl(ctx.current_price, ctx.wave_end_price);
                 const alertKey = `${ctx.symbol}:${ctx.timeframe}`;
                 const latestAlert = alertsMap.get(alertKey);
-                const showTooltip = tooltipCtxId === ctx.id && !!latestAlert;
                 return (
                   <React.Fragment key={ctx.id}>
-                  <tr>
+                  <tr className={!isLead ? styles.groupChildRow : undefined}>
                     <td>
+                      {isLead && hasMore ? (
+                        <button
+                          className={`${styles.groupToggle} ${isExpanded ? styles.groupToggleOpen : ''}`}
+                          onClick={() => toggleSymbol(ctx.symbol)}
+                          title={isExpanded ? '折叠' : `展开 ${groupCount} 条`}
+                        >
+                          ▶
+                        </button>
+                      ) : (
+                        <span className={styles.groupTogglePlaceholder} />
+                      )}
                       <span
                         className={styles.symbolCell}
                         style={{ cursor: 'pointer' }}
@@ -426,6 +469,9 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
                         {stripUsdt(ctx.symbol)}
                       </span>
                       <span className={styles.timeframeBadge} style={{ marginLeft: '0.375rem' }}>{ctx.timeframe}</span>
+                      {isLead && hasMore && !isExpanded && (
+                        <span className={styles.groupCountBadge}>{groupCount}</span>
+                      )}
                     </td>
                     <td className={styles.numCell}>
                       {(() => { const v = formatVolume(ctx.quote_volume_24h); return <span className={v.highlight ? styles.volumeHigh : undefined}>{v.text}</span>; })()}
@@ -541,6 +587,7 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
                   </tr>
                   </React.Fragment>
                 );
+                });
               })}
             </tbody>
           </table>
@@ -555,7 +602,6 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
         if (!ctx || !alert) return null;
         const TOOLTIP_WIDTH = 200;
         const TOOLTIP_HEIGHT = 160;
-        const vw = window.innerWidth;
         const vh = window.innerHeight;
         let x = tooltipPos.x - TOOLTIP_WIDTH - 8;
         if (x < 8) x = tooltipPos.x + 8;

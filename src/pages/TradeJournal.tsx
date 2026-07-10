@@ -400,6 +400,10 @@ const TradeJournal: React.FC<TradeJournalProps> = () => {
   const [detailMap, setDetailMap] = useState<Record<number, JournalEntry>>({});
   const [detailLoadingId, setDetailLoadingId] = useState<number | null>(null);
 
+  // 详情是否「结算」：已有分析结果，或已失败/放弃。未结算=analyzing 且还没出结果
+  const isDetailPending = (d?: JournalEntry) =>
+    !!d && d.status === 'analyzing' && (d.analyses?.length ?? 0) === 0;
+
   const loadDetail = async (id: number) => {
     try {
       const detail = await journalAPI.detail(id);
@@ -410,10 +414,11 @@ const TradeJournal: React.FC<TradeJournalProps> = () => {
     }
   };
 
-  // 加载某条详情（只加载一次，刷新请用「同步/刷新」按钮）
-  const ensureDetailLoaded = async (id: number) => {
-    if (detailMap[id]) return; // 已加载，用缓存
-    setDetailLoadingId(id);
+  // 加载某条详情。已缓存且已结算则用缓存；未结算（等 AI 结果）或 force 时重新拉
+  const ensureDetailLoaded = async (id: number, force = false) => {
+    const cached = detailMap[id];
+    if (cached && !force && !isDetailPending(cached)) return;
+    if (!cached) setDetailLoadingId(id);
     await loadDetail(id);
     setDetailLoadingId(null);
   };
@@ -467,15 +472,22 @@ const TradeJournal: React.FC<TradeJournalProps> = () => {
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   // 预加载持仓/待决策详情；并自动选中一条（优先持仓 > 待决策 > 第一条）默认填充右栏
+  // 未缓存的拉一次；已缓存但仍在等 AI 结果（pending）的强制重拉，保证刷新后能拿到评估结果
   useEffect(() => {
     entries
-      .filter(e => (e.status === 'open' || e.status === 'analyzing') && !detailMap[e.id])
-      .forEach(e => { ensureDetailLoaded(e.id); });
+      .filter(e => e.status === 'open' || e.status === 'analyzing')
+      .forEach(e => {
+        const cached = detailMap[e.id];
+        if (!cached) ensureDetailLoaded(e.id);
+        else if (isDetailPending(cached)) ensureDetailLoaded(e.id, true);
+      });
 
     if (entries.length > 0 && (selectedId == null || !entries.some(e => e.id === selectedId))) {
-      const first = entries.find(e => e.status === 'open')
-        ?? entries.find(e => e.status === 'analyzing')
-        ?? entries[0];
+      // 默认选中最新的历史记录（非持仓/待决策），没有则回退第一条
+      const history = entries
+        .filter(e => e.status !== 'open' && e.status !== 'analyzing')
+        .sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''));
+      const first = history[0] ?? entries[0];
       if (first) handleSelect(first.id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -488,6 +500,17 @@ const TradeJournal: React.FC<TradeJournalProps> = () => {
     const c: Record<string, number> = { open: 0, analyzing: 0, closed: 0 };
     entries.forEach(e => { c[e.status] = (c[e.status] ?? 0) + 1; });
     return c;
+  }, [entries]);
+
+  // 累计盈亏金额：累加所有已平仓记录的真实盈亏（realized_pnl）
+  const totalPnlAmount = React.useMemo(() => {
+    let sum = 0;
+    let has = false;
+    entries.forEach(e => {
+      const v = toNum(e.realized_pnl);
+      if (v != null) { sum += v; has = true; }
+    });
+    return has ? sum : undefined;
   }, [entries]);
 
   // 全局同步持仓
@@ -713,6 +736,12 @@ const TradeJournal: React.FC<TradeJournalProps> = () => {
           {detailLoadingId === entry.id && !detail && <div className={styles.detailLoading}>加载中...</div>}
           {detail && (
             <>
+              {entry.entry_reason && (
+                <div className={styles.assessmentBox}>
+                  <div className={styles.boxTitle}>入场理由</div>
+                  <div className={styles.boxText}>{entry.entry_reason}</div>
+                </div>
+              )}
               {analyses.map((a, i) => renderAnalysis(a, i))}
               {detail.review && (
                 <div className={styles.reviewBox}>
@@ -752,12 +781,6 @@ const TradeJournal: React.FC<TradeJournalProps> = () => {
                 <div className={styles.failedBox}>
                   <div className={styles.failedTitle}>⚠️ AI 分析失败</div>
                   <div className={styles.failedText}>重试一次后仍未成功，可点击右上「重新评估」生成新记录。</div>
-                </div>
-              )}
-              {entry.entry_reason && analyses.length === 0 && detail.status !== 'failed' && (
-                <div className={styles.assessmentBox}>
-                  <div className={styles.boxTitle}>入场理由</div>
-                  <div className={styles.boxText}>{entry.entry_reason}</div>
                 </div>
               )}
             </>
@@ -817,10 +840,10 @@ const TradeJournal: React.FC<TradeJournalProps> = () => {
           <div className={styles.statBarItem}>
             <span className={styles.statBarLabel}>累计盈亏</span>
             {(() => {
-              const pnl = toNum(stats.total_pnl);
+              const amt = totalPnlAmount;
               return (
-                <span className={`${styles.statBarValue} ${pnlClass(pnl)}`}>
-                  {pnl != null ? `${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}%` : '-'}
+                <span className={`${styles.statBarValue} ${pnlClass(amt)}`}>
+                  {amt != null ? `${amt >= 0 ? '+' : ''}${amt.toFixed(2)} U` : '-'}
                 </span>
               );
             })()}
@@ -857,8 +880,8 @@ const TradeJournal: React.FC<TradeJournalProps> = () => {
                     return (
                       <>
                         {rowSection('持仓中', '💼', openList)}
-                        {rowSection('待决策', '⏳', analyzingList)}
                         {rowSection('历史记录', '📊', others)}
+                        {rowSection('待决策', '⏳', analyzingList)}
                       </>
                     );
                   })()
