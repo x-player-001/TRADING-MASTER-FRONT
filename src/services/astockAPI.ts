@@ -113,17 +113,25 @@ export interface ParamVersion {
 }
 
 // ===== K线 =====
+// ⚠️ 后端这些数值字段可能返回 number、数字字符串或 null（停牌等），
+// 使用前一律先转数字并过滤，不要直接参与计算或传给图表库
+export type Numeric = number | string | null;
+
 export interface KlineBar {
   trade_date: string;          // YYYY-MM-DD
-  open: number;
-  high: number;
-  low: number;
-  close: number;               // 后复权（画图用）
-  raw_close: number;           // 原始收盘价
-  volume: number;
-  amount: number;
-  pct_chg: number;
-  turnover: number;
+  open: Numeric;               // 后复权
+  high: Numeric;
+  low: Numeric;
+  close: Numeric;
+  raw_open: Numeric;           // 原始开盘价（画图用）
+  raw_high: Numeric;           // 原始最高价
+  raw_low: Numeric;            // 原始最低价
+  raw_close: Numeric;          // 原始收盘价
+  volume: Numeric;
+  volume_raw?: Numeric;
+  amount: Numeric;
+  pct_chg: Numeric;
+  turnover: Numeric;
 }
 
 export interface KlineMark {

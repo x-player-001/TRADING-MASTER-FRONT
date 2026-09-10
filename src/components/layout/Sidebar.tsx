@@ -43,7 +43,8 @@ const Sidebar: React.FC<SidebarProps> = ({
         { icon: '📈', label: '趋势跟踪', href: '#trend-follow', page: 'trend-follow' },
         // { icon: '📉', label: 'EMA20推送', href: '#ema20-push', page: 'ema20-push' },
         { icon: '📒', label: '交易辅助', href: '#trade-journal', page: 'trade-journal' },
-        { icon: '🇨🇳', label: 'A股选股', href: '#astock-picks', page: 'astock-picks' }
+        { icon: '🇨🇳', label: 'A股选股', href: '#astock-picks', page: 'astock-picks' },
+        { icon: '🎣', label: '监控池', href: '#watch-pool', page: 'watch-pool' }
       ]
     },
     {

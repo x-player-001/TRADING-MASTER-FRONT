@@ -17,6 +17,16 @@ const toBusinessDay = (d: string) => {
   return { year, month, day };
 };
 
+// 后端数值字段可能是 number、数字字符串或 null，统一转为 number|null
+const toNum = (v: unknown): number | null => {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+  if (typeof v === 'string' && v.trim() !== '') {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+};
+
 // 计算 EMA
 const calcEMA = (closes: number[], period: number) => {
   const out: (number | null)[] = [];
@@ -35,7 +45,7 @@ const AStockKlineModal: React.FC<AStockKlineModalProps> = ({ code, name, onClose
   const [error, setError] = useState<string | null>(null);
   const [stockName, setStockName] = useState(name ?? '');
   const [marks, setMarks] = useState<KlineMark[]>([]);
-  const [activeMark, setActiveMark] = useState<KlineMark | null>(null);
+  const [activeIdx, setActiveIdx] = useState<number | null>(null);
 
   useEffect(() => {
     const container = chartContainerRef.current;
@@ -46,7 +56,7 @@ const AStockKlineModal: React.FC<AStockKlineModalProps> = ({ code, name, onClose
     const gridColor = isDark ? '#2b2b43' : '#e1e3eb';
 
     const chart = createChart(container, {
-      width: container.clientWidth,
+      width: container.clientWidth || 800,
       height: 500,
       layout: { background: { color: bg }, textColor },
       grid: { vertLines: { color: gridColor }, horzLines: { color: gridColor } },
@@ -70,37 +80,62 @@ const AStockKlineModal: React.FC<AStockKlineModalProps> = ({ code, name, onClose
     });
 
     // 成交量（叠加在底部独立刻度）
+    // 注意：须用 volumeSeries.priceScale() 取刻度，chart.priceScale('volume')
+    // 在该刻度尚未建立时会抛错，导致整个 effect 中断、图表空白
     const volumeSeries = chart.addSeries(HistogramSeries, {
       priceFormat: { type: 'volume' },
-      priceScaleId: 'volume',
+      priceScaleId: '',
     });
-    chart.priceScale('volume').applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
+    volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
 
     astockAPI.getKline(code, { limit: 250, adjust: 'hfq' })
       .then(res => {
         setStockName(res.name || code);
         setMarks(res.marks);
 
-        const candleData = res.bars.map(b => ({
-          time: toBusinessDay(b.trade_date),
+        // 用原始价（raw_*）绘图，与行情软件显示的价格一致。
+        // 后端同一字段可能返回 number / 数字字符串 / null（停牌等），
+        // lightweight-charts 遇到非数字会整批拒绝导致图表空白，故统一转数字再剔除无效行
+        const bars = res.bars
+          .map(b => ({
+            time: toBusinessDay(b.trade_date),
+            open: toNum(b.raw_open),
+            high: toNum(b.raw_high),
+            low: toNum(b.raw_low),
+            close: toNum(b.raw_close),
+            volume: toNum(b.volume) ?? 0,
+          }))
+          .filter(
+            (b): b is typeof b & { open: number; high: number; low: number; close: number } =>
+              b.open !== null && b.high !== null && b.low !== null && b.close !== null
+          );
+
+        if (!bars.length) {
+          setError('该股票无有效K线数据');
+          setLoading(false);
+          return;
+        }
+
+        const candleData = bars.map(b => ({
+          time: b.time,
           open: b.open, high: b.high, low: b.low, close: b.close,
         }));
         candleSeries.setData(candleData as any);
 
-        const volData = res.bars.map(b => ({
-          time: toBusinessDay(b.trade_date),
+        const volData = bars.map(b => ({
+          time: b.time,
           value: b.volume,
           color: b.close >= b.open ? 'rgba(239,83,80,0.5)' : 'rgba(38,166,154,0.5)',
         }));
         volumeSeries.setData(volData as any);
 
-        const closes = res.bars.map(b => b.close);
-        const dates = res.bars.map(b => toBusinessDay(b.trade_date));
+        const closes = bars.map(b => b.close);
+        const dates = bars.map(b => b.time);
         const ema20 = calcEMA(closes, 20);
         ema20Series.setData(ema20.map((v, i) => v === null ? null : { time: dates[i], value: v }).filter(Boolean) as any);
 
         // 默认展示最近100根 + 右侧30格留白
-        const barCount = res.bars.length;
+        const barCount = bars.length;
         const visibleBars = 100;
         const rightOffset = 10;
         chart.timeScale().setVisibleLogicalRange({
@@ -115,11 +150,20 @@ const AStockKlineModal: React.FC<AStockKlineModalProps> = ({ code, name, onClose
       });
 
     const observer = new ResizeObserver(() => {
-      if (container) chart.applyOptions({ width: container.clientWidth });
+      const w = container.clientWidth;
+      if (w > 0) chart.applyOptions({ width: w });
     });
     observer.observe(container);
 
+    // 动画结束后布局才稳定，补一次尺寸校正（ResizeObserver 只在尺寸变化时触发，
+    // 若首帧宽度已是终值则不会回调，图表会停在兜底宽度）
+    const raf = requestAnimationFrame(() => {
+      const w = container.clientWidth;
+      if (w > 0) chart.applyOptions({ width: w });
+    });
+
     return () => {
+      cancelAnimationFrame(raf);
       observer.disconnect();
       chart.remove();
     };
@@ -140,7 +184,7 @@ const AStockKlineModal: React.FC<AStockKlineModalProps> = ({ code, name, onClose
           <div className={styles.title}>
             <span className={styles.symbol}>{stockName || code}</span>
             <span className={styles.code}>{code}</span>
-            <span className={styles.subtitle}>日线 · 后复权 · 最近250根</span>
+            <span className={styles.subtitle}>日线 · 原始价 · 最近250根</span>
           </div>
           <button className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
@@ -155,18 +199,19 @@ const AStockKlineModal: React.FC<AStockKlineModalProps> = ({ code, name, onClose
             <div className={styles.marksPanel}>
               <div className={styles.marksTitle}>选中记录（{marks.length}）</div>
               <div className={styles.marksList}>
-                {marks.map((m) => (
+                {/* 同一交易日可能有多条记录（不同参数套各选一次），故用下标作 key */}
+                {marks.map((m, idx) => (
                   <div
-                    key={m.trade_date}
-                    className={`${styles.markItem} ${activeMark?.trade_date === m.trade_date ? styles.markActive : ''}`}
-                    onClick={() => setActiveMark(activeMark?.trade_date === m.trade_date ? null : m)}
+                    key={`${m.trade_date}-${idx}`}
+                    className={`${styles.markItem} ${activeIdx === idx ? styles.markActive : ''}`}
+                    onClick={() => setActiveIdx(activeIdx === idx ? null : idx)}
                   >
                     <div className={styles.markHead}>
                       <span className={styles.markDate}>{m.trade_date}</span>
                       <span className={styles.markRank}>#{m.rank}</span>
                       <span className={styles.markScore}>{(m.total_score * 100).toFixed(1)}分</span>
                     </div>
-                    {activeMark?.trade_date === m.trade_date && m.reasons && (
+                    {activeIdx === idx && m.reasons && (
                       <div className={styles.markReasons}>{m.reasons}</div>
                     )}
                   </div>
