@@ -101,6 +101,98 @@ $warning: #f59e0b;
   @media (max-width: 768px) { display: none; }
 }
 
+// ── 按日期分组的分隔行（三个池子共用）─────────────────
+.groupHeaderRow {
+  td {
+    padding: 0 !important;
+    border-bottom: none !important;
+  }
+
+  // 分组行不响应普通行的 hover 高亮
+  &:hover > td {
+    background: transparent !important;
+  }
+}
+
+.groupHeaderCell {
+  background: #eef2f7 !important;
+
+  :global(.dark) & {
+    background: rgba(148, 163, 184, 0.12) !important;
+  }
+}
+
+.groupHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.75rem;
+}
+
+.groupHeaderDate {
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #0f172a;
+  :global(.dark) & { color: #e2e8f0; }
+}
+
+.groupHeaderLabel {
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
+.groupHeaderCount {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+  :global(.dark) & { color: #cbd5e1; }
+}
+
+// ── 回踩池热度列 ───────────────────────────────────────
+.hotCell {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  cursor: help;
+}
+
+.hotScore {
+  font-weight: 700;
+  color: #ef4444;
+}
+
+.hotConcept {
+  padding: 0.02rem 0.28rem;
+  font-size: 0.7rem;
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.16);
+  border-radius: 0.2rem;
+  white-space: nowrap;
+
+  :global(.dark) & { color: #fbbf24; }
+}
+
+// 未回测验证等口径提醒：整行独占并用警示色，不能像普通注脚一样被忽略
+.noticeHint {
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 0.375rem;
+
+  :global(.dark) & {
+    color: #fbbf24;
+    background: rgba(66, 32, 6, 0.55);
+    border-color: #854d0e;
+  }
+}
+
 .benchmarkHint {
   margin-left: auto;
   font-size: 0.78rem;

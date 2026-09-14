@@ -18,6 +18,8 @@ import PageHeader from '../components/ui/PageHeader';
 import { TopProgressBar, DataSection, CoolRefreshButton } from '../components/ui';
 import AStockKlineModal from '../components/astock/AStockKlineModal';
 import LowvolPanel from '../components/astock/LowvolPanel';
+import { groupByDate, withGroupHeaderColumns, groupRowClassName } from '../components/astock/dateGroup';
+import PullbackPanel from '../components/astock/PullbackPanel';
 import type { BoardGroup } from '../services/astockAPI';
 import {
   watchPoolAPI,
@@ -89,6 +91,7 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
   const [activeTab, setActiveTab] = useState('watch');
   const [refreshKey, setRefreshKey] = useState(0);
   const [lowvolLoading, setLowvolLoading] = useState(false);
+  const [pullbackLoading, setPullbackLoading] = useState(false);
 
   // ── 数据 ────────────────────────────────────────────
   const [list, setList] = useState<WatchItem[]>([]);
@@ -484,15 +487,15 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
           </div>
         }
       >
-        <Table<WatchItem>
-          rowKey={(r) => `${r.code}-${r.trigger_date}`}
-          columns={columns}
-          dataSource={filteredList}
+        <Table
+          rowKey={(r: any) => (r.__groupDate ? `g-${r.__groupDate}` : `${r.code}-${r.trigger_date}`)}
+          columns={withGroupHeaderColumns<WatchItem>(columns, '首板日')}
+          dataSource={groupByDate(filteredList, 'trigger_date')}
           loading={loading}
           size="middle"
           pagination={{ pageSize: 30, showSizeChanger: false, showTotal: (t) => `共 ${t} 只` }}
           scroll={{ x: 1360 }}
-          rowClassName={(row) => (row.broke_open_date ? styles.rowBroke : '')}
+          rowClassName={groupRowClassName<WatchItem>((row) => (row.broke_open_date ? styles.rowBroke : ''))}
           locale={{
             emptyText: (
               <Empty description={keyword.trim() ? `未匹配到「${keyword.trim()}」` : '当前筛选条件下无数据'} />
@@ -505,11 +508,11 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
 
   return (
     <div className={`${styles.watchPool} ${isSidebarCollapsed ? styles.sidebarCollapsed : ''}`}>
-      <TopProgressBar isVisible={loading || isRefreshing || lowvolLoading} />
+      <TopProgressBar isVisible={loading || isRefreshing || lowvolLoading || pullbackLoading} />
 
       <PageHeader
         title="监控池"
-        subtitle="低位首板池（30日内再次涨停）/ 低位放量池（T+1~10 收益与超额）"
+        subtitle="低位首板池（30日内再次涨停）/ 低位放量池（T+1~10 收益）/ 回踩池（突破后回踩）"
         icon="🎣"
       >
         <div className={styles.headerActions}>
@@ -536,6 +539,18 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
                 since={since}
                 refreshKey={refreshKey}
                 onLoadingChange={setLowvolLoading}
+                onOpenKline={setKlineStock}
+              />
+            ),
+          },
+          {
+            key: 'pullback',
+            label: '回踩池',
+            children: (
+              <PullbackPanel
+                since={since}
+                refreshKey={refreshKey}
+                onLoadingChange={setPullbackLoading}
                 onOpenKline={setKlineStock}
               />
             ),

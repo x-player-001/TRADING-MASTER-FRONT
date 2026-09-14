@@ -15,6 +15,7 @@ import {
 } from 'recharts';
 import styles from '../../pages/WatchPool.module.scss';
 import { DataSection } from '../ui';
+import { groupByDate, withGroupHeaderColumns, groupRowClassName } from './dateGroup';
 import {
   lowvolAPI,
   LowvolItem,
@@ -457,10 +458,11 @@ const LowvolPanel: React.FC<LowvolPanelProps> = ({ since, refreshKey, onLoadingC
           </div>
         }
       >
-        <Table<LowvolItem>
-          rowKey={(r) => `${r.code}-${r.trigger_date}`}
-          columns={columns}
-          dataSource={filteredList}
+        <Table
+          rowKey={(r: any) => (r.__groupDate ? `g-${r.__groupDate}` : `${r.code}-${r.trigger_date}`)}
+          columns={withGroupHeaderColumns<LowvolItem>(columns, '触发日')}
+          dataSource={groupByDate(filteredList, 'trigger_date')}
+          rowClassName={groupRowClassName<LowvolItem>(() => '')}
           loading={loading}
           size="middle"
           pagination={{ pageSize: 30, showSizeChanger: false, showTotal: (t) => `共 ${t} 只` }}

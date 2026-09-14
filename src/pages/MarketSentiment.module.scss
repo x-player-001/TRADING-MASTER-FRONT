@@ -1,0 +1,748 @@
+$danger: #ef4444;
+$success: #10b981;
+$primary: #3b82f6;
+
+// 头部 4rem，页面自身留出上下内边距后按视口高度铺满，避免整页滚动
+$shell: 4rem;
+$pad: 0.875rem;
+
+.page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: $pad;
+  height: calc(100vh - #{$shell});
+  padding: $pad 1rem;
+  overflow: hidden;
+  background: #f4f6fa;
+
+  :global(.dark) & { background: #0a0f1c; }
+
+  // 屏幕不够高时允许整页滚动，不硬挤
+  @media (max-height: 760px), (max-width: 1100px) {
+    height: auto;
+    min-height: calc(100vh - #{$shell});
+    overflow: visible;
+  }
+}
+
+// ══ PageHeader 压缩 ════════════════════════════════════
+// 统一规范要求用 PageHeader，但其默认占高约 120px；
+// 看板要在一屏内排完，这里把标题/副标题压到一行高度
+.headerSlot {
+  flex-shrink: 0;
+
+  :global(h1) {
+    font-size: 1.25rem !important;
+    line-height: 1.2 !important;
+  }
+
+  // 标题块与整体下边距收紧
+  > div {
+    margin-bottom: 0 !important;
+    padding-bottom: 0.25rem !important;
+  }
+
+  p, :global(p) {
+    font-size: 0.75rem !important;
+    margin-bottom: 0 !important;
+  }
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+// ══ 核心读数条 ═════════════════════════════════════════
+.topBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  flex-shrink: 0;
+  padding: 0.5rem 0.875rem;
+  background: #fff;
+  border: 1px solid #e6eaf2;
+  border-radius: 0.75rem;
+
+  :global(.dark) & {
+    background: #111a2e;
+    border-color: rgba(148, 163, 184, 0.14);
+  }
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.brandIcon { font-size: 1.05rem; }
+
+.brandText {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+  :global(.dark) & { color: #f1f5f9; }
+}
+
+.liveDot {
+  width: 0.4rem;
+  height: 0.4rem;
+  margin-left: 0.25rem;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(34,197,94,0.6); }
+  70%  { box-shadow: 0 0 0 0.3rem rgba(34,197,94,0); }
+  100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
+
+.asOf {
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.downChip {
+  padding: 0.05rem 0.4rem;
+  font-size: 0.68rem;
+  color: #b45309;
+  background: #fef3c7;
+  border-radius: 0.25rem;
+}
+
+// 非交易时段：实时计数归零，避免把 0 当成有效读数
+.liveDotIdle {
+  background: #94a3b8;
+  animation: none;
+}
+
+.idleChip {
+  padding: 0.05rem 0.4rem;
+  font-size: 0.68rem;
+  color: #475569;
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 0.25rem;
+  cursor: help;
+
+  :global(.dark) & { color: #cbd5e1; }
+}
+
+.gaugeVIdle {
+  font-size: 1rem;
+  color: #94a3b8;
+}
+
+// 核心读数横排
+.topStats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.35rem;
+  width: 100%;
+}
+
+.topStat {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+}
+
+.topStatVal {
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #0f172a;
+  :global(.dark) & { color: #f1f5f9; }
+}
+
+.topStatKey {
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
+.topStatSub {
+  margin-left: 0.2rem;
+  font-size: 0.62rem;
+  font-style: normal;
+  color: #cbd5e1;
+  :global(.dark) & { color: #64748b; }
+}
+
+// ══ Bento 网格 ═════════════════════════════════════════
+// 按内容体量分配面积，而不是切成等大方块：
+//   · phase   只有 5 行短文本 + 仪表 → 矮，与 ladder 共享左上角一列
+//   · trend   图表，需要宽度展开 60 根柱 → 跨 2 列、占 2 行高
+//   · limitup 最多 60 行的长表 → 右侧整列通高
+//   · concept 14 行 / hot 10 行 → 各占一个中等高度格
+.bento {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 0.95fr 1.35fr 1.15fr 0.85fr;
+  // 趋势图是时间序列，要横着摊开 60 根柱，所以独占最下面一整行（通栏且矮），
+  // 不再塞进右侧竖条里被压成"高瘦"形状。
+  // 中间一行（概念/人气/涨停池，都是长列表）吃掉剩余高度；
+  // 最后一行给趋势图一个可读的最小高度——同排的天梯只有 3 行，
+  // 纯 auto 会被矮的那个决定行高，把图表压扁
+  grid-template-rows: auto minmax(0, 1fr) minmax(14rem, auto);
+  gap: $pad;
+  grid-template-areas:
+    'phase   phase   phase   limitup'
+    'themes  concept hot     limitup'
+    'ladder  trend   trend   trend';
+
+  @media (max-width: 1600px) {
+    grid-template-columns: 1fr 1.2fr 0.8fr 0.8fr;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'phase   phase   phase   limitup'
+      'ladder  concept hot     limitup'
+      'themes  trend   trend   trend';
+  }
+
+  @media (max-width: 1100px) {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: none;
+    grid-auto-rows: minmax(11rem, auto);
+    grid-template-areas:
+      'phase   ladder'
+      'trend   trend'
+      'themes  limitup'
+      'concept hot';
+  }
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+    grid-template-areas: 'phase' 'ladder' 'themes' 'trend' 'limitup' 'concept' 'hot';
+  }
+}
+
+.cardPhase    { grid-area: phase; }
+.cardLadder   { grid-area: ladder; }
+.cardThemes   { grid-area: themes; }
+.cardTrend { grid-area: trend; }
+.cardLimitup  { grid-area: limitup; }
+.cardConcepts { grid-area: concept; }
+.cardHot      { grid-area: hot; }
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0.7rem 0.8rem;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #e6eaf2;
+  border-radius: 0.75rem;
+
+  :global(.dark) & {
+    background: #111a2e;
+    border-color: rgba(148, 163, 184, 0.14);
+  }
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #0f172a;
+
+  i {
+    font-size: 0.66rem;
+    font-style: normal;
+    font-weight: 400;
+    color: #94a3b8;
+  }
+
+  :global(.dark) & { color: #e2e8f0; }
+}
+
+.seg { margin-left: auto; }
+
+.phasePill {
+  margin-left: auto;
+  padding: 0.05rem 0.4rem;
+  font-size: 0.64rem;
+  font-weight: 600;
+  color: var(--pc);
+  background: color-mix(in srgb, var(--pc) 14%, transparent);
+  border-radius: 0.25rem;
+}
+
+// ══ 阶段主视觉 ═════════════════════════════════════════
+// 这块是全页的「结论」，用阶段色描边 + 深底把它从普通卡片里拎出来
+.cardPhase {
+  padding: 0;
+  border-color: color-mix(in srgb, var(--pc) 45%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--pc) 12%, transparent),
+    0 4px 20px color-mix(in srgb, var(--pc) 12%, transparent);
+
+  :global(.dark) & {
+    background: linear-gradient(150deg,
+      color-mix(in srgb, var(--pc) 13%, #111a2e) 0%,
+      #111a2e 62%);
+    border-color: color-mix(in srgb, var(--pc) 38%, transparent);
+  }
+}
+
+.phaseGlow {
+  position: absolute;
+  top: -60%;
+  left: -20%;
+  width: 26rem;
+  height: 26rem;
+  pointer-events: none;
+  background: radial-gradient(circle, var(--pg) 0%, transparent 65%);
+  opacity: 0.55;
+  :global(.dark) & { opacity: 0.85; }
+}
+
+// 横跨两列的宽幅条：阶段名 / 历史读数 / 仪表沿水平方向铺开，
+// 不做纵向堆叠，高度只由内容决定
+.phaseBody {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem 1.5rem;
+  height: 100%;
+  padding: 0.7rem 1rem;
+}
+
+.phaseLeft {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.switchChip {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.2rem;
+  padding: 0.05rem 0.4rem;
+  font-size: 0.66rem;
+  font-weight: 600;
+  background: rgba(148, 163, 184, 0.16);
+  border-radius: 0.25rem;
+  cursor: help;
+}
+
+.arrow { color: #94a3b8; }
+
+.phaseName {
+  font-size: 2.4rem;
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  color: var(--pc);
+  text-shadow: 0 0 24px var(--pg);
+}
+
+.phaseStance {
+  margin-top: 0.1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0f172a;
+  :global(.dark) & { color: #e2e8f0; }
+}
+
+// 横幅中段：与阶段名并排，靠左对齐后由仪表推到右侧
+.phaseHist {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem 0.4rem;
+  max-width: 16rem;
+  padding-left: 1rem;
+  border-left: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.phaseHistK {
+  font-size: 0.66rem;
+  color: #94a3b8;
+  cursor: help;
+}
+
+.phaseHistV {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.phaseHistD {
+  font-size: 0.62rem;
+  color: #cbd5e1;
+  :global(.dark) & { color: #64748b; }
+}
+
+// 晋级率仪表
+.gauge {
+  position: relative;
+  flex: 0 1 7.5rem;
+  min-width: 6rem;
+  max-width: 9rem;
+  margin-left: auto;
+  align-self: center;
+}
+
+.gaugeSvg { width: 100%; display: block; overflow: visible; }
+
+.gaugeArc {
+  filter: drop-shadow(0 0 5px var(--pg));
+  transition: stroke-dasharray 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.gaugeIn {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.15rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.gaugeV {
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #0f172a;
+  :global(.dark) & { color: #f1f5f9; }
+}
+
+.gaugeK {
+  font-size: 0.64rem;
+  color: #94a3b8;
+  cursor: help;
+}
+
+// ══ 通用滚动体 ═════════════════════════════════════════
+.ladder,
+.themes,
+.conceptWrap,
+.hotWrap,
+.luScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.35);
+    border-radius: 2px;
+  }
+}
+
+// ══ 连板天梯 ═══════════════════════════════════════════
+// 档位只有 3~4 行但格子很高：内容贴顶排列，剩余空间留白即可，
+// 用 center/space-evenly 会把几行字吊在卡片中间显得更空
+.ladder {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 0.5rem;
+}
+
+.ladderRow {
+  display: grid;
+  grid-template-columns: 1.9rem minmax(1.6rem, 3.2rem) 1fr;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.ladderB {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: right;
+  color: #0f172a;
+  :global(.dark) & { color: #e2e8f0; }
+}
+
+.ladderBar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 1.15rem;
+  padding: 0 0.35rem;
+  background: linear-gradient(90deg, #f97316, #ef4444);
+  border-radius: 0.25rem;
+  box-shadow: 0 1px 6px rgba(239, 68, 68, 0.3);
+
+  span { font-size: 0.68rem; font-weight: 700; color: #fff; }
+}
+
+.chips { display: flex; flex-wrap: wrap; gap: 0.2rem; }
+
+.chip {
+  padding: 0.02rem 0.3rem;
+  font-size: 0.68rem;
+  color: #475569;
+  background: rgba(148, 163, 184, 0.16);
+  border-radius: 0.2rem;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover { color: #fff; background: $primary; }
+  :global(.dark) & { color: #cbd5e1; }
+}
+
+.chipSealed {
+  color: #b91c1c;
+  background: rgba(239, 68, 68, 0.16);
+  :global(.dark) & { color: #fca5a5; }
+}
+
+// ══ 今日主线 ═══════════════════════════════════════════
+.themes {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.42rem;
+}
+
+.themeRow {
+  display: grid;
+  grid-template-columns: 1rem minmax(3.5rem, 4.5rem) 1fr 1.1rem 1.9rem;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.themeRank {
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.rankTop {
+  color: #fff;
+  background: linear-gradient(135deg, #f97316, #ef4444);
+  border-radius: 0.2rem;
+}
+
+.themeName {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  :global(.dark) & { color: #e2e8f0; }
+}
+
+.themeTrack {
+  height: 0.4rem;
+  background: rgba(148, 163, 184, 0.18);
+  border-radius: 0.2rem;
+  overflow: hidden;
+}
+
+.themeFill {
+  height: 100%;
+  background: linear-gradient(90deg, #fb923c, #ef4444);
+  border-radius: 0.2rem;
+  transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.themeN {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: right;
+  color: $danger;
+}
+
+.themeB {
+  font-size: 0.64rem;
+  text-align: right;
+  color: #94a3b8;
+}
+
+.themeBHot { font-weight: 700; color: $danger; }
+
+// ══ 趋势图 ═════════════════════════════════════════════
+// 通栏横条：宽而矮才是时间序列该有的比例。
+// 太矮（<10rem）柱子会缩成一条线、纵轴刻度也挤，13rem 是可读的下限
+.trendChart {
+  flex: 1;
+  height: 13rem;
+}
+
+// ══ 涨停池 ═════════════════════════════════════════════
+.luTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.72rem;
+
+  td {
+    padding: 0.22rem 0.2rem;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+    white-space: nowrap;
+  }
+
+  tr:hover td { background: rgba(148, 163, 184, 0.08); }
+}
+
+.luName {
+  max-width: 4.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  a {
+    font-weight: 500;
+    color: #0f172a;
+    cursor: pointer;
+    &:hover { color: $primary; }
+    :global(.dark) & { color: #e2e8f0; }
+  }
+}
+
+.stTag {
+  margin-left: 0.15rem;
+  padding: 0 0.15rem;
+  font-size: 0.58rem;
+  font-style: normal;
+  color: #b45309;
+  background: #fef3c7;
+  border-radius: 0.15rem;
+}
+
+.bd {
+  padding: 0.02rem 0.25rem;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: #64748b;
+  background: rgba(148, 163, 184, 0.18);
+  border-radius: 0.2rem;
+}
+
+.bdWarm { color: #c2410c; background: rgba(249, 115, 22, 0.18); }
+
+.bdHot {
+  color: #fff;
+  background: linear-gradient(135deg, #f97316, #ef4444);
+}
+
+.early { font-weight: 600; color: $danger; }
+.dim { color: #94a3b8; }
+
+.luSeal {
+  text-align: right;
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  font-size: 0.68rem;
+  color: #0f172a;
+  :global(.dark) & { color: #cbd5e1; }
+}
+
+.luTheme {
+  max-width: 6rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.66rem;
+  color: #94a3b8;
+}
+
+// ══ 概念板块 ═══════════════════════════════════════════
+// 列宽自适应：窄列时单列排，宽列时自动分成多列，不会又空又长
+.conceptWrap {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr));
+  align-content: start;
+  gap: 0.1rem 0.8rem;
+}
+
+.conceptItem {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.22rem 0.25rem;
+  border-radius: 0.25rem;
+
+  &:hover { background: rgba(148, 163, 184, 0.08); }
+}
+
+.conceptN {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  :global(.dark) & { color: #e2e8f0; }
+}
+
+.conceptP {
+  font-size: 0.76rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.conceptT {
+  width: 3.2rem;
+  text-align: right;
+  font-size: 0.64rem;
+  color: #94a3b8;
+}
+
+// ══ 人气榜 ═════════════════════════════════════════════
+.hotWrap { display: flex; flex-direction: column; }
+
+.hotRow {
+  display: grid;
+  grid-template-columns: 1.1rem 1fr auto;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.22rem 0.2rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: rgba(148, 163, 184, 0.08); }
+}
+
+.hotR {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.hotN {
+  font-size: 0.74rem;
+  color: #0f172a;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &:hover { color: $primary; }
+  :global(.dark) & { color: #e2e8f0; }
+}
+
+.hotT {
+  font-size: 0.64rem;
+  color: #94a3b8;
+}
+
+// A股习惯：涨红跌绿
+.up { color: $danger; }
+.down { color: $success; }

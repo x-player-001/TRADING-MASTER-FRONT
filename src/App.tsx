@@ -24,6 +24,7 @@ import Ema20Push from './pages/Ema20Push';
 import TradeJournal from './pages/TradeJournal';
 import AStockPicks from './pages/AStockPicks';
 import WatchPool from './pages/WatchPool';
+import MarketSentiment from './pages/MarketSentiment';
 // 链上数据模块
 import PotentialTokens from './pages/PotentialTokens';
 import MonitorTokens from './pages/MonitorTokens';
@@ -118,6 +119,8 @@ function App() {
         setCurrentPage('astock-picks');
       } else if (hash === 'watch-pool') {
         setCurrentPage('watch-pool');
+      } else if (hash === 'market-sentiment') {
+        setCurrentPage('market-sentiment');
       } else if (hash === 'potential-tokens') {
         setCurrentPage('potential-tokens');
       } else if (hash === 'monitor-tokens') {
@@ -220,6 +223,8 @@ function App() {
         return <AStockPicks isSidebarCollapsed={isSidebarCollapsed} />;
       case 'watch-pool':
         return <WatchPool isSidebarCollapsed={isSidebarCollapsed} />;
+      case 'market-sentiment':
+        return <MarketSentiment isSidebarCollapsed={isSidebarCollapsed} />;
       // 链上数据模块页面
       case 'potential-tokens':
         return <PotentialTokens isSidebarCollapsed={isSidebarCollapsed} />;
