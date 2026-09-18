@@ -1,0 +1,196 @@
+$danger: #ef4444;
+$warning: #f59e0b;
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 1rem;
+  padding: 0.625rem 1rem;
+  background: linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%);
+  border: 1px solid #fed7aa;
+  border-radius: 0.625rem;
+
+  :global(.dark) & {
+    background: linear-gradient(135deg, rgba(67, 20, 7, 0.55) 0%, rgba(30, 41, 59, 0.6) 100%);
+    border-color: rgba(194, 65, 12, 0.5);
+  }
+}
+
+// ── 左侧总览 ───────────────────────────────────────────
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #9a3412;
+  :global(.dark) & { color: #fdba74; }
+}
+
+.staleChip {
+  padding: 0.05rem 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #7c2d12;
+  background: #fed7aa;
+  border-radius: 0.25rem;
+  cursor: help;
+
+  :global(.dark) & { color: #fed7aa; background: rgba(154, 52, 18, 0.7); }
+}
+
+.metric {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  cursor: help;
+
+  b {
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #111827;
+    :global(.dark) & { color: #f1f5f9; }
+  }
+}
+
+.metricKey {
+  font-size: 0.72rem;
+  color: #92400e;
+  :global(.dark) & { color: #d6d3d1; }
+}
+
+.sealed { color: $danger !important; }
+.broken { color: $warning !important; }
+
+.divider {
+  width: 1px;
+  height: 1rem;
+  background: rgba(154, 52, 18, 0.25);
+}
+
+.byPool {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.poolChip {
+  padding: 0.05rem 0.35rem;
+  font-size: 0.68rem;
+  color: #9a3412;
+  background: rgba(251, 146, 60, 0.18);
+  border-radius: 0.2rem;
+
+  :global(.dark) & { color: #fdba74; }
+}
+
+.snapshot {
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  font-size: 0.7rem;
+  color: #a8a29e;
+}
+
+// ── 右侧个股 ───────────────────────────────────────────
+.listWrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+  min-width: 0;
+
+  @media (max-width: 1280px) {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+.stocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  max-height: 3.6rem;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(154, 52, 18, 0.3);
+    border-radius: 2px;
+  }
+}
+
+.stock {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.74rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.12s ease;
+
+  &:hover { transform: translateY(-1px); }
+}
+
+// 当前封着 = 红底；已炸板 = 灰底，视觉上一眼区分
+.stockSealed {
+  color: #fff;
+  background: linear-gradient(135deg, #f97316, #ef4444);
+}
+
+.stockBroken {
+  color: #78716c;
+  background: rgba(168, 162, 158, 0.25);
+
+  :global(.dark) & { color: #d6d3d1; background: rgba(120, 113, 108, 0.35); }
+}
+
+.favMark {
+  font-size: 0.68rem;
+  color: #fde68a;
+}
+
+.stockName { font-weight: 600; }
+
+.boards {
+  padding: 0 0.2rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.28);
+  border-radius: 0.15rem;
+}
+
+// 炸板次数：封着也可能非零，单独标出来
+.openTimes {
+  font-size: 0.64rem;
+  color: #fef3c7;
+
+  .stockBroken & { color: #b45309; }
+  :global(.dark) .stockBroken & { color: #fbbf24; }
+}
+
+.dim {
+  font-size: 0.76rem;
+  color: #a8a29e;
+}
+
+// ── tooltip ────────────────────────────────────────────
+.tip {
+  font-size: 0.75rem;
+  line-height: 1.7;
+}
+
+.tipReason {
+  margin-top: 0.2rem;
+  padding-top: 0.2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  opacity: 0.85;
+}
