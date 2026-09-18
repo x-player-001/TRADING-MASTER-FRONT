@@ -15,6 +15,9 @@ import {
 } from 'recharts';
 import styles from '../../pages/WatchPool.module.scss';
 import { DataSection } from '../ui';
+import FavStar from './FavStar';
+import LimitupBadge, { usePoolLimitupMap } from './LimitupBadge';
+import { favoriteAPI } from '../../services/favoriteAPI';
 import { groupByDate, withGroupHeaderColumns, groupRowClassName } from './dateGroup';
 import {
   lowvolAPI,
@@ -73,6 +76,29 @@ const LowvolPanel: React.FC<LowvolPanelProps> = ({ since, refreshKey, onLoadingC
   const [excludeLimitUp, setExcludeLimitUp] = useState(false);
   const [orderBy, setOrderBy] = useState<LowvolOrderBy>('excess5');
   const [keyword, setKeyword] = useState('');
+
+  // 收藏：拉一次代码数组，渲染时 O(1) 查表
+
+  // 今日池内涨停标记：拉一次做 O(1) 查表
+  const limitupMap = usePoolLimitupMap(refreshKey);
+  const [favCodes, setFavCodes] = useState<Set<string>>(new Set());
+  const loadFavCodes = useCallback(async () => {
+    try {
+      setFavCodes(new Set(await favoriteAPI.getCodes()));
+    } catch (err) {
+      console.error('加载收藏列表失败:', err);
+    }
+  }, []);
+  useEffect(() => { loadFavCodes(); }, [loadFavCodes]);
+  const handleFavChange = useCallback((code: string, faved: boolean) => {
+    setFavCodes((prev) => {
+      const next = new Set(prev);
+      if (faved) next.add(code); else next.delete(code);
+      return next;
+    });
+  }, []);
+
+
 
   // ── 数据 ────────────────────────────────────────────
   const [list, setList] = useState<LowvolItem[]>([]);
@@ -151,10 +177,13 @@ const LowvolPanel: React.FC<LowvolPanelProps> = ({ since, refreshKey, onLoadingC
       title: '代码',
       dataIndex: 'code',
       key: 'code',
-      width: 96,
+      width: 122,
       fixed: 'left',
       render: (code: string, row) => (
-        <a className={styles.codeLink} onClick={() => onOpenKline({ code, name: row.name })}>{code}</a>
+        <span className={styles.codeCell}>
+          <FavStar code={code} favCodes={favCodes} onChange={handleFavChange} />
+          <a className={styles.codeLink} onClick={() => onOpenKline({ code, name: row.name })}>{code}</a>
+        </span>
       ),
     },
     {
@@ -166,6 +195,7 @@ const LowvolPanel: React.FC<LowvolPanelProps> = ({ since, refreshKey, onLoadingC
       render: (name: string, row) => (
         <span className={styles.nameCell}>
           <a className={styles.nameLink} onClick={() => openDetail(row)}>{name}</a>
+          <LimitupBadge code={row.code} map={limitupMap} />
           {row.first_board && (
             <Tooltip title={row.limit_up ? '首板（触发日涨停）' : '首板'}>
               <span className={styles.brokeBadge}>板</span>
@@ -466,7 +496,7 @@ const LowvolPanel: React.FC<LowvolPanelProps> = ({ since, refreshKey, onLoadingC
           loading={loading}
           size="middle"
           pagination={{ pageSize: 30, showSizeChanger: false, showTotal: (t) => `共 ${t} 只` }}
-          scroll={{ x: 1520 }}
+          scroll={{ x: 1546 }}
           locale={{
             emptyText: (
               <Empty description={keyword.trim() ? `未匹配到「${keyword.trim()}」` : '当前筛选条件下无数据'} />

@@ -20,6 +20,11 @@ import AStockKlineModal from '../components/astock/AStockKlineModal';
 import LowvolPanel from '../components/astock/LowvolPanel';
 import { groupByDate, withGroupHeaderColumns, groupRowClassName } from '../components/astock/dateGroup';
 import PullbackPanel from '../components/astock/PullbackPanel';
+import FavoritePanel from '../components/astock/FavoritePanel';
+import FavStar from '../components/astock/FavStar';
+import LimitupBadge, { usePoolLimitupMap } from '../components/astock/LimitupBadge';
+import { favoriteAPI } from '../services/favoriteAPI';
+import PoolLimitupBar from '../components/astock/PoolLimitupBar';
 import type { BoardGroup } from '../services/astockAPI';
 import {
   watchPoolAPI,
@@ -87,11 +92,35 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
   // 名称/代码模糊搜索（接口无此参数，前端在已加载的列表上过滤）
   const [keyword, setKeyword] = useState('');
 
+  // 收藏：拉一次代码数组，渲染时 O(1) 查表
+  const [favCodes, setFavCodes] = useState<Set<string>>(new Set());
+  const loadFavCodes = useCallback(async () => {
+    try {
+      setFavCodes(new Set(await favoriteAPI.getCodes()));
+    } catch (err) {
+      console.error('加载收藏列表失败:', err);
+    }
+  }, []);
+  useEffect(() => { loadFavCodes(); }, [loadFavCodes]);
+  const handleFavChange = useCallback((code: string, faved: boolean) => {
+    setFavCodes((prev) => {
+      const next = new Set(prev);
+      if (faved) next.add(code); else next.delete(code);
+      return next;
+    });
+  }, []);
+
+
+
   // 两个池子各自独立，用 Tab 切换；since / 刷新由本页统一控制
   const [activeTab, setActiveTab] = useState('watch');
   const [refreshKey, setRefreshKey] = useState(0);
+  // 今日池内涨停标记：拉一次做 O(1) 查表
+  const limitupMap = usePoolLimitupMap(refreshKey);
+
   const [lowvolLoading, setLowvolLoading] = useState(false);
   const [pullbackLoading, setPullbackLoading] = useState(false);
+  const [favLoading, setFavLoading] = useState(false);
 
   // ── 数据 ────────────────────────────────────────────
   const [list, setList] = useState<WatchItem[]>([]);
@@ -176,10 +205,13 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
       title: '代码',
       dataIndex: 'code',
       key: 'code',
-      width: 96,
+      width: 122,
       fixed: 'left',
       render: (code: string, row) => (
-        <a className={styles.codeLink} onClick={() => setKlineStock({ code, name: row.name })}>{code}</a>
+        <span className={styles.codeCell}>
+          <FavStar code={code} favCodes={favCodes} onChange={handleFavChange} />
+          <a className={styles.codeLink} onClick={() => setKlineStock({ code, name: row.name })}>{code}</a>
+        </span>
       ),
     },
     {
@@ -191,6 +223,7 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
       render: (name: string, row) => (
         <span className={styles.nameCell}>
           <a className={styles.nameLink} onClick={() => openDetail(row)}>{name}</a>
+          <LimitupBadge code={row.code} map={limitupMap} />
           {row.broke_open_date && (
             <Tooltip title={`已于 ${row.broke_open_date} 跌破首板日开盘价，走弱信号`}>
               <span className={styles.brokeBadge}>破</span>
@@ -494,7 +527,7 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
           loading={loading}
           size="middle"
           pagination={{ pageSize: 30, showSizeChanger: false, showTotal: (t) => `共 ${t} 只` }}
-          scroll={{ x: 1360 }}
+          scroll={{ x: 1386 }}
           rowClassName={groupRowClassName<WatchItem>((row) => (row.broke_open_date ? styles.rowBroke : ''))}
           locale={{
             emptyText: (
@@ -508,11 +541,11 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
 
   return (
     <div className={`${styles.watchPool} ${isSidebarCollapsed ? styles.sidebarCollapsed : ''}`}>
-      <TopProgressBar isVisible={loading || isRefreshing || lowvolLoading || pullbackLoading} />
+      <TopProgressBar isVisible={loading || isRefreshing || lowvolLoading || pullbackLoading || favLoading} />
 
       <PageHeader
         title="监控池"
-        subtitle="低位首板池（30日内再次涨停）/ 低位放量池（T+1~10 收益）/ 回踩池（突破后回踩）"
+        subtitle="低位首板池 / 低位放量池 / 回踩池 / 我的收藏"
         icon="🎣"
       >
         <div className={styles.headerActions}>
@@ -525,6 +558,9 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
           <CoolRefreshButton onClick={handleRefresh} loading={isRefreshing} />
         </div>
       </PageHeader>
+
+      {/* 当天池内涨停状态栏 */}
+      <PoolLimitupBar refreshKey={refreshKey} onOpenKline={setKlineStock} />
 
       <Tabs
         activeKey={activeTab}
@@ -551,6 +587,17 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
                 since={since}
                 refreshKey={refreshKey}
                 onLoadingChange={setPullbackLoading}
+                onOpenKline={setKlineStock}
+              />
+            ),
+          },
+          {
+            key: 'favorite',
+            label: '我的收藏',
+            children: (
+              <FavoritePanel
+                refreshKey={refreshKey}
+                onLoadingChange={setFavLoading}
                 onOpenKline={setKlineStock}
               />
             ),

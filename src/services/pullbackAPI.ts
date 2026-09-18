@@ -26,9 +26,6 @@ export type PullbackStatus =
 // limitup = 涨停突破入池，streak = 连续上涨入池
 export type PullbackEntryKind = 'limitup' | 'streak';
 
-export type PullbackOrderBy =
-  | 'pullback_date' | 'hot_score' | 'breakout_date'
-  | 'gain_from_low' | 'drawdown' | 'streak_gain' | 'max_ret';
 
 export const PULLBACK_STATUS_LABELS: Record<PullbackStatus, string> = {
   armed: '待回踩',
@@ -113,7 +110,7 @@ export interface PullbackItem {
   top_concept_pct: number | null;    // 龙头概念当日涨幅%
   top_concept_share: number | null;  // 该票在概念内的权重占比
   theme_consec_days: number | null;  // 题材连续上榜天数
-  hot_score: number | null;          // 热度综合评分，order_by=hot_score 用它排序
+  hot_score: number | null;          // 热度综合评分
 
   // ── 结算 ──
   status: PullbackStatus;
@@ -145,8 +142,10 @@ export interface PullbackListParams {
   max_gain_from_low?: number;
   exclude_broke?: boolean;
   only_hot?: boolean;        // 只看命中热门概念/题材的（hot_score 非空）
+  // ⚠️ only_fav 目前只有 /api/pullback 支持；实测 /api/watch 与 /api/lowvol
+  // 传了会被静默忽略（200→200 且非法值不报 422），故未在那两个池子接入
+  only_fav?: boolean;        // 只看已收藏的
   since?: string;
-  order_by?: PullbackOrderBy;
   limit?: number;
 }
 

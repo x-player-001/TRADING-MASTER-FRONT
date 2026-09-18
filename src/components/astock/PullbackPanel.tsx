@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Table, Tag, Drawer, message, Tooltip, Empty, Segmented, Switch, Select, Input } from 'antd';
+import { Table, Tag, Drawer, message, Tooltip, Empty, Segmented, Switch, Input } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { Dayjs } from 'dayjs';
 import {
@@ -15,6 +15,9 @@ import {
 } from 'recharts';
 import styles from '../../pages/WatchPool.module.scss';
 import { DataSection } from '../ui';
+import FavStar from './FavStar';
+import LimitupBadge, { usePoolLimitupMap } from './LimitupBadge';
+import { favoriteAPI } from '../../services/favoriteAPI';
 import { groupByDate, withGroupHeaderColumns, groupRowClassName } from './dateGroup';
 import {
   pullbackAPI,
@@ -22,7 +25,6 @@ import {
   PullbackStats,
   PullbackStatus,
   PullbackEntryKind,
-  PullbackOrderBy,
   PullbackTrackPoint,
   PULLBACK_STATUS_LABELS,
   PULLBACK_STATUS_HINTS,
@@ -37,16 +39,6 @@ interface PullbackPanelProps {
   onLoadingChange?: (loading: boolean) => void;
   onOpenKline: (stock: { code: string; name?: string }) => void;
 }
-
-const ORDER_OPTIONS = [
-  { label: '热度', value: 'hot_score' },
-  { label: '回踩日期', value: 'pullback_date' },
-  { label: '突破日期', value: 'breakout_date' },
-  { label: '距低点', value: 'gain_from_low' },
-  { label: '回撤幅度', value: 'drawdown' },
-  { label: '连涨涨幅', value: 'streak_gain' },
-  { label: '最大收益', value: 'max_ret' },
-];
 
 // 状态机已拆细，这里只放常用的几个；armed/triggered 的区分正是
 // 「第一波登记 vs 第二波报警」
@@ -89,8 +81,31 @@ const PullbackPanel: React.FC<PullbackPanelProps> = ({ since, refreshKey, onLoad
   const [boardGroup, setBoardGroup] = useState<BoardGroup | 'all'>('main');
   const [excludeBroke, setExcludeBroke] = useState(false);
   const [onlyHot, setOnlyHot] = useState(false);
-  const [orderBy, setOrderBy] = useState<PullbackOrderBy>('hot_score');
+  const [onlyFav, setOnlyFav] = useState(false);
   const [keyword, setKeyword] = useState('');
+
+  // 收藏：拉一次代码数组，渲染时 O(1) 查表
+
+  // 今日池内涨停标记：拉一次做 O(1) 查表
+  const limitupMap = usePoolLimitupMap(refreshKey);
+  const [favCodes, setFavCodes] = useState<Set<string>>(new Set());
+  const loadFavCodes = useCallback(async () => {
+    try {
+      setFavCodes(new Set(await favoriteAPI.getCodes()));
+    } catch (err) {
+      console.error('加载收藏列表失败:', err);
+    }
+  }, []);
+  useEffect(() => { loadFavCodes(); }, [loadFavCodes]);
+  const handleFavChange = useCallback((code: string, faved: boolean) => {
+    setFavCodes((prev) => {
+      const next = new Set(prev);
+      if (faved) next.add(code); else next.delete(code);
+      return next;
+    });
+  }, []);
+
+
 
   // ── 数据 ────────────────────────────────────────────
   const [list, setList] = useState<PullbackItem[]>([]);
@@ -113,8 +128,8 @@ const PullbackPanel: React.FC<PullbackPanelProps> = ({ since, refreshKey, onLoad
         board_group: boardGroup === 'all' ? undefined : boardGroup,
         exclude_broke: excludeBroke || undefined,
         only_hot: onlyHot || undefined,
+        only_fav: onlyFav || undefined,
         since: since ? since.format('YYYY-MM-DD') : undefined,
-        order_by: orderBy,
         limit: 200,
       });
       setList(data ?? []);
@@ -127,7 +142,7 @@ const PullbackPanel: React.FC<PullbackPanelProps> = ({ since, refreshKey, onLoad
     }
     // onLoadingChange 由父级内联定义，不入依赖以免每次渲染都重新请求
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, entryKind, boardGroup, excludeBroke, onlyHot, since, orderBy]);
+  }, [status, entryKind, boardGroup, excludeBroke, onlyHot, onlyFav, since]);
 
   const loadStats = useCallback(async () => {
     try {
@@ -184,10 +199,13 @@ const PullbackPanel: React.FC<PullbackPanelProps> = ({ since, refreshKey, onLoad
       title: '代码',
       dataIndex: 'code',
       key: 'code',
-      width: 96,
+      width: 122,
       fixed: 'left',
       render: (code: string, row) => (
-        <a className={styles.codeLink} onClick={() => onOpenKline({ code, name: row.name })}>{code}</a>
+        <span className={styles.codeCell}>
+          <FavStar code={code} favCodes={favCodes} onChange={handleFavChange} />
+          <a className={styles.codeLink} onClick={() => onOpenKline({ code, name: row.name })}>{code}</a>
+        </span>
       ),
     },
     {
@@ -199,6 +217,7 @@ const PullbackPanel: React.FC<PullbackPanelProps> = ({ since, refreshKey, onLoad
       render: (name: string, row) => (
         <span className={styles.nameCell}>
           <a className={styles.nameLink} onClick={() => openDetail(row)}>{name}</a>
+          <LimitupBadge code={row.code} map={limitupMap} />
           {row.broke_date && (
             <Tooltip title={`已于 ${row.broke_date} 跌破关键位，走弱信号`}>
               <span className={styles.brokeBadge}>破</span>
@@ -516,13 +535,12 @@ const PullbackPanel: React.FC<PullbackPanelProps> = ({ since, refreshKey, onLoad
                 { label: '非主板', value: 'other' },
               ]}
             />
-            <Select
-              value={orderBy}
-              onChange={(v) => setOrderBy(v as PullbackOrderBy)}
-              options={ORDER_OPTIONS}
-              size="small"
-              style={{ width: 112 }}
-            />
+            <Tooltip title="只看已收藏的票">
+              <span className={styles.switchWrap}>
+                <Switch size="small" checked={onlyFav} onChange={setOnlyFav} />
+                <span className={styles.switchLabel}>只看收藏</span>
+              </span>
+            </Tooltip>
             <Tooltip title="只看命中当日热门概念/题材的票（hot_score 非空）">
               <span className={styles.switchWrap}>
                 <Switch size="small" checked={onlyHot} onChange={setOnlyHot} />
@@ -546,7 +564,7 @@ const PullbackPanel: React.FC<PullbackPanelProps> = ({ since, refreshKey, onLoad
           loading={loading}
           size="middle"
           pagination={{ pageSize: 30, showSizeChanger: false, showTotal: (t) => `共 ${t} 只` }}
-          scroll={{ x: 1628 }}
+          scroll={{ x: 1654 }}
           rowClassName={groupRowClassName<PullbackItem>((row) => (row.broke_date ? styles.rowBroke : ''))}
           locale={{
             emptyText: (

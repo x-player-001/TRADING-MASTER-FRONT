@@ -101,6 +101,100 @@ $warning: #f59e0b;
   @media (max-width: 768px) { display: none; }
 }
 
+// ── 今日池内涨停标记（三个池子共用）───────────────────
+// 封着=红、炸板=黄，两种状态一眼区分
+.ltBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0.05rem 0.3rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.4;
+  border-radius: 0.25rem;
+  cursor: help;
+}
+
+.ltSealed {
+  color: #fff;
+  background: linear-gradient(135deg, #f97316, #ef4444);
+}
+
+.ltBroken {
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.22);
+
+  :global(.dark) & { color: #fbbf24; background: rgba(245, 158, 11, 0.18); }
+}
+
+.ltBoards {
+  padding: 0 0.12rem;
+  font-size: 0.62rem;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 0.12rem;
+
+  .ltBroken & { background: rgba(180, 83, 9, 0.18); }
+}
+
+// ── 列表收藏星标（三个池子共用）───────────────────────
+.codeCell {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.favStar {
+  display: inline-block;
+  margin-right: 0.3rem;
+  font-size: 0.95rem;
+  line-height: 1;
+  color: #cbd5e1;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s ease, transform 0.15s ease;
+
+  &:hover {
+    color: #f59e0b;
+    transform: scale(1.15);
+  }
+
+  :global(.dark) & { color: #475569; }
+}
+
+.favStarOn {
+  color: #f59e0b;
+  :global(.dark) & { color: #fbbf24; }
+}
+
+.favStarBusy {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+// ── 收藏池：可编辑备注 / 移除 ──────────────────────────
+.noteCell {
+  display: inline-block;
+  min-width: 6rem;
+  padding: 0.1rem 0.25rem;
+  border-radius: 0.25rem;
+  cursor: text;
+
+  &:hover { background: rgba(148, 163, 184, 0.14); }
+}
+
+.notePlaceholder {
+  color: #cbd5e1;
+  :global(.dark) & { color: #475569; }
+}
+
+.removeLink {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  cursor: pointer;
+
+  &:hover { color: #ef4444; }
+}
+
 // ── 按日期分组的分隔行（三个池子共用）─────────────────
 .groupHeaderRow {
   td {
