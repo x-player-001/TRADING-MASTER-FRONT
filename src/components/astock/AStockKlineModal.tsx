@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { message } from 'antd';
 import { createChart, CandlestickSeries, LineSeries, HistogramSeries } from 'lightweight-charts';
 import { astockAPI, KlineMark } from '../../services/astockAPI';
+import { conceptAPI, StockConcept } from '../../services/conceptAPI';
+import { favoriteAPI } from '../../services/favoriteAPI';
 import styles from './AStockKlineModal.module.scss';
 
 interface AStockKlineModalProps {
@@ -46,6 +49,9 @@ const AStockKlineModal: React.FC<AStockKlineModalProps> = ({ code, name, onClose
   const [stockName, setStockName] = useState(name ?? '');
   const [marks, setMarks] = useState<KlineMark[]>([]);
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
+  const [concepts, setConcepts] = useState<StockConcept[]>([]);
+  const [faved, setFaved] = useState(false);
+  const [favBusy, setFavBusy] = useState(false);
 
   useEffect(() => {
     const container = chartContainerRef.current;
@@ -169,6 +175,51 @@ const AStockKlineModal: React.FC<AStockKlineModalProps> = ({ code, name, onClose
     };
   }, [code, isDark]);
 
+  // 收藏状态：打开弹窗时查一次
+  useEffect(() => {
+    let cancelled = false;
+    setFaved(false);
+    favoriteAPI
+      .getCodes()
+      .then((codes) => {
+        if (!cancelled) setFaved(codes.includes(code));
+      })
+      .catch((err) => console.error('加载收藏状态失败:', err));
+    return () => { cancelled = true; };
+  }, [code]);
+
+  // POST 幂等、DELETE 不存在返回 404，可放心做乐观更新：先翻转，失败回滚
+  const toggleFav = async () => {
+    if (favBusy) return;
+    setFavBusy(true);
+    const next = !faved;
+    setFaved(next);
+    try {
+      if (next) await favoriteAPI.add(code);
+      else await favoriteAPI.remove(code);
+    } catch (err: any) {
+      setFaved(!next);
+      message.error(err?.message || (next ? '收藏失败' : '取消收藏失败'));
+    } finally {
+      setFavBusy(false);
+    }
+  };
+
+  // 概念板块单独取，和 K 线解耦：概念接口挂了不影响图表渲染
+  useEffect(() => {
+    let cancelled = false;
+    setConcepts([]);
+    conceptAPI
+      .getStockConcepts(code)
+      .then((res) => {
+        if (!cancelled) setConcepts(res?.concepts ?? []);
+      })
+      .catch((err) => {
+        console.error('加载概念板块失败:', err);
+      });
+    return () => { cancelled = true; };
+  }, [code]);
+
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) onClose();
   };
@@ -182,8 +233,39 @@ const AStockKlineModal: React.FC<AStockKlineModalProps> = ({ code, name, onClose
       <div className={styles.modal}>
         <div className={styles.header}>
           <div className={styles.title}>
+            <span
+              className={`${styles.favStar} ${faved ? styles.favStarOn : ''} ${favBusy ? styles.favStarBusy : ''}`}
+              onClick={toggleFav}
+              role="button"
+              title={faved ? '取消收藏' : '收藏'}
+              aria-label={faved ? '取消收藏' : '收藏'}
+            >
+              {faved ? '★' : '☆'}
+            </span>
             <span className={styles.symbol}>{stockName || code}</span>
             <span className={styles.code}>{code}</span>
+            {/* 概念按成分股数升序返回，窄题材在前，取前 6 个 */}
+            {concepts.length > 0 && (
+              <span className={styles.concepts}>
+                {concepts.slice(0, 6).map((c) => (
+                  <span
+                    key={c.thscode}
+                    className={styles.conceptTag}
+                    title={`${c.concept_name} · ${c.member_count} 只成分股`}
+                  >
+                    {c.concept_name}
+                  </span>
+                ))}
+                {concepts.length > 6 && (
+                  <span
+                    className={styles.conceptMore}
+                    title={concepts.slice(6).map((c) => c.concept_name).join('、')}
+                  >
+                    +{concepts.length - 6}
+                  </span>
+                )}
+              </span>
+            )}
             <span className={styles.subtitle}>日线 · 原始价 · 最近250根</span>
           </div>
           <button className={styles.closeBtn} onClick={onClose}>✕</button>
