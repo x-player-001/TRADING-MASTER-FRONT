@@ -162,9 +162,14 @@ export interface PullbackListParams {
 
 export interface PullbackStats {
   total: number;
+  // ⚠️ watching / expired 是**旧状态名的遗留字段**，值却是新状态的：
+  //   watching 实为 triggered（已报警），不含 armed（待回踩）
+  //   expired  实为 settled（报警后窗口内没再涨停），不是"窗口走完作废"
+  // by_status 用的是新名，是权威来源，展示时优先用它
   watching: number;
   hit: number;
   expired: number;
+  by_status?: Partial<Record<PullbackStatus, number>>;
   hit_rate: number;          // ⚠️ 无历史基准可比，见 note
   avg_hit_days: number;
   avg_ret5: number | null;

@@ -449,17 +449,39 @@ const PullbackPanel: React.FC<PullbackPanelProps> = ({ since, refreshKey, onLoad
             <span className={styles.statLabel}>池中总数</span>
             <span className={styles.statValue}>{stats.total}</span>
           </div>
+          {/* stats 的 watching/expired 是旧状态名遗留字段，值其实是
+              triggered/settled，标签按真实语义写，优先用 by_status */}
           <div className={styles.statItem}>
-            <span className={styles.statLabel}>跟踪中</span>
-            <span className={`${styles.statValue} ${styles.statWatching}`}>{stats.watching}</span>
+            <Tooltip title={PULLBACK_STATUS_HINTS.triggered}>
+              <span className={`${styles.statLabel} ${styles.statLabelInfo}`}>已报警</span>
+            </Tooltip>
+            <span className={`${styles.statValue} ${styles.statWatching}`}>
+              {stats.by_status?.triggered ?? stats.watching}
+            </span>
+          </div>
+          {stats.by_status?.armed !== undefined && (
+            <div className={styles.statItem}>
+              <Tooltip title={PULLBACK_STATUS_HINTS.armed}>
+                <span className={`${styles.statLabel} ${styles.statLabelInfo}`}>待回踩</span>
+              </Tooltip>
+              <span className={styles.statValue}>{stats.by_status.armed}</span>
+            </div>
+          )}
+          <div className={styles.statItem}>
+            <Tooltip title={PULLBACK_STATUS_HINTS.hit}>
+              <span className={`${styles.statLabel} ${styles.statLabelInfo}`}>已命中</span>
+            </Tooltip>
+            <span className={`${styles.statValue} ${styles.statHit}`}>
+              {stats.by_status?.hit ?? stats.hit}
+            </span>
           </div>
           <div className={styles.statItem}>
-            <span className={styles.statLabel}>已命中</span>
-            <span className={`${styles.statValue} ${styles.statHit}`}>{stats.hit}</span>
-          </div>
-          <div className={styles.statItem}>
-            <span className={styles.statLabel}>已到期</span>
-            <span className={styles.statValue}>{stats.expired}</span>
+            <Tooltip title={PULLBACK_STATUS_HINTS.settled}>
+              <span className={`${styles.statLabel} ${styles.statLabelInfo}`}>已结算</span>
+            </Tooltip>
+            <span className={styles.statValue}>
+              {stats.by_status?.settled ?? stats.expired}
+            </span>
           </div>
 
           <div className={styles.statDivider} />
