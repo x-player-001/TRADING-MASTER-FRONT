@@ -26,7 +26,7 @@ const fmtMoney = (v: number | null): string => {
 const PoolLimitupBar: React.FC<PoolLimitupBarProps> = ({ refreshKey, onOpenKline }) => {
   const [list, setList] = useState<PoolLimitupItem[]>([]);
   const [stats, setStats] = useState<PoolLimitupStats | null>(null);
-  const [filter, setFilter] = useState<'all' | 'sealed' | 'broken'>('all');
+  const [filter, setFilter] = useState<'all' | 'live' | 'sealed' | 'broken'>('all');
   const [failed, setFailed] = useState(false);
   const timerRef = useRef<number | null>(null);
 
@@ -48,7 +48,11 @@ const PoolLimitupBar: React.FC<PoolLimitupBarProps> = ({ refreshKey, onOpenKline
     return () => { if (timerRef.current) window.clearInterval(timerRef.current); };
   }, [load]);
 
+  // 一只票只要有任一来源是活信号，就算活信号
+  const isLive = (r: PoolLimitupItem) => (r.pool_detail ?? []).some((d) => d.is_live);
+
   const shown = React.useMemo(() => {
+    if (filter === 'live') return list.filter(isLive);
     if (filter === 'sealed') return list.filter((r) => r.is_sealed_now);
     if (filter === 'broken') return list.filter((r) => !r.is_sealed_now);
     return list;
@@ -94,6 +98,24 @@ const PoolLimitupBar: React.FC<PoolLimitupBarProps> = ({ refreshKey, onOpenKline
           </span>
         </Tooltip>
 
+        {/* in_pools 里「仍在跟踪」和「命中后延续」操作含义完全不同，必须拆开报 */}
+        {stats?.live_signals !== undefined && (
+          <Tooltip title="仍在跟踪的活信号——池子给出信号后尚未结算，这部分才是新机会">
+            <span className={styles.metric}>
+              <b className={styles.live}>{stats.live_signals}</b>
+              <span className={styles.metricKey}>活信号</span>
+            </span>
+          </Tooltip>
+        )}
+        {stats?.recent_hits !== undefined && (
+          <Tooltip title="命中后 10 自然日内再次涨停，属同一波延续，不是新信号">
+            <span className={styles.metric}>
+              <b className={styles.recent}>{stats.recent_hits}</b>
+              <span className={styles.metricKey}>命中延续</span>
+            </span>
+          </Tooltip>
+        )}
+
         {stats?.by_pool && (
           <span className={styles.byPool}>
             {(Object.keys(POOL_LABELS) as PoolName[]).map((k) =>
@@ -116,9 +138,10 @@ const PoolLimitupBar: React.FC<PoolLimitupBarProps> = ({ refreshKey, onOpenKline
         <Segmented
           size="small"
           value={filter}
-          onChange={(v) => setFilter(v as 'all' | 'sealed' | 'broken')}
+          onChange={(v) => setFilter(v as 'all' | 'live' | 'sealed' | 'broken')}
           options={[
             { label: `全部 ${list.length}`, value: 'all' },
+            { label: `活信号 ${list.filter(isLive).length}`, value: 'live' },
             { label: `封着 ${list.filter((r) => r.is_sealed_now).length}`, value: 'sealed' },
             { label: `炸板 ${list.filter((r) => !r.is_sealed_now).length}`, value: 'broken' },
           ]}
@@ -135,13 +158,24 @@ const PoolLimitupBar: React.FC<PoolLimitupBarProps> = ({ refreshKey, onOpenKline
                     {r.open_times > 0 && ` · 今日炸板 ${r.open_times} 次`}</div>
                   {r.first_seal_time && <div>首封 {r.first_seal_time}</div>}
                   {r.seal_amount !== null && <div>封单 {fmtMoney(r.seal_amount)}</div>}
-                  <div>命中：{(r.pools ?? []).map((p) => POOL_LABELS[p] ?? p).join('、')}</div>
+                  {/* 逐条标明来源，活信号和命中延续的操作含义完全不同 */}
+                  {(r.pool_detail ?? []).map((d, i) => (
+                    <div key={i}>
+                      {POOL_LABELS[d.pool] ?? d.pool}
+                      {d.is_live
+                        ? ` ${d.entry_date ?? ''} 信号`
+                        : ` ${d.hit_date ?? ''} 已命中（延续）`}
+                    </div>
+                  ))}
+                  {!(r.pool_detail ?? []).length && (
+                    <div>命中：{(r.pools ?? []).map((p) => POOL_LABELS[p] ?? p).join('、')}</div>
+                  )}
                   {r.limit_up_reason && <div className={styles.tipReason}>{r.limit_up_reason}</div>}
                 </div>
               }
             >
               <span
-                className={`${styles.stock} ${r.is_sealed_now ? styles.stockSealed : styles.stockBroken}`}
+                className={`${styles.stock} ${r.is_sealed_now ? styles.stockSealed : styles.stockBroken} ${isLive(r) ? '' : styles.stockContinued}`}
                 onClick={() => onOpenKline({ code: r.code, name: r.name })}
               >
                 {r.in_favorite && <span className={styles.favMark}>★</span>}

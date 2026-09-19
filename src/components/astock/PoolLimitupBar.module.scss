@@ -73,6 +73,10 @@ $warning: #f59e0b;
 .sealed { color: $danger !important; }
 .broken { color: $warning !important; }
 
+// 活信号 = 新机会；命中延续 = 同一波的尾巴，不是新信号
+.live { color: #16a34a !important; }
+.recent { color: #a8a29e !important; }
+
 .divider {
   width: 1px;
   height: 1rem;
@@ -158,6 +162,13 @@ $warning: #f59e0b;
   background: rgba(168, 162, 158, 0.25);
 
   :global(.dark) & { color: #d6d3d1; background: rgba(120, 113, 108, 0.35); }
+}
+
+// 命中后延续：压低存在感，避免误读成新信号
+.stockContinued {
+  opacity: 0.5;
+
+  &:hover { opacity: 1; }
 }
 
 .favMark {

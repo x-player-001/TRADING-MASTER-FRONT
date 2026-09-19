@@ -17,10 +17,21 @@ export const POOL_LABELS: Record<PoolName, string> = {
   lowvol: '放量池',
 };
 
+// 每条记录的来源。只看 pools 时「活信号」和「命中后延续」长得一模一样，
+// 必须靠 is_live 区分——两者的操作含义完全不同。
+export interface PoolDetailRef {
+  pool: PoolName;
+  status: string;             // watching/triggered=仍在跟踪，hit=近期命中
+  entry_date: string | null;  // 入池日（回踩池是 pullback_date）
+  hit_date: string | null;    // 命中日，仅 status=hit 有值
+  is_live: boolean;           // true=活信号，false=命中后 10 自然日内的延续
+}
+
 export interface PoolLimitupItem {
   code: string;
   name: string;
   pools: PoolName[];          // 同一只票命中多个池时只返回一行，这里列出全部
+  pool_detail: PoolDetailRef[];
   is_sealed_now: boolean;
   open_times: number;         // 今日炸板次数
   boards: number;             // 连板数
@@ -40,6 +51,10 @@ export interface PoolLimitupStats {
   sealed: number;             // 当前封着
   broken: number;             // 已炸板
   by_pool: Partial<Record<PoolName, number>>;
+  // 把 in_pools 拆成两类：仍在跟踪 vs 命中后延续。
+  // ⚠️ 只报 in_pools 会让人以为都是新信号——实测 33 只里只有 16 只是活信号
+  live_signals?: number;
+  recent_hits?: number;
   snapshot_at: string | null;
   // 数据非当日时为 true——防止周末查看时把上个交易日的涨停当成今天的
   is_stale: boolean;
