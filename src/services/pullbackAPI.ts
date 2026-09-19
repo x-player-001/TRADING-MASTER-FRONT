@@ -26,6 +26,15 @@ export type PullbackStatus =
 // limitup = 涨停突破入池，streak = 连续上涨入池
 export type PullbackEntryKind = 'limitup' | 'streak';
 
+// 节奏分型：回答「若涨停、预计多快」，不是「会不会涨停」。
+// 实测 n=13702：急 快速涨停11.90%/总命中26.58%，中 3.58%/12.49%，缓 1.54%/8.19%。
+// ⚠️ 两个使用边界（文档明确要求）：
+//   1. 不要拿它筛票——缓组样本是急组的 8 倍，按节奏过滤会砍掉大部分命中
+//   2.「缓」不是"预计慢慢涨"，是"不具备急涨特征"，是排除法的结果，
+//      缓组总命中率仅 8.19%，里面大部分根本不涨
+// 故前端只做展示与分组查看，不提供 rhythm 筛选器。
+export type PullbackRhythm = '急' | '中' | '缓';
+
 
 export const PULLBACK_STATUS_LABELS: Record<PullbackStatus, string> = {
   armed: '待回踩',
@@ -101,6 +110,8 @@ export interface PullbackItem {
   dist_ma20: number;
   pullback_days: number;
   pullback_vol_ratio: number;   // 回踩日缩量倍数
+  vol20: number | null;         // 相对20日均量
+  rhythm: PullbackRhythm | null;// 节奏分型，仅展示不筛选
 
   // ── 热度（新增）──
   // 命中当日热门概念/题材时才有值；实测 hot_themes 与 theme_consec_days

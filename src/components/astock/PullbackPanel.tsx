@@ -25,6 +25,7 @@ import {
   PullbackStats,
   PullbackStatus,
   PullbackEntryKind,
+  PullbackRhythm,
   PullbackTrackPoint,
   PULLBACK_STATUS_LABELS,
   PULLBACK_STATUS_HINTS,
@@ -269,6 +270,25 @@ const PullbackPanel: React.FC<PullbackPanelProps> = ({ since, refreshKey, onLoad
           </Tag>
         </Tooltip>
       ),
+    },
+    {
+      title: '节奏',
+      dataIndex: 'rhythm',
+      key: 'rhythm',
+      width: 72,
+      align: 'center',
+      render: (r: PullbackRhythm | null) => {
+        if (!r) return <span className={styles.muted}>—</span>;
+        const hint =
+          r === '急' ? '若涨停预计 T+1~T+2（实测快速涨停 11.90%，总命中 26.58%）'
+            : r === '中' ? '若涨停预计一周内（实测快速涨停 3.58%，总命中 12.49%）'
+              : '不具备急涨特征——是排除法的结果，非"预计慢慢涨"。总命中仅 8.19%，多数根本不涨';
+        return (
+          <Tooltip title={`${hint}。仅用于设定持有预期，不要拿它筛票`}>
+            <Tag color={r === '急' ? 'red' : r === '中' ? 'orange' : 'default'}>{r}</Tag>
+          </Tooltip>
+        );
+      },
     },
     {
       title: '热度',
@@ -564,7 +584,7 @@ const PullbackPanel: React.FC<PullbackPanelProps> = ({ since, refreshKey, onLoad
           loading={loading}
           size="middle"
           pagination={{ pageSize: 30, showSizeChanger: false, showTotal: (t) => `共 ${t} 只` }}
-          scroll={{ x: 1654 }}
+          scroll={{ x: 1726 }}
           rowClassName={groupRowClassName<PullbackItem>((row) => (row.broke_date ? styles.rowBroke : ''))}
           locale={{
             emptyText: (
