@@ -175,6 +175,43 @@ export interface PullbackStats {
   note?: string;             // 后端给的口径提醒，应原样展示
 }
 
+// ===== 盘中回踩预警（14:45）=====
+// ⚠️ 与 /api/pullback 的正式入池是**两张表、两个口径**，前端不要混为一谈：
+//   正式入池 18:30 收盘后跑管线，那时已买不进；
+//   本接口 14:45 用实时价预判，留出收盘前 15 分钟下单时间。
+// **这是预判不是确认**——判据用盘中 last_price 代替收盘价，
+// 尾盘 15 分钟可能拉走或砸穿，名单里会有一部分收盘时不成立。
+export interface PullbackAlert {
+  id: number;
+  pool_id: number;             // 对应 watch_pullback.id，可回查那条 armed 记录
+  code: string;
+  name: string;
+  alert_date: string;
+  snapshot_at: string;         // 抓取时刻
+  last_price: number | null;   // 预警时实时价（非收盘价）
+  dist_ma5: number | null;
+  dist_ma10: number | null;
+  dist_ma20: number | null;
+  drawdown_from_peak: number | null;
+  pullback_days: number | null;
+  amount: number | null;
+  rhythm: PullbackRhythm | null;
+  breakout_date: string | null;
+  breakout_boards: number | null;
+  vol20: number | null;
+  gain_from_low: number | null;
+  // 次日回填：收盘后是否真的入池。null=尚未回填。
+  // 这是整套机制的自检指标，统计它才知道 14:45 这个时点准不准
+  confirmed: boolean | null;
+  in_favorite: boolean;
+}
+
+export interface PullbackAlertParams {
+  alert_date?: string;
+  rhythm?: PullbackRhythm;
+  only_fav?: boolean;
+}
+
 // 距均线偏离的着色：贴近均线（|x| 小）是回踩到位，偏离大则尚未回踩充分
 export const distLevel = (v: number | null | undefined): 'near' | 'mid' | 'far' => {
   if (v === null || v === undefined) return 'far';
@@ -194,6 +231,11 @@ class PullbackAPIService {
     return astockGet<PullbackStats>('/api/pullback/stats', {
       params: { since: since ?? '2000-01-01' },
     });
+  }
+
+  // 盘中预警。返回按 急→中→缓 排序，同型按回撤深的优先
+  async getAlerts(params: PullbackAlertParams = {}): Promise<PullbackAlert[]> {
+    return astockGet<PullbackAlert[]>('/api/pullback/alerts', { params: { _: 12, ...params } });
   }
 
   async getDetail(code: string): Promise<PullbackItem> {

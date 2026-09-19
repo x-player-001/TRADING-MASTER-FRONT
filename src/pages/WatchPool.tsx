@@ -21,6 +21,7 @@ import LowvolPanel from '../components/astock/LowvolPanel';
 import { groupByDate, withGroupHeaderColumns, groupRowClassName } from '../components/astock/dateGroup';
 import PullbackPanel from '../components/astock/PullbackPanel';
 import FavoritePanel from '../components/astock/FavoritePanel';
+import AlertPanel from '../components/astock/AlertPanel';
 import FavStar from '../components/astock/FavStar';
 import LimitupBadge, { usePoolLimitupMap } from '../components/astock/LimitupBadge';
 import { favoriteAPI } from '../services/favoriteAPI';
@@ -121,6 +122,7 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
   const [lowvolLoading, setLowvolLoading] = useState(false);
   const [pullbackLoading, setPullbackLoading] = useState(false);
   const [favLoading, setFavLoading] = useState(false);
+  const [alertLoading, setAlertLoading] = useState(false);
 
   // ── 数据 ────────────────────────────────────────────
   const [list, setList] = useState<WatchItem[]>([]);
@@ -541,11 +543,11 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
 
   return (
     <div className={`${styles.watchPool} ${isSidebarCollapsed ? styles.sidebarCollapsed : ''}`}>
-      <TopProgressBar isVisible={loading || isRefreshing || lowvolLoading || pullbackLoading || favLoading} />
+      <TopProgressBar isVisible={loading || isRefreshing || lowvolLoading || pullbackLoading || favLoading || alertLoading} />
 
       <PageHeader
         title="监控池"
-        subtitle="低位首板池 / 低位放量池 / 回踩池 / 我的收藏"
+        subtitle="低位首板池 / 低位放量池 / 回踩池 / 盘中预警 / 我的收藏"
         icon="🎣"
       >
         <div className={styles.headerActions}>
@@ -587,6 +589,17 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
                 since={since}
                 refreshKey={refreshKey}
                 onLoadingChange={setPullbackLoading}
+                onOpenKline={setKlineStock}
+              />
+            ),
+          },
+          {
+            key: 'alerts',
+            label: '盘中预警',
+            children: (
+              <AlertPanel
+                refreshKey={refreshKey}
+                onLoadingChange={setAlertLoading}
                 onOpenKline={setKlineStock}
               />
             ),
