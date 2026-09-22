@@ -80,7 +80,9 @@ const RotationBoardPanel: React.FC<RotationBoardProps> = ({ refreshKey }) => {
     <div className={styles.board}>
       {/* ── 第一行：标题 + 阶段分布 ── */}
       <div className={styles.head}>
-        <span className={styles.title}>板块轮动</span>
+        <Tooltip title={data.note ?? '按近期涨幅与成交额占比变化给概念打轮动阶段标签'}>
+          <span className={styles.title}>板块轮动</span>
+        </Tooltip>
         <span className={styles.meta}>
           {data.trade_date} · 回看 {data.window} 日
           {data.days_available < data.window && `（实际 ${data.days_available} 日）`}
@@ -111,9 +113,6 @@ const RotationBoardPanel: React.FC<RotationBoardProps> = ({ refreshKey }) => {
           {collapsed ? '展开 ▾' : '收起 ▴'}
         </button>
       </div>
-
-      {/* 后端给的口径提醒必须原样展示——stage 未经验证，不能当选股依据 */}
-      {data.note && <div className={styles.note}>⚠️ {data.note}</div>}
 
       {!collapsed && (
         <>

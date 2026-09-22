@@ -531,8 +531,6 @@ const PullbackPanel: React.FC<PullbackPanelProps> = ({ since, refreshKey, onLoad
             </>
           )}
 
-          {/* 后端给的口径提醒原样展示——本形态尚未回测验证 */}
-          {stats.note && <div className={styles.noticeHint}>⚠️ {stats.note}</div>}
         </div>
       )}
 
