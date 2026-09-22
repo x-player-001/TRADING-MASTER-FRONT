@@ -250,34 +250,6 @@ $success: #10b981;
   :global(.dark) & { background: rgba(139, 92, 246, 0.12); }
 }
 
-.reviewHead {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-bottom: 0.3rem;
-}
-
-.reviewTag {
-  padding: 0.02rem 0.3rem;
-  font-size: 0.64rem;
-  font-weight: 700;
-  color: #fff;
-  background: #8b5cf6;
-  border-radius: 0.2rem;
-}
-
-.reviewMeta {
-  font-size: 0.66rem;
-  color: #a78bfa;
-}
-
-.reviewWarn {
-  font-size: 0.64rem;
-  color: #a8a29e;
-  border-bottom: 1px dotted currentColor;
-  cursor: help;
-}
-
 .reviewBody {
   font-size: 0.76rem;
   line-height: 1.75;
@@ -292,4 +264,11 @@ $success: #10b981;
     color: #cbd5e1;
     b { color: #c4b5fd; }
   }
+}
+
+// 每个加粗标题另起一段，段首标题单独成色块，便于快速扫
+.reviewPara {
+  margin: 0;
+
+  & + & { margin-top: 0.3rem; }
 }

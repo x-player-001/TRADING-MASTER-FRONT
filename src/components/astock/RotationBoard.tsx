@@ -54,7 +54,7 @@ const RotationBoardPanel: React.FC<RotationBoardProps> = ({ refreshKey }) => {
   const [review, setReview] = useState<ReviewItem | null>(null);
   const [reviewNote, setReviewNote] = useState<string | null>(null);
   const [stage, setStage] = useState<RotationStage | 'all'>('all');
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);  // 默认收起，只留复盘结论
   const [failed, setFailed] = useState(false);
 
   const load = useCallback(async () => {
@@ -93,7 +93,19 @@ const RotationBoardPanel: React.FC<RotationBoardProps> = ({ refreshKey }) => {
     <div className={styles.board}>
       {/* ── 第一行：标题 + 阶段分布 ── */}
       <div className={styles.head}>
-        <Tooltip title={data.note ?? '按近期涨幅与成交额占比变化给概念打轮动阶段标签'}>
+        <Tooltip
+          title={
+            <>
+              <div>{data.note ?? '按近期涨幅与成交额占比变化给概念打轮动阶段标签'}</div>
+              {/* 下面那段结论是 LLM 生成的，口径提醒挂在这里而不是压在正文上 */}
+              {review && reviewNote && (
+                <div style={{ marginTop: 6, opacity: 0.85 }}>
+                  结论由 {review.model} 生成：{reviewNote}
+                </div>
+              )}
+            </>
+          }
+        >
           <span className={styles.title}>板块轮动</span>
         </Tooltip>
         <span className={styles.meta}>
@@ -127,26 +139,20 @@ const RotationBoardPanel: React.FC<RotationBoardProps> = ({ refreshKey }) => {
         </button>
       </div>
 
+      {/* 复盘结论不跟着收起——收起按钮只收下面的概念卡片和题材 */}
+      {review && (
+        <div className={styles.review}>
+          <ReviewText
+            content={review.content}
+            className={styles.reviewBody}
+            paragraphs
+            paragraphClassName={styles.reviewPara}
+          />
+        </div>
+      )}
+
       {!collapsed && (
         <>
-          {/* ── DeepSeek 盘后复盘：把上面这堆数字翻译成一段话 ── */}
-          {review && (
-            <div className={styles.review}>
-              <div className={styles.reviewHead}>
-                <span className={styles.reviewTag}>AI 复盘</span>
-                <span className={styles.reviewMeta}>
-                  {review.trade_date} · {review.model}
-                </span>
-                {reviewNote && (
-                  <Tooltip title={reviewNote}>
-                    <span className={styles.reviewWarn}>仅展示</span>
-                  </Tooltip>
-                )}
-              </div>
-              <ReviewText content={review.content} className={styles.reviewBody} />
-            </div>
-          )}
-
           {/* ── 概念 ── */}
           <div className={styles.filterRow}>
             <Segmented
