@@ -114,7 +114,7 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
 
 
   // 两个池子各自独立，用 Tab 切换；since / 刷新由本页统一控制
-  const [activeTab, setActiveTab] = useState('watch');
+  const [activeTab, setActiveTab] = useState('pullback');
   const [refreshKey, setRefreshKey] = useState(0);
   // 今日池内涨停标记：拉一次做 O(1) 查表
   const limitupMap = usePoolLimitupMap(refreshKey);
@@ -547,7 +547,7 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
 
       <PageHeader
         title="监控池"
-        subtitle="低位首板池 / 低位放量池 / 回踩池 / 盘中预警 / 我的收藏"
+        subtitle="回踩池 / 低位首板池 / 低位放量池 / 盘中预警 / 我的收藏"
         icon="🎣"
       >
         <div className={styles.headerActions}>
@@ -568,6 +568,18 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
         activeKey={activeTab}
         onChange={setActiveTab}
         items={[
+          {
+            key: 'pullback',
+            label: '回踩池',
+            children: (
+              <PullbackPanel
+                since={since}
+                refreshKey={refreshKey}
+                onLoadingChange={setPullbackLoading}
+                onOpenKline={setKlineStock}
+              />
+            ),
+          },
           { key: 'watch', label: '低位首板池', children: watchTab },
           {
             key: 'lowvol',
@@ -577,18 +589,6 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
                 since={since}
                 refreshKey={refreshKey}
                 onLoadingChange={setLowvolLoading}
-                onOpenKline={setKlineStock}
-              />
-            ),
-          },
-          {
-            key: 'pullback',
-            label: '回踩池',
-            children: (
-              <PullbackPanel
-                since={since}
-                refreshKey={refreshKey}
-                onLoadingChange={setPullbackLoading}
                 onOpenKline={setKlineStock}
               />
             ),
