@@ -285,3 +285,106 @@ $primary: #3b82f6;
   color: #6b7280;
   :global(.dark) & { color: #9ca3af; }
 }
+
+// ── 图表 + 复盘上下排 ─────────────────────────────────
+.mainCol {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+}
+
+// ── AI 复盘 ───────────────────────────────────────────
+// 后端明确：LLM 对已有数据的翻译，只作展示，不参与选股决策
+.review {
+  padding: 0.6rem 0.9rem 0.75rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.reviewHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.35rem;
+}
+
+.reviewTag {
+  padding: 0.02rem 0.3rem;
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: #fff;
+  background: #8b5cf6;
+  border-radius: 0.2rem;
+}
+
+.reviewMeta {
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
+// 回看「上周怎么说的」：按日期切换
+.reviewDates {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+}
+
+.reviewDate {
+  padding: 0.02rem 0.3rem;
+  font-size: 0.66rem;
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.15);
+  border-radius: 0.2rem;
+  cursor: pointer;
+
+  &:hover { background: rgba(139, 92, 246, 0.2); }
+}
+
+.reviewDateOn {
+  color: #fff;
+  background: #8b5cf6;
+}
+
+// 每次点击都可能计费，做成弱化的次要按钮而不是显眼的主按钮
+.reviewBtn {
+  margin-left: auto;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.68rem;
+  color: #8b5cf6;
+  background: transparent;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: 0.25rem;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { background: rgba(139, 92, 246, 0.12); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.reviewBody {
+  max-height: 9rem;
+  overflow-y: auto;
+  font-size: 0.78rem;
+  line-height: 1.8;
+  color: #334155;
+
+  b {
+    font-weight: 700;
+    color: #6d28d9;
+  }
+
+  :global(.dark) & {
+    color: #cbd5e1;
+    b { color: #c4b5fd; }
+  }
+}
+
+.reviewDim {
+  font-size: 0.74rem;
+  color: #94a3b8;
+}
+
+.reviewErr {
+  font-size: 0.74rem;
+  color: #ef4444;
+}

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Tooltip, Segmented, Empty } from 'antd';
 import styles from './RotationBoard.module.scss';
+import ReviewText from './ReviewText';
+import { reviewAPI, ReviewItem } from '../../services/reviewAPI';
 import {
   rotationAPI,
   RotationBoard as RotationBoardData,
@@ -49,6 +51,8 @@ const Spark: React.FC<{ c: RotationConcept }> = ({ c }) => {
 
 const RotationBoardPanel: React.FC<RotationBoardProps> = ({ refreshKey }) => {
   const [data, setData] = useState<RotationBoardData | null>(null);
+  const [review, setReview] = useState<ReviewItem | null>(null);
+  const [reviewNote, setReviewNote] = useState<string | null>(null);
   const [stage, setStage] = useState<RotationStage | 'all'>('all');
   const [collapsed, setCollapsed] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -60,6 +64,15 @@ const RotationBoardPanel: React.FC<RotationBoardProps> = ({ refreshKey }) => {
     } catch (err) {
       console.error('加载板块轮动失败:', err);
       setFailed(true);
+    }
+    // 复盘是独立接口，挂了不影响轮动看板本身
+    try {
+      const day = await reviewAPI.getDay({ kind: 'concept' });
+      setReview(day.concept);
+      setReviewNote(day.note);
+    } catch (err) {
+      console.error('加载板块复盘失败:', err);
+      setReview(null);
     }
   }, []);
 
@@ -116,6 +129,24 @@ const RotationBoardPanel: React.FC<RotationBoardProps> = ({ refreshKey }) => {
 
       {!collapsed && (
         <>
+          {/* ── DeepSeek 盘后复盘：把上面这堆数字翻译成一段话 ── */}
+          {review && (
+            <div className={styles.review}>
+              <div className={styles.reviewHead}>
+                <span className={styles.reviewTag}>AI 复盘</span>
+                <span className={styles.reviewMeta}>
+                  {review.trade_date} · {review.model}
+                </span>
+                {reviewNote && (
+                  <Tooltip title={reviewNote}>
+                    <span className={styles.reviewWarn}>仅展示</span>
+                  </Tooltip>
+                )}
+              </div>
+              <ReviewText content={review.content} className={styles.reviewBody} />
+            </div>
+          )}
+
           {/* ── 概念 ── */}
           <div className={styles.filterRow}>
             <Segmented

@@ -238,3 +238,58 @@ $success: #10b981;
 // A股习惯：涨红跌绿
 .up { color: $danger; }
 .down { color: $success; }
+
+// ── AI 复盘 ───────────────────────────────────────────
+// 后端明确要求：只作展示，不参与选股决策
+.review {
+  padding: 0.5rem 0.7rem;
+  background: rgba(139, 92, 246, 0.07);
+  border-left: 2px solid #8b5cf6;
+  border-radius: 0.35rem;
+
+  :global(.dark) & { background: rgba(139, 92, 246, 0.12); }
+}
+
+.reviewHead {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.3rem;
+}
+
+.reviewTag {
+  padding: 0.02rem 0.3rem;
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: #fff;
+  background: #8b5cf6;
+  border-radius: 0.2rem;
+}
+
+.reviewMeta {
+  font-size: 0.66rem;
+  color: #a78bfa;
+}
+
+.reviewWarn {
+  font-size: 0.64rem;
+  color: #a8a29e;
+  border-bottom: 1px dotted currentColor;
+  cursor: help;
+}
+
+.reviewBody {
+  font-size: 0.76rem;
+  line-height: 1.75;
+  color: #334155;
+
+  b {
+    font-weight: 700;
+    color: #6d28d9;
+  }
+
+  :global(.dark) & {
+    color: #cbd5e1;
+    b { color: #c4b5fd; }
+  }
+}

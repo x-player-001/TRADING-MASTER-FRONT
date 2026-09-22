@@ -1,10 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { message } from 'antd';
 import { createChart, CandlestickSeries, LineSeries, HistogramSeries } from 'lightweight-charts';
 import { astockAPI, KlineMark } from '../../services/astockAPI';
 import { conceptAPI, StockConcept } from '../../services/conceptAPI';
 import { favoriteAPI } from '../../services/favoriteAPI';
 import styles from './AStockKlineModal.module.scss';
+import ReviewText from './ReviewText';
+import { reviewAPI, ReviewItem } from '../../services/reviewAPI';
 
 interface AStockKlineModalProps {
   code: string;
@@ -52,6 +54,10 @@ const AStockKlineModal: React.FC<AStockKlineModalProps> = ({ code, name, onClose
   const [concepts, setConcepts] = useState<StockConcept[]>([]);
   const [faved, setFaved] = useState(false);
   const [favBusy, setFavBusy] = useState(false);
+  const [reviews, setReviews] = useState<ReviewItem[] | null>(null);  // null=加载中
+  const [reviewIdx, setReviewIdx] = useState(0);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analyzeErr, setAnalyzeErr] = useState<string | null>(null);
 
   useEffect(() => {
     const container = chartContainerRef.current;
@@ -220,6 +226,44 @@ const AStockKlineModal: React.FC<AStockKlineModalProps> = ({ code, name, onClose
     return () => { cancelled = true; };
   }, [code]);
 
+  // 历史复盘：与 K 线解耦，接口挂了不影响图表
+  const loadReviews = useCallback(async () => {
+    try {
+      const list = await reviewAPI.getStockHistory(code, 10);
+      setReviews(list ?? []);
+      setReviewIdx(0);
+    } catch (err) {
+      console.error('加载个股复盘失败:', err);
+      setReviews([]);
+    }
+  }, [code]);
+
+  useEffect(() => {
+    setReviews(null);
+    setAnalyzeErr(null);
+    loadReviews();
+  }, [loadReviews]);
+
+  // ⚠️ 实时调模型：10~20 秒且计费，只能由用户点击触发，且要防连点
+  const handleAnalyze = async () => {
+    if (analyzing) return;
+    setAnalyzing(true);
+    setAnalyzeErr(null);
+    try {
+      const r = await reviewAPI.analyze(code);
+      // 同日已有结果时后端返回 cached=true，不会重复计费
+      setReviews((prev) => {
+        const rest = (prev ?? []).filter((x) => x.trade_date !== r.trade_date);
+        return [r, ...rest];
+      });
+      setReviewIdx(0);
+    } catch (err) {
+      setAnalyzeErr(err instanceof Error ? err.message : '分析失败');
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) onClose();
   };
@@ -272,9 +316,53 @@ const AStockKlineModal: React.FC<AStockKlineModalProps> = ({ code, name, onClose
         </div>
 
         <div className={styles.body}>
+          {/* 图表与复盘上下排，右侧留给选中记录面板 */}
+          <div className={styles.mainCol}>
           <div className={styles.chartWrap} ref={chartContainerRef}>
             {loading && <div className={styles.loading}>加载中...</div>}
             {error && <div className={styles.errorMsg}>{error}</div>}
+          </div>
+
+          {/* ── DeepSeek 复盘：把量价数字翻译成一段话，只作展示 ── */}
+          <div className={styles.review}>
+            <div className={styles.reviewHead}>
+              <span className={styles.reviewTag}>AI 复盘</span>
+              {/* 有多天记录时可回看「上周怎么说的」 */}
+              {reviews && reviews.length > 1 && (
+                <span className={styles.reviewDates}>
+                  {reviews.map((r, i) => (
+                    <span
+                      key={r.trade_date}
+                      className={`${styles.reviewDate} ${i === reviewIdx ? styles.reviewDateOn : ''}`}
+                      onClick={() => setReviewIdx(i)}
+                    >
+                      {r.trade_date.slice(5)}
+                    </span>
+                  ))}
+                </span>
+              )}
+              {reviews && reviews.length === 1 && (
+                <span className={styles.reviewMeta}>{reviews[0].trade_date}</span>
+              )}
+              <button
+                className={styles.reviewBtn}
+                onClick={handleAnalyze}
+                disabled={analyzing}
+                title="调用模型分析，约 10~20 秒；当日已有结果则直接返回，不重复计费"
+              >
+                {analyzing ? '分析中…' : reviews && reviews.length ? '重新分析' : '生成分析'}
+              </button>
+            </div>
+
+            {reviews === null && <div className={styles.reviewDim}>加载中…</div>}
+            {reviews?.length === 0 && !analyzing && (
+              <div className={styles.reviewDim}>暂无复盘记录，可点「生成分析」</div>
+            )}
+            {analyzeErr && <div className={styles.reviewErr}>{analyzeErr}</div>}
+            {reviews?.[reviewIdx] && (
+              <ReviewText content={reviews[reviewIdx].content} className={styles.reviewBody} />
+            )}
+          </div>
           </div>
 
           {marks.length > 0 && (

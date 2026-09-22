@@ -75,5 +75,9 @@ export const astockGet = <T = any>(url: string, config?: AxiosRequestConfig): Pr
   return astockApiClient.get(url, config);
 };
 
+export const astockPost = <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => {
+  return astockApiClient.post(url, data, config);
+};
+
 // 导出配置常量
 export { ASTOCK_API_BASE_URL };
