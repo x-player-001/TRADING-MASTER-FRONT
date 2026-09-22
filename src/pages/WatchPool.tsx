@@ -26,6 +26,7 @@ import FavStar from '../components/astock/FavStar';
 import LimitupBadge, { usePoolLimitupMap } from '../components/astock/LimitupBadge';
 import { favoriteAPI } from '../services/favoriteAPI';
 import PoolLimitupBar from '../components/astock/PoolLimitupBar';
+import RotationBoard from '../components/astock/RotationBoard';
 import type { BoardGroup } from '../services/astockAPI';
 import {
   watchPoolAPI,
@@ -560,6 +561,9 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
           <CoolRefreshButton onClick={handleRefresh} loading={isRefreshing} />
         </div>
       </PageHeader>
+
+      {/* 板块轮动看板 */}
+      <RotationBoard refreshKey={refreshKey} />
 
       {/* 当天池内涨停状态栏 */}
       <PoolLimitupBar refreshKey={refreshKey} onOpenKline={setKlineStock} />
