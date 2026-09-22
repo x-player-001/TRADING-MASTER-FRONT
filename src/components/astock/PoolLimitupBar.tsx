@@ -56,6 +56,10 @@ const PoolLimitupBar: React.FC<PoolLimitupBarProps> = ({ refreshKey, onOpenKline
   // 一只票只要有任一来源是活信号，就算活信号
   const isLive = (r: PoolLimitupItem) => (r.pool_detail ?? []).some((d) => d.is_live);
 
+  // 这只票在指定池的入池日。日期是 YYYY-MM-DD，按字符串比就是按时间比
+  const entryOf = (r: PoolLimitupItem, pool: PoolName): string | null =>
+    (r.pool_detail ?? []).find((d) => d.pool === pool)?.entry_date ?? null;
+
   if (failed) {
     return <div className={styles.bar}><span className={styles.dim}>池内涨停数据暂不可用</span></div>;
   }
@@ -157,7 +161,11 @@ const PoolLimitupBar: React.FC<PoolLimitupBarProps> = ({ refreshKey, onOpenKline
 
       {/* ── 各池个股，同一行内用竖线分隔；命中多池的票会在各池重复出现 ── */}
       {POOL_ORDER.map((pool) => {
-        const rows = list.filter((r) => (r.pools ?? []).includes(pool));
+        // 按该池自己的入池日倒序：刚报警的排前面。
+        // 同一只票在不同池的入池日不同，所以取的是当前这个池的那条。
+        const rows = list
+          .filter((r) => (r.pools ?? []).includes(pool))
+          .sort((a, b) => (entryOf(b, pool) ?? '').localeCompare(entryOf(a, pool) ?? ''));
         if (!rows.length) return null;
         return (
           <React.Fragment key={pool}>
