@@ -71,13 +71,16 @@ const PoolLimitupBar: React.FC<PoolLimitupBarProps> = ({ refreshKey, onOpenKline
             {r.open_times > 0 && ` · 今日炸板 ${r.open_times} 次`}</div>
           {r.first_seal_time && <div>首封 {r.first_seal_time}</div>}
           {r.seal_amount !== null && <div>封单 {fmtMoney(r.seal_amount)}</div>}
-          {/* 逐条标明来源，活信号和命中延续的操作含义完全不同 */}
+          {/* 逐条标明来源，活信号和命中延续的操作含义完全不同。
+              entry_date 是当初报警那天，hit_date 是兑现涨停那天——
+              要判断「当时叫我买的信号现在怎么样了」，看的是入池日。 */}
           {(r.pool_detail ?? []).map((d, i) => (
             <div key={i}>
               {POOL_LABELS[d.pool] ?? d.pool}
+              {d.entry_date && ` 入池 ${d.entry_date}`}
               {d.is_live
-                ? ` ${d.entry_date ?? ''} 信号`
-                : ` ${d.hit_date ?? ''} 已命中（延续）`}
+                ? ' · 信号中'
+                : ` · 已命中${d.hit_date ? `（${d.hit_date} 涨停，延续）` : '（延续）'}`}
             </div>
           ))}
           {!(r.pool_detail ?? []).length && (
