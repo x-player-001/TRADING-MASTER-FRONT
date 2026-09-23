@@ -181,7 +181,7 @@ $primary: #3b82f6;
   position: relative;
   flex: 1;
   min-width: 0;
-  min-height: 500px;
+  min-height: 420px;
 }
 
 .loading,
@@ -362,21 +362,53 @@ $primary: #3b82f6;
 }
 
 .reviewBody {
-  max-height: 9rem;
+  max-height: 15rem;
   overflow-y: auto;
+  padding-right: 0.4rem;
   font-size: 0.78rem;
-  line-height: 1.8;
+  line-height: 1.85;
   color: #334155;
+
+  p {
+    margin: 0;
+    // 数字和价格多，等宽数字让上下行对得齐
+    font-variant-numeric: tabular-nums;
+  }
 
   b {
     font-weight: 700;
     color: #6d28d9;
   }
 
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.4);
+    border-radius: 2px;
+  }
+
   :global(.dark) & {
     color: #cbd5e1;
     b { color: #c4b5fd; }
   }
+}
+
+// 三段（强支撑/第二波概率/量价异常）各自成块，用左边线分隔
+.reviewBlock {
+  & + & {
+    margin-top: 0.55rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed rgba(148, 163, 184, 0.28);
+  }
+}
+
+.reviewHeading {
+  margin-bottom: 0.15rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #6d28d9;
+  letter-spacing: 0.02em;
+
+  :global(.dark) & { color: #c4b5fd; }
 }
 
 .reviewDim {

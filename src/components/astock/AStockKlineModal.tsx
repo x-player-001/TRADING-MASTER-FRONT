@@ -360,7 +360,13 @@ const AStockKlineModal: React.FC<AStockKlineModalProps> = ({ code, name, onClose
             )}
             {analyzeErr && <div className={styles.reviewErr}>{analyzeErr}</div>}
             {reviews?.[reviewIdx] && (
-              <ReviewText content={reviews[reviewIdx].content} className={styles.reviewBody} />
+              <ReviewText
+                content={reviews[reviewIdx].content}
+                className={styles.reviewBody}
+                paragraphs
+                paragraphClassName={styles.reviewBlock}
+                headingClassName={styles.reviewHeading}
+              />
             )}
           </div>
           </div>
