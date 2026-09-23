@@ -34,6 +34,10 @@ import {
 } from '../../services/pullbackAPI';
 import type { BoardGroup } from '../../services/astockAPI';
 
+// 统计条暂时隐藏（代码保留）。改回 true 即恢复「池中总数 / 已报警 / 命中率…」那一行。
+const SHOW_STATS_BAR = false;
+
+
 interface PullbackPanelProps {
   since: Dayjs | null;
   refreshKey: number;
@@ -443,7 +447,7 @@ const PullbackPanel: React.FC<PullbackPanelProps> = ({ since, refreshKey, onLoad
   return (
     <>
       {/* ── 统计条 ─────────────────────────────────── */}
-      {stats && (
+      {SHOW_STATS_BAR && stats && (
         <div className={styles.statsBar}>
           <div className={styles.statItem}>
             <span className={styles.statLabel}>池中总数</span>
