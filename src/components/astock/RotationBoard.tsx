@@ -54,7 +54,7 @@ const RotationBoardPanel: React.FC<RotationBoardProps> = ({ refreshKey }) => {
   const [review, setReview] = useState<ReviewItem | null>(null);
   const [reviewNote, setReviewNote] = useState<string | null>(null);
   const [stage, setStage] = useState<RotationStage | 'all'>('all');
-  const [collapsed, setCollapsed] = useState(true);  // 默认收起，只留复盘结论
+  const [collapsed, setCollapsed] = useState(true);  // 默认收起，只留标题行（AI 复盘也收起）
   const [failed, setFailed] = useState(false);
 
   const load = useCallback(async () => {
@@ -139,20 +139,20 @@ const RotationBoardPanel: React.FC<RotationBoardProps> = ({ refreshKey }) => {
         </button>
       </div>
 
-      {/* 复盘结论不跟着收起——收起按钮只收下面的概念卡片和题材 */}
-      {review && (
-        <div className={styles.review}>
-          <ReviewText
-            content={review.content}
-            className={styles.reviewBody}
-            paragraphs
-            paragraphClassName={styles.reviewPara}
-          />
-        </div>
-      )}
-
       {!collapsed && (
         <>
+          {/* AI 复盘结论也跟着收起，默认只留标题行 */}
+          {review && (
+            <div className={styles.review}>
+              <ReviewText
+                content={review.content}
+                className={styles.reviewBody}
+                paragraphs
+                paragraphClassName={styles.reviewPara}
+              />
+            </div>
+          )}
+
           {/* ── 概念 ── */}
           <div className={styles.filterRow}>
             <Segmented

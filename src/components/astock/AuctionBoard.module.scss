@@ -1,0 +1,304 @@
+$danger: #ef4444;
+$success: #10b981;
+
+// 与板块轮动看板同一套卡片骨架，换琥珀色区分
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.625rem 0.875rem;
+  background: linear-gradient(135deg, #fffbeb 0%, #f8fafc 100%);
+  border: 1px solid #fde68a;
+  border-radius: 0.625rem;
+
+  :global(.dark) & {
+    background: linear-gradient(135deg, rgba(120, 53, 15, 0.35) 0%, rgba(30, 41, 59, 0.6) 100%);
+    border-color: rgba(245, 158, 11, 0.35);
+  }
+}
+
+// ── 标题行 ─────────────────────────────────────────────
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+}
+
+.title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #b45309;
+  :global(.dark) & { color: #fcd34d; }
+}
+
+.meta {
+  font-size: 0.72rem;
+  color: #d97706;
+  :global(.dark) & { color: #fbbf24; }
+}
+
+.incomplete {
+  padding: 0.05rem 0.4rem;
+  font-size: 0.66rem;
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.15);
+  border-radius: 0.25rem;
+  cursor: help;
+}
+
+.baseline {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  cursor: help;
+}
+
+.orderSwitch {
+  margin-left: auto;
+}
+
+.toggle {
+  margin-left: auto;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.7rem;
+  color: #d97706;
+  background: transparent;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 0.25rem;
+  cursor: pointer;
+
+  &:hover { background: rgba(245, 158, 11, 0.12); }
+}
+
+// ── 标题行里的全市场汇总 ───────────────────────────────
+.amount {
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #1f2937;
+  :global(.dark) & { color: #f1f5f9; }
+}
+
+.chg {
+  margin-left: -0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+  cursor: help;
+}
+
+.spark {
+  flex-shrink: 0;
+}
+
+.exch,
+.limit {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  :global(.dark) & { color: #94a3b8; }
+
+  b { font-weight: 700; }
+}
+
+.breadth {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: help;
+}
+
+.breadthBar {
+  display: inline-flex;
+  width: 110px;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: rgba(148, 163, 184, 0.2);
+}
+
+.barUp { background: $danger; }
+.barFlat {
+  background: #cbd5e1;
+  :global(.dark) & { background: #475569; }
+}
+.barDown { background: $success; }
+
+// ── 概念卡片 ───────────────────────────────────────────
+.concepts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+  padding-top: 0.45rem;
+  border-top: 1px dashed rgba(245, 158, 11, 0.35);
+}
+
+.conceptHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+}
+
+.subTitle {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #b45309;
+  :global(.dark) & { color: #fcd34d; }
+}
+
+// 前 10 个概念：每行 5 张正好两行，窄屏逐级减列
+.conceptGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.45rem;
+
+  @media (max-width: 1279px) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  @media (max-width: 1023px) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 767px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.4rem 0.55rem;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 0.45rem;
+
+  :global(.dark) & {
+    background: rgba(15, 23, 42, 0.45);
+    border-color: rgba(245, 158, 11, 0.18);
+  }
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  cursor: help;
+}
+
+.rank {
+  flex-shrink: 0;
+  min-width: 1rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: #d97706;
+  text-align: center;
+}
+
+.name {
+  overflow: hidden;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1f2937;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  :global(.dark) & { color: #f1f5f9; }
+}
+
+.hotTag {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 0 0.3rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: $danger;
+  background: rgba(239, 68, 68, 0.12);
+  border-radius: 0.2rem;
+}
+
+.cardMetrics {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #475569;
+  :global(.dark) & { color: #cbd5e1; }
+}
+
+.metricLabel {
+  font-size: 0.6rem;
+  font-weight: 400;
+  color: #94a3b8;
+}
+
+// 强于全市场基准
+.metricHot {
+  color: $danger;
+  :global(.dark) & { color: #f87171; }
+}
+
+.cardFoot {
+  display: flex;
+  gap: 0.6rem;
+  font-size: 0.66rem;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+  :global(.dark) & { color: #94a3b8; }
+}
+
+.topStocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+}
+
+.stock {
+  display: inline-flex;
+  gap: 0.2rem;
+  padding: 0 0.3rem;
+  font-size: 0.66rem;
+  color: #475569;
+  background: rgba(148, 163, 184, 0.14);
+  border-radius: 0.2rem;
+  white-space: nowrap;
+  :global(.dark) & { color: #cbd5e1; }
+}
+
+.stockLink {
+  cursor: pointer;
+  &:hover { background: rgba(245, 158, 11, 0.22); }
+}
+
+.conceptFoot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  font-size: 0.68rem;
+  color: #64748b;
+  :global(.dark) & { color: #94a3b8; }
+}
+
+.note {
+  color: #d97706;
+}
+
+.tip {
+  font-size: 0.72rem;
+  line-height: 1.6;
+}
+
+.dim {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+// A股习惯：涨红跌绿
+.up { color: $danger; }
+.down { color: $success; }

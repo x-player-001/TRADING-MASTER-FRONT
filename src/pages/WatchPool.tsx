@@ -27,6 +27,7 @@ import LimitupBadge, { usePoolLimitupMap } from '../components/astock/LimitupBad
 import { favoriteAPI } from '../services/favoriteAPI';
 import PoolLimitupBar from '../components/astock/PoolLimitupBar';
 import RotationBoard from '../components/astock/RotationBoard';
+import AuctionBoard from '../components/astock/AuctionBoard';
 import type { BoardGroup } from '../services/astockAPI';
 
 // 统计条暂时隐藏（代码保留）。改回 true 即恢复「池中总数 / 已报警 / 命中率…」那一行。
@@ -568,6 +569,9 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
 
       {/* 板块轮动看板 */}
       <RotationBoard refreshKey={refreshKey} />
+
+      {/* 集合竞价：全市场汇总 + 按概念聚合的竞价资金 */}
+      <AuctionBoard refreshKey={refreshKey} onOpenKline={setKlineStock} />
 
       {/* 当天池内涨停状态栏 */}
       <PoolLimitupBar refreshKey={refreshKey} onOpenKline={setKlineStock} />
