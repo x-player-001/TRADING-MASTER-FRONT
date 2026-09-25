@@ -80,8 +80,8 @@ apiClient.interceptors.response.use(
     let data = response.data;
 
     if (data && typeof data === 'object' && data.success === false) {
-      console.warn('⚠️ 业务逻辑错误:', data.message);
-      throw new Error(data.message || 'API请求失败');
+      console.warn('⚠️ 业务逻辑错误:', data.message ?? data.error);
+      throw new Error(data.message || data.error || 'API请求失败');
     }
 
     // 解包data字段
@@ -105,7 +105,7 @@ apiClient.interceptors.response.use(
 
       switch (status) {
         case 400:
-          errorMessage = data?.message || '请求参数错误';
+          errorMessage = data?.message || data?.error || '请求参数错误';
           break;
         case 401:
           errorMessage = '未授权访问';
@@ -114,7 +114,7 @@ apiClient.interceptors.response.use(
           errorMessage = '访问被禁止';
           break;
         case 404:
-          errorMessage = '请求的资源不存在';
+          errorMessage = data?.error || '请求的资源不存在';
           break;
         case 500:
           errorMessage = '服务器内部错误';
@@ -126,7 +126,8 @@ apiClient.interceptors.response.use(
           errorMessage = '服务暂时不可用';
           break;
         default:
-          errorMessage = data?.message || `HTTP错误: ${status}`;
+          // 部分服务（如 K线回放）把错误原因放在 error 字段
+          errorMessage = data?.message || data?.error || `HTTP错误: ${status}`;
       }
     } else if (error.request) {
       // 请求已发出但没有收到响应
