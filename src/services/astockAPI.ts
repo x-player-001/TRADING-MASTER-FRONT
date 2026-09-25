@@ -13,6 +13,11 @@ export interface MarketStatus {
 // ===== 每日选股 =====
 export type BoardGroup = 'main' | 'other';
 
+// 按代码前缀判断板块，口径与后端 board_group 一致（沪深主板 000/001/002/003/600/601/603/605，
+// 其余创业板 300/301、科创板 688、北交所 920 等为非主板）。用于不返回 board_group 的接口
+const MAIN_BOARD_PREFIX = /^(000|001|002|003|600|601|603|605)/;
+export const boardGroupOf = (code: string): BoardGroup => (MAIN_BOARD_PREFIX.test(code) ? 'main' : 'other');
+
 export interface Pick {
   id: number;
   trade_date: string;

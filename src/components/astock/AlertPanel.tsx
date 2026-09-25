@@ -13,6 +13,8 @@ import {
   PullbackRhythm,
   distLevel,
 } from '../../services/pullbackAPI';
+import { boardGroupOf } from '../../services/astockAPI';
+import type { BoardGroup } from '../../services/astockAPI';
 
 interface AlertPanelProps {
   refreshKey: number;
@@ -48,6 +50,8 @@ const AlertPanel: React.FC<AlertPanelProps> = ({ refreshKey, onLoadingChange, on
   const [rhythm, setRhythm] = useState<PullbackRhythm | 'all'>('all');
   const [onlyFav, setOnlyFav] = useState(false);
   const [keyword, setKeyword] = useState('');
+  // 与其他池一致默认看主板；预警接口不支持 board_group，按代码前缀在前端筛
+  const [boardGroup, setBoardGroup] = useState<BoardGroup | 'all'>('main');
 
   const [list, setList] = useState<PullbackAlert[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,11 +98,12 @@ const AlertPanel: React.FC<AlertPanelProps> = ({ refreshKey, onLoadingChange, on
 
   const filtered = React.useMemo(() => {
     const kw = keyword.trim().toLowerCase();
-    if (!kw) return list;
     return list.filter(
-      (r) => r.name?.toLowerCase().includes(kw) || r.code?.toLowerCase().includes(kw)
+      (r) =>
+        (boardGroup === 'all' || boardGroupOf(r.code) === boardGroup) &&
+        (!kw || r.name?.toLowerCase().includes(kw) || r.code?.toLowerCase().includes(kw))
     );
-  }, [list, keyword]);
+  }, [list, keyword, boardGroup]);
 
   // confirmed 是整套机制的自检指标：统计它才知道 14:45 这个时点准不准。
   // null 表示尚未回填（当日的必然如此），不能算进分母。
@@ -277,7 +282,7 @@ const AlertPanel: React.FC<AlertPanelProps> = ({ refreshKey, onLoadingChange, on
         subtitle={
           [
             shownDate ? `${shownDate} 14:45` : null,
-            keyword.trim() ? `${filtered.length} / ${list.length} 只` : `${list.length} 只`,
+            filtered.length !== list.length ? `${filtered.length} / ${list.length} 只` : `${list.length} 只`,
             snapshot ? `抓取 ${snapshot.slice(11, 16)}` : null,
           ].filter(Boolean).join(' · ')
         }
@@ -323,6 +328,16 @@ const AlertPanel: React.FC<AlertPanelProps> = ({ refreshKey, onLoadingChange, on
                 { label: '急', value: '急' },
                 { label: '中', value: '中' },
                 { label: '缓', value: '缓' },
+              ]}
+            />
+            <Segmented
+              size="small"
+              value={boardGroup}
+              onChange={(v) => setBoardGroup(v as BoardGroup | 'all')}
+              options={[
+                { label: '全部板块', value: 'all' },
+                { label: '主板', value: 'main' },
+                { label: '非主板', value: 'other' },
               ]}
             />
             <Tooltip title="只看已收藏的票">
