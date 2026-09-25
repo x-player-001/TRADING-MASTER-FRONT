@@ -4,6 +4,7 @@ import {
   createChart,
   CandlestickSeries,
   HistogramSeries,
+  LineSeries,
   createSeriesMarkers,
   LineStyle,
   IChartApi,
@@ -25,6 +26,8 @@ import type { OpenPosition } from './useReplaySession';
 import styles from './Replay.module.scss';
 import { fmtPrice } from './format';
 import { DrawingPrimitive } from './DrawingPrimitive';
+import { CountdownPrimitive, countdownText } from './CountdownPrimitive';
+import { calcEMA, calcMACD } from './indicators';
 import {
   Drawing,
   DrawingTool,
@@ -54,7 +57,22 @@ interface ReplayChartProps {
    * 不传则止损止盈线不可拖动（如会话已结束）
    */
   onProtectionDrag?: (kind: 'sl' | 'tp', price: number) => string | null;
+  /** 游标 5m K线的 open_time：大周期下在价格轴显示当前K线的剩余时间 */
+  cursorTime?: number;
+  /** 主图叠加 EMA20 */
+  showEma?: boolean;
+  /** 副图 MACD(12,26,9) */
+  showMacd?: boolean;
 }
+
+const EMA_PERIOD = 20;
+const EMA_COLOR = '#f59e0b';
+const DIF_COLOR = '#3b82f6';
+const DEA_COLOR = '#f59e0b';
+const MACD_PANE = 1;
+
+/** 指标数值精度跟随价格量级，小币种的 MACD 不至于全显示成 0.00 */
+const precisionFor = (price: number) => (price >= 1000 ? 2 : price >= 1 ? 4 : 6);
 
 type ProtectionKind = 'sl' | 'tp';
 
@@ -127,9 +145,15 @@ const ReplayChart: React.FC<ReplayChartProps> = ({
   picking = false,
   drawingKey,
   onProtectionDrag,
+  cursorTime,
+  showEma = true,
+  showMacd = true,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const drawingRef = useRef<DrawingPrimitive | null>(null);
+  const countdownRef = useRef<CountdownPrimitive | null>(null);
+  const emaRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const macdRef = useRef<{ hist: ISeriesApi<'Histogram'>; dif: ISeriesApi<'Line'>; dea: ISeriesApi<'Line'> } | null>(null);
 
   // ── 画线状态 ──
   // drawings 用 { key, list } 绑定会话，避免切换会话时把旧会话的线存进新会话
@@ -217,7 +241,8 @@ const ReplayChart: React.FC<ReplayChartProps> = ({
     chart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
 
     chart.subscribeClick((param) => {
-      if (!param.point || !onPriceClickRef.current) return;
+      // 只在主图取价：MACD 副图的纵坐标不是价格
+      if (!param.point || !onPriceClickRef.current || (param.paneIndex ?? 0) !== 0) return;
       const price = candle.coordinateToPrice(param.point.y);
       if (price !== null) onPriceClickRef.current(price);
     });
@@ -225,6 +250,18 @@ const ReplayChart: React.FC<ReplayChartProps> = ({
     const drawingPrimitive = new DrawingPrimitive();
     candle.attachPrimitive(drawingPrimitive);
     drawingRef.current = drawingPrimitive;
+
+    emaRef.current = chart.addSeries(LineSeries, {
+      color: EMA_COLOR,
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+
+    const countdownPrimitive = new CountdownPrimitive();
+    candle.attachPrimitive(countdownPrimitive);
+    countdownRef.current = countdownPrimitive;
 
     chartRef.current = chart;
     candleRef.current = candle;
@@ -248,8 +285,79 @@ const ReplayChart: React.FC<ReplayChartProps> = ({
       volumeRef.current = null;
       markersRef.current = null;
       drawingRef.current = null;
+      countdownRef.current = null;
+      emaRef.current = null;
+      macdRef.current = null;
     };
   }, [isDark]);
+
+  // ── 指标：EMA20 叠加主图，MACD 放副图；每次整段重算（几千根 O(n)，开销很小） ──
+  useEffect(() => {
+    const chart = chartRef.current;
+    const ema = emaRef.current;
+    if (!chart || !ema) return;
+    const times = bars.map((b) => toChartTime(b.open_time));
+    const closes = bars.map((b) => b.close);
+    const precision = precisionFor(closes[closes.length - 1] ?? 1);
+    const minMove = 1 / 10 ** precision;
+    const toLine = (vals: (number | null)[]) =>
+      vals.flatMap((v, i) => (v === null ? [] : [{ time: times[i], value: v }]));
+
+    ema.applyOptions({ visible: showEma, priceFormat: { type: 'price', precision, minMove } });
+    ema.setData(showEma ? toLine(calcEMA(closes, EMA_PERIOD)) : []);
+
+    if (!showMacd) {
+      if (macdRef.current) {
+        chart.removeSeries(macdRef.current.hist);
+        chart.removeSeries(macdRef.current.dif);
+        chart.removeSeries(macdRef.current.dea);
+        macdRef.current = null;
+        if (chart.panes().length > MACD_PANE) chart.removePane(MACD_PANE);
+      }
+      return;
+    }
+    if (!macdRef.current) {
+      const common = { priceLineVisible: false, crosshairMarkerVisible: false };
+      macdRef.current = {
+        hist: chart.addSeries(HistogramSeries, { ...common, lastValueVisible: false }, MACD_PANE),
+        dif: chart.addSeries(LineSeries, { ...common, color: DIF_COLOR, lineWidth: 1, title: 'DIF' }, MACD_PANE),
+        dea: chart.addSeries(LineSeries, { ...common, color: DEA_COLOR, lineWidth: 1, title: 'DEA' }, MACD_PANE),
+      };
+      // 主图 : 副图 ≈ 3 : 1
+      chart.panes()[0]?.setStretchFactor(3);
+      chart.panes()[MACD_PANE]?.setStretchFactor(1);
+    }
+    const { hist, dif, dea } = macdRef.current;
+    const fmt = { priceFormat: { type: 'price' as const, precision, minMove } };
+    hist.applyOptions(fmt);
+    dif.applyOptions(fmt);
+    dea.applyOptions(fmt);
+    const m = calcMACD(closes);
+    // 柱子：零轴上绿下红，比前一根缩短时颜色变淡
+    hist.setData(
+      m.hist.flatMap((v, i) => {
+        if (v === null) return [];
+        const prev = m.hist[i - 1] ?? null;
+        const weakening = prev !== null && Math.abs(v) < Math.abs(prev);
+        const color = v >= 0
+          ? (weakening ? 'rgba(38,166,154,0.45)' : UP)
+          : (weakening ? 'rgba(239,83,80,0.45)' : DOWN);
+        return [{ time: times[i], value: v, color }];
+      })
+    );
+    dif.setData(toLine(m.dif));
+    dea.setData(toLine(m.dea));
+  }, [bars, showEma, showMacd, isDark]);
+
+  // 价格轴倒计时：跟最新价标签同色，贴在它下方
+  useEffect(() => {
+    const last = bars[bars.length - 1];
+    countdownRef.current?.setState({
+      price: last ? last.close : null,
+      text: last && cursorTime ? countdownText(cursorTime, INTERVAL_MS[interval], INTERVAL_MS['5m']) : '',
+      color: last && last.close < last.open ? DOWN : UP,
+    });
+  }, [bars, interval, cursorTime, isDark]);
 
   // K线数据：同一周期且只在尾部变化时增量 update，否则整段 setData
   useEffect(() => {
@@ -383,7 +491,8 @@ const ReplayChart: React.FC<ReplayChartProps> = ({
       const chart = chartRef.current;
       if (!chart) return { x, y, inPane: false };
       const paneW = chart.timeScale().width();
-      const paneH = container.clientHeight - chart.timeScale().height();
+      // 只算主图窗格：下面可能还有 MACD 副图
+      const paneH = chart.paneSize(0).height;
       return { x, y, inPane: x >= 0 && x <= paneW && y >= 0 && y <= paneH };
     };
 

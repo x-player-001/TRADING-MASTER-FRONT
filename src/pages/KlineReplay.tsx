@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Button, Segmented, Select, Table, Tag, Popconfirm, Modal, Tooltip, message } from 'antd';
+import { Button, Checkbox, Segmented, Select, Table, Tag, Popconfirm, Modal, Tooltip, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import styles from './KlineReplay.module.scss';
 import PageHeader from '../components/ui/PageHeader';
@@ -33,6 +33,7 @@ const SPEEDS = [
   { label: '10x', value: 100 },
 ];
 const LAST_SESSION_KEY = 'replay.lastSessionId';
+const INDICATORS_KEY = 'replay.indicators';
 const GAP_NOTIFY_BARS = 12; // 缺口不足 1 小时（零星缺几根）不提示
 
 const sideText = (side: string, action: string) => {
@@ -108,6 +109,20 @@ const KlineReplay: React.FC<KlineReplayProps> = () => {
   const [speed, setSpeed] = useState(500);
   const [picking, setPicking] = useState<PickField | null>(null);
   const [pickResult, setPickResult] = useState<PickRequest | null>(null);
+  // 指标开关，记在浏览器里
+  const [indicators, setIndicators] = useState<{ ema: boolean; macd: boolean }>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(INDICATORS_KEY) || 'null');
+      if (saved && typeof saved === 'object') return { ema: saved.ema !== false, macd: saved.macd !== false };
+    } catch { /* 忽略 */ }
+    return { ema: true, macd: true };
+  });
+  const toggleIndicator = (key: 'ema' | 'macd') =>
+    setIndicators((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try { localStorage.setItem(INDICATORS_KEY, JSON.stringify(next)); } catch { /* 忽略 */ }
+      return next;
+    });
 
   const finished = view?.session.status === 'finished';
 
@@ -188,7 +203,11 @@ const KlineReplay: React.FC<KlineReplayProps> = () => {
     if (!view || finished) return;
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      // 只在输入文字时让出快捷键；单选/复选框（如周期切换 Segmented 内部的 radio）上照常响应
+      const typing =
+        t && (t.tagName === 'TEXTAREA' || t.isContentEditable ||
+          (t.tagName === 'INPUT' && !['radio', 'checkbox', 'button'].includes((t as HTMLInputElement).type)));
+      if (typing) return;
       if ((e.key === 'ArrowRight' || e.key === ' ') && !endOfData && !playing) {
         // 空格默认会触发当前聚焦的按钮（比如刚点过的「下一根」），一并拦掉
         e.preventDefault();
@@ -346,6 +365,11 @@ const KlineReplay: React.FC<KlineReplayProps> = () => {
               options={REPLAY_INTERVALS}
             />
 
+            <span className={styles.indicatorToggles}>
+              <Checkbox checked={indicators.ema} onChange={() => toggleIndicator('ema')}>EMA20</Checkbox>
+              <Checkbox checked={indicators.macd} onChange={() => toggleIndicator('macd')}>MACD</Checkbox>
+            </span>
+
             <Tooltip title="游标K线（北京时间）">
               <span className={styles.cursor}>
                 {fmtTime(view.current_bar.open_time)}
@@ -411,6 +435,9 @@ const KlineReplay: React.FC<KlineReplayProps> = () => {
                 onPriceClick={handlePriceClick}
                 picking={!!picking}
                 drawingKey={String(session.id)}
+                cursorTime={view.current_bar.open_time}
+                showEma={indicators.ema}
+                showMacd={indicators.macd}
                 onProtectionDrag={
                   finished
                     ? undefined

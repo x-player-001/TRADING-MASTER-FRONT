@@ -88,6 +88,14 @@ $primary: #3b82f6;
   :global(.dark) & { color: #93c5fd; }
 }
 
+.indicatorToggles {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+
+  :global(.ant-checkbox-wrapper) { font-size: 0.75rem; }
+}
+
 .stepGroup {
   display: inline-flex;
   flex-wrap: wrap;
