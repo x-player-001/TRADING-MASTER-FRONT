@@ -1,0 +1,403 @@
+// K线回放各组件共用样式。加密货币习惯：绿涨/盈利/买，红跌/亏损/卖
+$up: #16a34a;
+$down: #dc2626;
+$primary: #3b82f6;
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 0.875rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.625rem;
+
+  :global(.dark) & {
+    background: #1f2937;
+    border-color: #374151;
+  }
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #111827;
+  :global(.dark) & { color: #f9fafb; }
+}
+
+.subTitle {
+  margin-bottom: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6b7280;
+  :global(.dark) & { color: #9ca3af; }
+}
+
+.dim {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.pos { color: $up; }
+.neg { color: $down; }
+.zero { color: inherit; }
+
+// ── 账户 / 持仓键值 ───────────────────────────────────
+.kvGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem 0.75rem;
+}
+
+.kv {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.kvLabel {
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
+.kvValue,
+.kvValueLg {
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #1f2937;
+  :global(.dark) & { color: #e5e7eb; }
+
+  &.pos { color: $up; }
+  &.neg { color: $down; }
+}
+
+.kvValueLg { font-size: 1.05rem; }
+
+.dirTag {
+  display: inline-block;
+  padding: 0 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.5;
+  color: #fff;
+  border-radius: 0.25rem;
+  white-space: nowrap;
+}
+.long { background: $up; }
+.short { background: $down; }
+
+.btnRow {
+  display: flex;
+  gap: 0.5rem;
+  > * { flex: 1; }
+}
+
+// ── 挂单 ──────────────────────────────────────────────
+.orderList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.orderRow {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  color: #1f2937;
+  :global(.dark) & { color: #e5e7eb; }
+}
+
+.miniTag {
+  padding: 0 0.25rem;
+  font-size: 0.65rem;
+  color: #6b7280;
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 0.2rem;
+}
+
+.linkBtn {
+  margin-left: auto;
+  padding: 0;
+  font-size: 0.75rem;
+  color: $primary;
+  background: none;
+  border: none;
+  cursor: pointer;
+
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+// ── 下单 ──────────────────────────────────────────────
+.sideBtns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+
+.sideBtn {
+  padding: 0.35rem 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: transparent;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: #6b7280;
+
+  :global(.dark) & { border-color: #4b5563; color: #9ca3af; }
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.buy.active {
+  color: #fff;
+  background: $up;
+  border-color: $up;
+}
+
+.sell.active {
+  color: #fff;
+  background: $down;
+  border-color: $down;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.fieldLabel {
+  flex: 0 0 2.6rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+  :global(.dark) & { color: #9ca3af; }
+}
+
+.pickBtn {
+  flex: 0 0 1.6rem;
+  height: 1.5rem;
+  padding: 0;
+  font-size: 0.9rem;
+  line-height: 1;
+  color: #94a3b8;
+  background: transparent;
+  border: 1px dashed #cbd5e1;
+  border-radius: 0.3rem;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { color: $primary; border-color: $primary; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  :global(.dark) & { border-color: #4b5563; }
+}
+
+.pickOn {
+  color: #fff !important;
+  background: $primary;
+  border-style: solid;
+  border-color: $primary !important;
+}
+
+.estimate {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.6rem;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: #475569;
+  background: rgba(148, 163, 184, 0.1);
+  border-radius: 0.375rem;
+  :global(.dark) & { color: #cbd5e1; }
+}
+
+.submitBuy,
+.submitSell {
+  font-weight: 700;
+}
+
+.submitBuy:not(:disabled) {
+  background: $up !important;
+  &:hover { background: #15803d !important; }
+}
+
+.submitSell:not(:disabled) {
+  background: $down !important;
+  &:hover { background: #b91c1c !important; }
+}
+
+// ── 统计 ──────────────────────────────────────────────
+.statsWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.statTiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.5rem;
+}
+
+.statTile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.5rem 0.65rem;
+  background: rgba(148, 163, 184, 0.08);
+  border-radius: 0.5rem;
+}
+
+.statValue {
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #1f2937;
+  :global(.dark) & { color: #f1f5f9; }
+
+  &.pos { color: $up; }
+  &.neg { color: $down; }
+}
+
+.statsBottom {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  gap: 1rem;
+
+  @media (max-width: 1100px) { grid-template-columns: minmax(0, 1fr); }
+}
+
+.curveBox,
+.groupBox {
+  min-width: 0;
+}
+
+// ── 图表画线工具栏 ────────────────────────────────────
+.chartWrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.drawToolbar {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.2rem 0.3rem;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #e5e7eb;
+  border-radius: 0.45rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  :global(.dark) & {
+    background: rgba(31, 41, 55, 0.92);
+    border-color: #374151;
+  }
+}
+
+.drawBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 0;
+  font-size: 0.85rem;
+  line-height: 1;
+  color: #475569;
+  background: transparent;
+  border: none;
+  border-radius: 0.3rem;
+  cursor: pointer;
+
+  :global(.dark) & { color: #cbd5e1; }
+
+  &:hover:not(:disabled) {
+    background: rgba(59, 130, 246, 0.12);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+}
+
+.drawBtnText {
+  width: auto;
+  padding: 0 0.4rem;
+  font-size: 0.72rem;
+}
+
+.drawBtnOn {
+  color: #fff !important;
+  background: $primary !important;
+}
+
+.swatch {
+  width: 0.9rem;
+  height: 0.9rem;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.5);
+}
+
+.swatchOn {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px $primary;
+}
+
+.drawSep {
+  width: 1px;
+  height: 1.1rem;
+  margin: 0 0.2rem;
+  background: rgba(148, 163, 184, 0.4);
+}
+
+.drawHint {
+  margin-left: 0.3rem;
+  font-size: 0.7rem;
+  color: $primary;
+  white-space: nowrap;
+}
+
+// ── 新建会话弹窗 ──────────────────────────────────────
+.startRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.coverage {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.4rem;
+}
+
+.coverageTag {
+  padding: 0.05rem 0.4rem;
+  font-size: 0.7rem;
+  color: #0369a1;
+  background: #e0f2fe;
+  border-radius: 0.25rem;
+  :global(.dark) & { color: #7dd3fc; background: #0c4a6e; }
+}
+
+.formRow {
+  display: flex;
+  gap: 0.75rem;
+}
