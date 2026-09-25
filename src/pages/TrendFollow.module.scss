@@ -377,6 +377,36 @@ $warning: #f59e0b;
   :global(.dark) & { background: #334155; color: #cbd5e1; }
 }
 
+// 四个周期区域两列并排，窄屏单列
+.timeframeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+
+  // 只有一个区域（选了周期筛选）时占满整行
+  &:has(> :only-child) { grid-template-columns: minmax(0, 1fr); }
+
+  @media (max-width: 1279px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.timeframeColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+// 半宽区域内的紧凑表格
+.table.compactTable {
+  min-width: 0;
+
+  thead th { padding: 0.5rem 0.4rem; }
+  tbody td { padding: 0.4rem 0.4rem; font-size: 0.75rem; }
+}
+
 // 组内子行（展开出来的非最新记录）淡背景区分
 .groupChildRow {
   background: #f8fafc;

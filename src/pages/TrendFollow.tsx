@@ -97,22 +97,24 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
   const [remarkDraft, setRemarkDraft] = useState('');
   const [remarkSaving, setRemarkSaving] = useState(false);
 
-  // 同币种分组的展开状态（key 为 symbol，默认折叠只显示最新一条）
+  // 同周期内同币种分组的展开状态（key 为 symbol:timeframe，默认折叠只显示最新一条）
   const [expandedSymbols, setExpandedSymbols] = useState<Set<string>>(new Set());
-  const toggleSymbol = (symbol: string) =>
+  const toggleSymbol = (key: string) =>
     setExpandedSymbols(prev => {
       const next = new Set(prev);
-      next.has(symbol) ? next.delete(symbol) : next.add(symbol);
+      if (next.has(key)) next.delete(key); else next.add(key);
       return next;
     });
 
   const fetchData = useCallback(async () => {
     try {
-      const [ctxData, alertData] = await Promise.all([
-        trendFollowAPI.getWatchContexts({ timeframe: timeframeFilter, state: stateFilter, limit: 200 }),
+      // 每个周期单独请求，避免 limit 被某个周期占满导致其他区域缺数据
+      const tfs = timeframeFilter ? [timeframeFilter] : TIMEFRAMES;
+      const [ctxLists, alertData] = await Promise.all([
+        Promise.all(tfs.map(tf => trendFollowAPI.getWatchContexts({ timeframe: tf, state: stateFilter, limit: 200 }))),
         trendFollowAPI.getRecentAlerts({ timeframe: timeframeFilter, limit: 200 }),
       ]);
-      setContexts(ctxData);
+      setContexts(ctxLists.flat());
       // 建立 symbol+timeframe -> 最近报警 的 map
       const map = new Map<string, TrendAlert>();
       // getRecentAlerts 已按时间倒序，第一条即最新
@@ -231,22 +233,52 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
     !searchTerm || c.symbol.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // 按币种分组，每组按进入时间倒序，代表行（最新）在前
-  const symbolGroups = React.useMemo(() => {
-    const map = new Map<string, WatchContext[]>();
-    for (const c of filteredContexts) {
-      const arr = map.get(c.symbol) ?? [];
-      arr.push(c);
-      map.set(c.symbol, arr);
-    }
-    // 组内按进入时间倒序
-    const groups = Array.from(map.values()).map(arr =>
-      [...arr].sort((a, b) => b.watch_start_time - a.watch_start_time)
+  // 每个周期一个区域（无数据也保留区域），区域内按币种分组
+  const timeframeSections = React.useMemo(() => {
+    const byTf = new Map<string, WatchContext[]>(
+      (timeframeFilter ? [timeframeFilter] : TIMEFRAMES).map(tf => [tf, []])
     );
-    // 组间按各自最新一条的进入时间倒序
-    groups.sort((a, b) => b[0].watch_start_time - a[0].watch_start_time);
-    return groups;
-  }, [filteredContexts]);
+    for (const c of filteredContexts) {
+      const arr = byTf.get(c.timeframe) ?? [];
+      arr.push(c);
+      byTf.set(c.timeframe, arr);
+    }
+    return Array.from(byTf.entries())
+      .map(([timeframe, list]) => {
+        const map = new Map<string, WatchContext[]>();
+        for (const c of list) {
+          const arr = map.get(c.symbol) ?? [];
+          arr.push(c);
+          map.set(c.symbol, arr);
+        }
+        // 组内按进入时间倒序，代表行（最新）在前
+        const groups = Array.from(map.values()).map(arr =>
+          [...arr].sort((a, b) => b.watch_start_time - a.watch_start_time)
+        );
+        // 组间按 24h 成交量倒序
+        groups.sort((a, b) => (b[0].quote_volume_24h || 0) - (a[0].quote_volume_24h || 0));
+        return {
+          timeframe,
+          groups,
+          total: list.length,
+          alerted: list.filter(c => c.state === 'ALERTED').length,
+        };
+      });
+  }, [filteredContexts, timeframeFilter]);
+
+  // 两列瀑布流：按周期顺序，每个区域放进当前行数较少的一列，避免短区域下方留空
+  const timeframeColumns = React.useMemo(() => {
+    if (timeframeSections.length <= 1) return [timeframeSections];
+    const cols: (typeof timeframeSections)[] = [[], []];
+    const heights = [0, 0];
+    for (const section of timeframeSections) {
+      const i = heights[0] <= heights[1] ? 0 : 1;
+      cols[i].push(section);
+      // 标题行 + 表头算 2 行，空区域按空状态占位算 3 行
+      heights[i] += 2 + Math.max(section.groups.length, 3);
+    }
+    return cols;
+  }, [timeframeSections]);
 
   const handleMouseEnter = (id: number, e: React.MouseEvent<HTMLDivElement>) => {
     if (tooltipTimer.current) clearTimeout(tooltipTimer.current);
@@ -408,18 +440,23 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
         );
       })()}
 
-      {/* 观察区表格 */}
-      <DataSection
-        title="观察区状态"
-        subtitle={`共 ${filteredContexts.length} 个观察区`}
-        loading={loading && !contexts.length}
-        error={null}
-        empty={!loading && filteredContexts.length === 0}
-        emptyText="暂无观察区数据"
-        compact
-      >
+      {/* 观察区：每个周期一个区域，两列并排 */}
+      <div className={styles.timeframeGrid}>
+        {timeframeColumns.map((column, colIdx) => (
+        <div key={colIdx} className={styles.timeframeColumn}>
+        {column.map(section => (
+          <DataSection
+            key={section.timeframe}
+            title={`${section.timeframe} 观察区`}
+            subtitle={`${section.total} 个${section.alerted > 0 ? ` · 已报警 ${section.alerted}` : ''}`}
+            loading={loading && !contexts.length}
+            error={null}
+            empty={!loading && section.total === 0}
+            emptyText="暂无观察区数据"
+            compact
+          >
         <div className={styles.tableContainer}>
-          <table className={styles.table}>
+          <table className={`${styles.table} ${styles.compactTable}`}>
             <thead>
               <tr>
                 <th>币种</th>
@@ -435,9 +472,10 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
               </tr>
             </thead>
             <tbody>
-              {symbolGroups.flatMap(group => {
+              {section.groups.flatMap(group => {
                 const groupCount = group.length;
-                const isExpanded = expandedSymbols.has(group[0].symbol);
+                const groupKey = `${group[0].symbol}:${group[0].timeframe}`;
+                const isExpanded = expandedSymbols.has(groupKey);
                 // 折叠时只渲染代表行（最新），展开时渲染全部
                 const visible = isExpanded ? group : [group[0]];
                 return visible.map((ctx, idxInGroup) => {
@@ -453,7 +491,7 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
                       {isLead && hasMore ? (
                         <button
                           className={`${styles.groupToggle} ${isExpanded ? styles.groupToggleOpen : ''}`}
-                          onClick={() => toggleSymbol(ctx.symbol)}
+                          onClick={() => toggleSymbol(groupKey)}
                           title={isExpanded ? '折叠' : `展开 ${groupCount} 条`}
                         >
                           ▶
@@ -468,7 +506,6 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
                       >
                         {stripUsdt(ctx.symbol)}
                       </span>
-                      <span className={styles.timeframeBadge} style={{ marginLeft: '0.375rem' }}>{ctx.timeframe}</span>
                       {isLead && hasMore && !isExpanded && (
                         <span className={styles.groupCountBadge}>{groupCount}</span>
                       )}
@@ -516,9 +553,8 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
                     </td>
                     <td className={styles.numCell}>{formatPrice(ctx.wave_end_price)}</td>
                     <td className={styles.numCell}>
-                      <span className={styles.elapsedCell}>
+                      <span className={styles.elapsedCell} title={formatTime(ctx.watch_start_time)}>
                         {calcElapsed(ctx.watch_start_time)}
-                        <span className={styles.elapsedTime}>{formatTime(ctx.watch_start_time)}</span>
                       </span>
                     </td>
                     <td className={styles.numCell}>{ctx.current_price ? formatPrice(ctx.current_price) : '—'}</td>
@@ -592,7 +628,11 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
             </tbody>
           </table>
         </div>
-      </DataSection>
+          </DataSection>
+        ))}
+        </div>
+        ))}
+      </div>
 
       {/* 报警级别 tooltip - fixed 定位避免撑开表格 */}
       {tooltipCtxId !== null && (() => {
