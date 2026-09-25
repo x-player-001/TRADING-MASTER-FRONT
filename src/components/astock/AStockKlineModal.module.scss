@@ -7,8 +7,10 @@ $primary: #3b82f6;
   z-index: 1000;
   background: rgba(0, 0, 0, 0.55);
   display: flex;
-  align-items: center;
+  // AI 复盘高度自适应，弹窗可能高过视口：遮罩层滚动，弹窗用 margin:auto 居中，超高时从顶部开始不被裁掉
+  align-items: flex-start;
   justify-content: center;
+  overflow-y: auto;
   padding: 1rem;
   animation: fadeIn 0.15s ease;
 }
@@ -23,7 +25,9 @@ $primary: #3b82f6;
   border-radius: 0.875rem;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
   width: 100%;
-  max-width: 1200px;
+  max-width: 1560px;
+  margin: auto;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   animation: slideUp 0.18s cubic-bezier(0.4, 0, 0.2, 1);
@@ -362,8 +366,6 @@ $primary: #3b82f6;
 }
 
 .reviewBody {
-  max-height: 15rem;
-  overflow-y: auto;
   padding-right: 0.4rem;
   font-size: 0.78rem;
   line-height: 1.85;
@@ -401,14 +403,19 @@ $primary: #3b82f6;
   }
 }
 
+// 标题与正文同一行：标题行内显示，后接冒号，正文紧跟其后
 .reviewHeading {
-  margin-bottom: 0.15rem;
-  font-size: 0.74rem;
+  display: inline;
+  font-size: 0.78rem;
   font-weight: 700;
   color: #6d28d9;
   letter-spacing: 0.02em;
 
+  &::after { content: '：'; }
+
   :global(.dark) & { color: #c4b5fd; }
+
+  + p { display: inline; }
 }
 
 .reviewDim {
