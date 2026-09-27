@@ -16,7 +16,7 @@ import {
 import styles from './WatchPool.module.scss';
 import PageHeader from '../components/ui/PageHeader';
 import { TopProgressBar, DataSection, CoolRefreshButton } from '../components/ui';
-import AStockKlineModal from '../components/astock/AStockKlineModal';
+import AStockKlineModal, { KlineTarget } from '../components/astock/AStockKlineModal';
 import LowvolPanel from '../components/astock/LowvolPanel';
 import { groupByDate, withGroupHeaderColumns, groupRowClassName } from '../components/astock/dateGroup';
 import PullbackPanel from '../components/astock/PullbackPanel';
@@ -28,6 +28,8 @@ import { favoriteAPI } from '../services/favoriteAPI';
 import PoolLimitupBar from '../components/astock/PoolLimitupBar';
 import RotationBoard from '../components/astock/RotationBoard';
 import AuctionBoard from '../components/astock/AuctionBoard';
+import TrendPullbackPanel from '../components/astock/TrendPullbackPanel';
+import BoxBreakoutPanel from '../components/astock/BoxBreakoutPanel';
 import type { BoardGroup } from '../services/astockAPI';
 
 // 统计条暂时隐藏（代码保留）。改回 true 即恢复「池中总数 / 已报警 / 命中率…」那一行。
@@ -129,6 +131,8 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
   const [pullbackLoading, setPullbackLoading] = useState(false);
   const [favLoading, setFavLoading] = useState(false);
   const [alertLoading, setAlertLoading] = useState(false);
+  const [trendPbLoading, setTrendPbLoading] = useState(false);
+  const [boxLoading, setBoxLoading] = useState(false);
 
   // ── 数据 ────────────────────────────────────────────
   const [list, setList] = useState<WatchItem[]>([]);
@@ -141,7 +145,7 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
   const [detail, setDetail] = useState<WatchItem | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
-  const [klineStock, setKlineStock] = useState<{ code: string; name?: string } | null>(null);
+  const [klineStock, setKlineStock] = useState<KlineTarget | null>(null);
 
   // ── 加载列表 ────────────────────────────────────────
   const loadList = useCallback(async () => {
@@ -549,11 +553,11 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
 
   return (
     <div className={`${styles.watchPool} ${isSidebarCollapsed ? styles.sidebarCollapsed : ''}`}>
-      <TopProgressBar isVisible={loading || isRefreshing || lowvolLoading || pullbackLoading || favLoading || alertLoading} />
+      <TopProgressBar isVisible={loading || isRefreshing || lowvolLoading || pullbackLoading || favLoading || alertLoading || trendPbLoading || boxLoading} />
 
       <PageHeader
         title="监控池"
-        subtitle="回踩池 / 低位首板池 / 低位放量池 / 盘中预警 / 我的收藏"
+        subtitle="回踩池 / 低位首板池 / 低位放量池 / 趋势回调 / 平台突破 / 盘中预警 / 我的收藏"
         icon="🎣"
       >
         <div className={styles.headerActions}>
@@ -601,6 +605,28 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
                 since={since}
                 refreshKey={refreshKey}
                 onLoadingChange={setLowvolLoading}
+                onOpenKline={setKlineStock}
+              />
+            ),
+          },
+          {
+            key: 'trendPullback',
+            label: '趋势回调',
+            children: (
+              <TrendPullbackPanel
+                refreshKey={refreshKey}
+                onLoadingChange={setTrendPbLoading}
+                onOpenKline={setKlineStock}
+              />
+            ),
+          },
+          {
+            key: 'boxBreakout',
+            label: '平台突破',
+            children: (
+              <BoxBreakoutPanel
+                refreshKey={refreshKey}
+                onLoadingChange={setBoxLoading}
                 onOpenKline={setKlineStock}
               />
             ),
@@ -814,6 +840,7 @@ const WatchPool: React.FC<WatchPoolProps> = ({ isSidebarCollapsed = false }) => 
         <AStockKlineModal
           code={klineStock.code}
           name={klineStock.name}
+          overlay={klineStock.overlay}
           isDark={document.documentElement.classList.contains('dark')}
           sidebarCollapsed={isSidebarCollapsed}
           onClose={() => setKlineStock(null)}

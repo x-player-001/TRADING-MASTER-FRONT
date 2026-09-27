@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { message } from 'antd';
-import { createChart, CandlestickSeries, LineSeries, HistogramSeries } from 'lightweight-charts';
+import { createChart, createSeriesMarkers, CandlestickSeries, LineSeries, HistogramSeries, LineStyle } from 'lightweight-charts';
+import type { SeriesMarker, Time } from 'lightweight-charts';
 import { astockAPI, KlineMark } from '../../services/astockAPI';
 import { conceptAPI, StockConcept } from '../../services/conceptAPI';
 import { favoriteAPI } from '../../services/favoriteAPI';
@@ -8,9 +9,40 @@ import styles from './AStockKlineModal.module.scss';
 import ReviewText from './ReviewText';
 import { reviewAPI, ReviewItem } from '../../services/reviewAPI';
 
+/** 叠加在 K 线上的结构标注（价格为原始价，日期为 YYYY-MM-DD） */
+export interface KlineOverlayLine {
+  from: { date: string; price: number };
+  /** to 缺省 = 与起点同价的水平线，延伸到最后一根K线 */
+  to?: { date: string; price: number };
+  color: string;
+  dashed?: boolean;
+}
+
+export interface KlineOverlayMarker {
+  date: string;
+  text: string;
+  color: string;
+  position: 'aboveBar' | 'belowBar';
+}
+
+export interface KlineOverlay {
+  lines?: KlineOverlayLine[];
+  markers?: KlineOverlayMarker[];
+  /** 标题栏的图例说明 */
+  legend?: { color: string; label: string }[];
+}
+
+/** 打开 K 线弹窗的目标；overlay 可选 */
+export interface KlineTarget {
+  code: string;
+  name?: string;
+  overlay?: KlineOverlay;
+}
+
 interface AStockKlineModalProps {
   code: string;
   name?: string;
+  overlay?: KlineOverlay;
   onClose: () => void;
   isDark?: boolean;
   sidebarCollapsed?: boolean;
@@ -44,7 +76,7 @@ const calcEMA = (closes: number[], period: number) => {
   return out;
 };
 
-const AStockKlineModal: React.FC<AStockKlineModalProps> = ({ code, name, onClose, isDark = false, sidebarCollapsed = false }) => {
+const AStockKlineModal: React.FC<AStockKlineModalProps> = ({ code, name, overlay, onClose, isDark = false, sidebarCollapsed = false }) => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -100,8 +132,11 @@ const AStockKlineModal: React.FC<AStockKlineModalProps> = ({ code, name, onClose
     });
     volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
 
+    // 数据回来前弹窗已关闭（chart 已 remove）时不再绘制，否则抛 Object is disposed
+    let disposed = false;
     astockAPI.getKline(code, { limit: 250, adjust: 'hfq' })
       .then(res => {
+        if (disposed) return;
         setStockName(res.name || code);
         setMarks(res.marks);
 
@@ -110,6 +145,7 @@ const AStockKlineModal: React.FC<AStockKlineModalProps> = ({ code, name, onClose
         // lightweight-charts 遇到非数字会整批拒绝导致图表空白，故统一转数字再剔除无效行
         const bars = res.bars
           .map(b => ({
+            date: b.trade_date,
             time: toBusinessDay(b.trade_date),
             open: toNum(b.raw_open),
             high: toNum(b.raw_high),
@@ -146,6 +182,48 @@ const AStockKlineModal: React.FC<AStockKlineModalProps> = ({ code, name, onClose
         const ema20 = calcEMA(closes, 20);
         ema20Series.setData(ema20.map((v, i) => v === null ? null : { time: dates[i], value: v }).filter(Boolean) as any);
 
+        // 结构标注：只画落在已加载K线范围内的日期，范围外的点会撑开时间轴
+        if (overlay) {
+          const dateSet = new Set(bars.map(b => b.date));
+          const firstDate = bars[0].date;
+          const lastDate = bars[bars.length - 1].date;
+
+          (overlay.lines ?? []).forEach(line => {
+            const to = line.to ?? { date: lastDate, price: line.from.price };
+            let from = line.from;
+            // 水平线起点早于数据范围时截到第一根；斜线截断会失真，直接跳过
+            if (from.date < firstDate) {
+              if (from.price !== to.price) return;
+              from = { date: firstDate, price: from.price };
+            }
+            if (!dateSet.has(from.date) || !dateSet.has(to.date) || from.date >= to.date) return;
+            const s = chart.addSeries(LineSeries, {
+              color: line.color,
+              lineWidth: 2,
+              lineStyle: line.dashed ? LineStyle.Dashed : LineStyle.Solid,
+              priceLineVisible: false,
+              lastValueVisible: false,
+              crosshairMarkerVisible: false,
+            });
+            s.setData([
+              { time: toBusinessDay(from.date), value: from.price },
+              { time: toBusinessDay(to.date), value: to.price },
+            ]);
+          });
+
+          const markers: SeriesMarker<Time>[] = (overlay.markers ?? [])
+            .filter(m => dateSet.has(m.date))
+            .sort((a, b) => a.date.localeCompare(b.date))
+            .map(m => ({
+              time: toBusinessDay(m.date),
+              position: m.position,
+              shape: m.position === 'aboveBar' ? 'arrowDown' as const : 'arrowUp' as const,
+              color: m.color,
+              text: m.text,
+            }));
+          if (markers.length) createSeriesMarkers(candleSeries, markers);
+        }
+
         // 默认展示最近100根 + 右侧30格留白
         const barCount = bars.length;
         const visibleBars = 100;
@@ -157,6 +235,7 @@ const AStockKlineModal: React.FC<AStockKlineModalProps> = ({ code, name, onClose
         setLoading(false);
       })
       .catch((err) => {
+        if (disposed) return;
         setError(err?.message || '加载K线失败');
         setLoading(false);
       });
@@ -175,11 +254,12 @@ const AStockKlineModal: React.FC<AStockKlineModalProps> = ({ code, name, onClose
     });
 
     return () => {
+      disposed = true;
       cancelAnimationFrame(raf);
       observer.disconnect();
       chart.remove();
     };
-  }, [code, isDark]);
+  }, [code, isDark, overlay]);
 
   // 收藏状态：打开弹窗时查一次
   useEffect(() => {
@@ -311,6 +391,15 @@ const AStockKlineModal: React.FC<AStockKlineModalProps> = ({ code, name, onClose
               </span>
             )}
             <span className={styles.subtitle}>日线 · 原始价 · 最近250根</span>
+            {overlay?.legend && overlay.legend.length > 0 && (
+              <span className={styles.overlayLegend}>
+                {overlay.legend.map((l) => (
+                  <span key={l.label} className={styles.overlayLegendItem}>
+                    <i style={{ background: l.color }} />{l.label}
+                  </span>
+                ))}
+              </span>
+            )}
           </div>
           <button className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>

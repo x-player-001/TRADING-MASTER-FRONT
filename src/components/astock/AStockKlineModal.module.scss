@@ -427,3 +427,25 @@ $primary: #3b82f6;
   font-size: 0.74rem;
   color: #ef4444;
 }
+
+// 结构标注图例（监控池形态 Tab 打开时显示）
+.overlayLegend {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+  :global(.dark) & { color: #9ca3af; }
+}
+
+.overlayLegendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+
+  i {
+    width: 0.9rem;
+    height: 2px;
+    display: inline-block;
+  }
+}
