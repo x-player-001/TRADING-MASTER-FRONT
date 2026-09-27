@@ -132,6 +132,80 @@ export interface TriggerEvent {
   created_at: string;
 }
 
+// ===== 合并观察列表 GET /api/trend-follow/watchlist =====
+// 15m/1h/4h 里同一个币合并成一行，按 score 从高到低；只含观察中 / 已报警的观察区。
+// 参数：timeframes（逗号分隔，默认 15m,1h,4h，可含 5m）、min_score。
+
+/** 所处阶段：按当前回撤比例划分 */
+export type WatchStage = 'RISING' | 'PULLBACK' | 'IN_ZONE' | 'DEEP';
+
+export const WATCH_STAGE_LABELS: Record<WatchStage, string> = {
+  RISING: '上涨中',
+  PULLBACK: '回调中',
+  IN_ZONE: '回撤到位',
+  DEEP: '回撤过深',
+};
+
+/**
+ * 评分标签对应的分值（后端只返回标签文字，分值按实测数据反推，用于着色和悬停提示）。
+ * 回调中 +1 不在后端说明里，但实测存在
+ */
+export const SCORE_TAG_VALUES: Record<string, number> = {
+  回撤到位: 3,
+  缩量: 2,
+  回调中: 1,
+  '多周期×2': 1,
+  '多周期×3': 2,
+  回撤过深: -2,
+  临近超时: -1,
+};
+
+/** 单个周期的明细（画图用） */
+export interface WatchlistDetail {
+  id: number;
+  timeframe: string;
+  state: WatchContextState;
+  last_alert_level: number | null;
+  wave_start_price: number;
+  wave_end_price: number;
+  wave_amplitude_pct: number;
+  wave_bar_count: number;
+  wave_end_time: number;
+  pullback_lowest_price: number;
+  pullback_bar_count: number;
+  max_pullback_bars: number;
+  retrace_now: number;       // 当前回撤比例（0~1）
+  retrace_max: number;       // 最深回撤比例
+  volume_ratio: number | null; // 回调量 / 波段量（实测部分明细为 null）
+  volume_shrink: boolean;
+  stage: WatchStage;
+  stale: boolean;            // 临近超时
+  watch_start_time: number;
+  remark: string | null;
+}
+
+/** 合并后的一行（一个币） */
+export interface WatchlistItem {
+  symbol: string;
+  current_price: number;
+  quote_volume_24h: number;
+  timeframes: string[];          // 出现在哪几个周期
+  tf_count: number;
+  primary_timeframe: string;     // 行上的汇总指标取自这个周期
+  wave_amplitude_pct: number;    // 第一波涨幅 %
+  retrace_now: number;
+  retrace_max: number;
+  pullback_bar_count: number;    // 距高点几根K线
+  volume_shrink: boolean;
+  stage: WatchStage;
+  stale: boolean;
+  max_alert_level: number | null;
+  score: number;
+  score_tags: string[];
+  updated_at: string;
+  details: WatchlistDetail[];
+}
+
 class TrendFollowAPIService {
   private baseUrl = '/api/trend-follow';
 
@@ -150,6 +224,14 @@ class TrendFollowAPIService {
       query.state = state;
     }
     return apiGet<WatchContext[]>(`${this.baseUrl}/watch-contexts`, { params: query });
+  }
+
+  /** 合并观察列表（apiClient 已解包，直接是数组） */
+  async getWatchlist(params?: { timeframes?: string[]; min_score?: number }): Promise<WatchlistItem[]> {
+    const query: Record<string, unknown> = {};
+    if (params?.timeframes?.length) query.timeframes = params.timeframes.join(',');
+    if (params?.min_score !== undefined) query.min_score = params.min_score;
+    return apiGet<WatchlistItem[]>(`${this.baseUrl}/watchlist`, { params: query });
   }
 
   async getAlerts(params?: {

@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Input, Select, message } from 'antd';
+import { Input, Select, Segmented, message } from 'antd';
 import KlineModal from '../components/trend/KlineModal';
+import WatchlistCards, { KlineTarget } from '../components/trend/WatchlistCards';
 import SignalStats from '../components/trend/SignalStats';
 import styles from './TrendFollow.module.scss';
 import PageHeader from '../components/ui/PageHeader';
@@ -10,11 +11,18 @@ import {
   WatchContext,
   TrendAlert,
   WatchContextState,
+  WatchlistItem,
+  WatchStage,
+  WATCH_STAGE_LABELS,
 } from '../services/trendFollowAPI';
 
 const { Option } = Select;
 
 const TIMEFRAMES = ['5m', '15m', '1h', '4h'];
+const VIEW_MODE_KEY = 'trendFollow.viewMode';
+// 信号统计暂时隐藏（代码保留）。改回 true 即恢复「报警事后表现 / 扳机入场对比 / AI 置信度校准」那一块。
+const SHOW_SIGNAL_STATS = false;
+type ViewMode = 'merged' | 'byTf';
 const STATE_LABELS: Record<WatchContextState, string> = {
   WATCHING: '观察中',
   ALERTED: '已报警',
@@ -78,6 +86,17 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
   const [searchTerm, setSearchTerm] = useState('');
   const [timeframeFilter, setTimeframeFilter] = useState<string | undefined>();
   const [stateFilter, setStateFilter] = useState<WatchContextState | undefined>();
+  const [stageFilter, setStageFilter] = useState<WatchStage | undefined>();
+
+  // 视图：合并观察列表（同币跨周期合并成一行，按评分排序）/ 按周期分区，记在浏览器里
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    try { return localStorage.getItem(VIEW_MODE_KEY) === 'byTf' ? 'byTf' : 'merged'; } catch { return 'merged'; }
+  });
+  const changeViewMode = (m: ViewMode) => {
+    setViewMode(m);
+    try { localStorage.setItem(VIEW_MODE_KEY, m); } catch { /* 忽略 */ }
+  };
+  const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
 
   // tooltip 状态
   const [tooltipCtxId, setTooltipCtxId] = useState<number | null>(null);
@@ -90,7 +109,7 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
   const stateTooltipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // K线弹窗
-  const [klineModalCtx, setKlineModalCtx] = useState<WatchContext | null>(null);
+  const [klineModalCtx, setKlineModalCtx] = useState<KlineTarget | null>(null);
 
   // 备注展开行
   const [remarkOpenId, setRemarkOpenId] = useState<number | null>(null);
@@ -110,11 +129,16 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
     try {
       // 每个周期单独请求，避免 limit 被某个周期占满导致其他区域缺数据
       const tfs = timeframeFilter ? [timeframeFilter] : TIMEFRAMES;
-      const [ctxLists, alertData] = await Promise.all([
+      const [ctxLists, alertData, merged] = await Promise.all([
         Promise.all(tfs.map(tf => trendFollowAPI.getWatchContexts({ timeframe: tf, state: stateFilter, limit: 200 }))),
         trendFollowAPI.getRecentAlerts({ timeframe: timeframeFilter, limit: 200 }),
+        // 合并列表只在合并视图下拉；选了周期就只合并该周期
+        viewMode === 'merged'
+          ? trendFollowAPI.getWatchlist({ timeframes: timeframeFilter ? [timeframeFilter] : undefined })
+          : Promise.resolve(null),
       ]);
       setContexts(ctxLists.flat());
+      if (merged) setWatchlist(merged);
       // 建立 symbol+timeframe -> 最近报警 的 map
       const map = new Map<string, TrendAlert>();
       // getRecentAlerts 已按时间倒序，第一条即最新
@@ -131,7 +155,7 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
       setLoading(false);
       setIsRefreshing(false);
     }
-  }, [timeframeFilter, stateFilter]);
+  }, [timeframeFilter, stateFilter, viewMode]);
 
   useEffect(() => { setLoading(true); fetchData(); }, [fetchData]);
   useEffect(() => {
@@ -170,6 +194,7 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
       await trendFollowAPI.deleteWatchContext(id);
       message.success('已删除');
       setContexts(prev => prev.filter(c => c.id !== id));
+      if (viewMode === 'merged') fetchData(); // 合并行的分数/周期会变，重新拉
     } catch {
       message.error('删除失败');
     }
@@ -231,6 +256,11 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
 
   const filteredContexts = contexts.filter(c =>
     !searchTerm || c.symbol.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredWatchlist = watchlist.filter(w =>
+    (!searchTerm || w.symbol.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    (!stageFilter || w.stage === stageFilter)
   );
 
   // 每个周期一个区域（无数据也保留区域），区域内按币种分组
@@ -313,6 +343,16 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
       {/* 筛选器 */}
       <div className={styles.filterSection}>
         <div className={styles.filterRow}>
+          <div className={`${styles.filterItem} ${styles.viewSwitch}`}>
+            <Segmented
+              value={viewMode}
+              onChange={v => changeViewMode(v as ViewMode)}
+              options={[
+                { label: '合并列表', value: 'merged' },
+                { label: '按周期', value: 'byTf' },
+              ]}
+            />
+          </div>
           <div className={styles.filterItem}>
             <label className={styles.filterLabel}>币种：</label>
             <Input
@@ -329,36 +369,64 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
               {TIMEFRAMES.map(tf => <Option key={tf} value={tf}>{tf}</Option>)}
             </Select>
           </div>
-          <div className={styles.filterItem}>
-            <label className={styles.filterLabel}>状态：</label>
-            <Select placeholder="观察中/报警" value={stateFilter} onChange={v => setStateFilter(v)} allowClear style={{ width: 120 }}>
-              <Option value="WATCHING">观察中</Option>
-              <Option value="ALERTED">已报警</Option>
-              <Option value="ABANDONED">已废弃</Option>
-              <Option value="DELETED">已删除</Option>
-              <Option value="BREAKTHROUGH">已突破</Option>
-            </Select>
-          </div>
+          {viewMode === 'merged' ? (
+            <div className={styles.filterItem}>
+              <label className={styles.filterLabel}>阶段：</label>
+              <Select placeholder="全部阶段" value={stageFilter} onChange={v => setStageFilter(v)} allowClear style={{ width: 120 }}>
+                {(Object.keys(WATCH_STAGE_LABELS) as WatchStage[]).map(k => (
+                  <Option key={k} value={k}>{WATCH_STAGE_LABELS[k]}</Option>
+                ))}
+              </Select>
+            </div>
+          ) : (
+            <div className={styles.filterItem}>
+              <label className={styles.filterLabel}>状态：</label>
+              <Select placeholder="观察中/报警" value={stateFilter} onChange={v => setStateFilter(v)} allowClear style={{ width: 120 }}>
+                <Option value="WATCHING">观察中</Option>
+                <Option value="ALERTED">已报警</Option>
+                <Option value="ABANDONED">已废弃</Option>
+                <Option value="DELETED">已删除</Option>
+                <Option value="BREAKTHROUGH">已突破</Option>
+              </Select>
+            </div>
+          )}
           <div className={styles.filterItem}>
             <CoolRefreshButton onClick={handleRefresh} loading={isRefreshing} size="small" iconOnly />
           </div>
           <div className={styles.statusInfo}>
-            <span className={styles.statusItem}>
-              <span className={styles.statusLabel}>观察区：</span>
-              <span className={styles.statusValue}>{filteredContexts.length}</span>
-            </span>
-            <span className={styles.statusItem}>
-              <span className={styles.statusLabel}>已报警：</span>
-              <span className={styles.statusValue}>{filteredContexts.filter(c => c.state === 'ALERTED').length}</span>
-            </span>
+            {viewMode === 'merged' ? (
+              <>
+                <span className={styles.statusItem}>
+                  <span className={styles.statusLabel}>币种：</span>
+                  <span className={styles.statusValue}>{filteredWatchlist.length}</span>
+                </span>
+                <span className={styles.statusItem}>
+                  <span className={styles.statusLabel}>回撤到位：</span>
+                  <span className={styles.statusValue}>{filteredWatchlist.filter(w => w.stage === 'IN_ZONE').length}</span>
+                </span>
+              </>
+            ) : (
+              <>
+                <span className={styles.statusItem}>
+                  <span className={styles.statusLabel}>观察区：</span>
+                  <span className={styles.statusValue}>{filteredContexts.length}</span>
+                </span>
+                <span className={styles.statusItem}>
+                  <span className={styles.statusLabel}>已报警：</span>
+                  <span className={styles.statusValue}>{filteredContexts.filter(c => c.state === 'ALERTED').length}</span>
+                </span>
+              </>
+            )}
           </div>
         </div>
       </div>
 
-      {/* 信号统计（默认折叠） */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <SignalStats />
-      </div>
+      {/* 信号统计（默认折叠；暂时隐藏，见 SHOW_SIGNAL_STATS） */}
+      {SHOW_SIGNAL_STATS && (
+        <div style={{ marginBottom: '1.5rem' }}>
+          <SignalStats />
+        </div>
+      )}
 
       {/* 公告栏 - 仅在观察中状态下显示1h内报警滚动播报 */}
       {(!stateFilter || stateFilter === 'WATCHING') && (() => {
@@ -440,6 +508,20 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
         );
       })()}
 
+      {viewMode === 'merged' ? (
+        <DataSection
+          title="合并观察列表"
+          subtitle={`${filteredWatchlist.length} 个币 · 同币跨周期合并，按评分排序`}
+          loading={loading && !watchlist.length}
+          error={null}
+          empty={!loading && filteredWatchlist.length === 0}
+          emptyText="暂无观察币种"
+          compact
+        >
+          <WatchlistCards items={filteredWatchlist} onOpenKline={setKlineModalCtx} />
+        </DataSection>
+      ) : (
+      <>
       {/* 观察区：每个周期一个区域，两列并排 */}
       <div className={styles.timeframeGrid}>
         {timeframeColumns.map((column, colIdx) => (
@@ -633,6 +715,9 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
         </div>
         ))}
       </div>
+
+      </>
+      )}
 
       {/* 报警级别 tooltip - fixed 定位避免撑开表格 */}
       {tooltipCtxId !== null && (() => {

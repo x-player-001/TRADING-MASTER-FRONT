@@ -4,7 +4,8 @@ import { trendFollowAPI, WatchContext } from '../../services/trendFollowAPI';
 import styles from './KlineModal.module.scss';
 
 interface KlineModalProps {
-  ctx: WatchContext;
+  /** 只用到 id / symbol / timeframe，合并观察列表的明细也能直接传 */
+  ctx: Pick<WatchContext, 'id' | 'symbol' | 'timeframe'>;
   onClose: () => void;
   onDelete: (id: number) => void;
   isDark?: boolean;
