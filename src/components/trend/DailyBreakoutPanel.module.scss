@@ -1,0 +1,45 @@
+// 日线突破 Tab（加密货币习惯：涨绿跌红）
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.thresholds {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.symbol {
+  font-weight: 600;
+  color: #3b82f6;
+  cursor: pointer;
+  &:hover { text-decoration: underline; }
+  :global(.dark) & { color: #60a5fa; }
+}
+
+.muted {
+  color: #6b7280;
+  :global(.dark) & { color: #9ca3af; }
+}
+
+.up {
+  color: #10b981;
+  :global(.dark) & { color: #34d399; }
+}
+
+.down {
+  color: #ef4444;
+  :global(.dark) & { color: #f87171; }
+}
+
+.hot {
+  font-weight: 600;
+  color: #f59e0b;
+  :global(.dark) & { color: #fbbf24; }
+}

@@ -1,8 +1,9 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Input, Select, Segmented, message } from 'antd';
+import { Input, Select, Segmented, Tabs, message } from 'antd';
 import KlineModal from '../components/trend/KlineModal';
 import WatchlistCards, { KlineTarget } from '../components/trend/WatchlistCards';
 import SignalStats from '../components/trend/SignalStats';
+import DailyBreakoutPanel from '../components/trend/DailyBreakoutPanel';
 import styles from './TrendFollow.module.scss';
 import PageHeader from '../components/ui/PageHeader';
 import { TopProgressBar, DataSection, CoolRefreshButton } from '../components/ui';
@@ -20,6 +21,8 @@ const { Option } = Select;
 
 const TIMEFRAMES = ['5m', '15m', '1h', '4h'];
 const VIEW_MODE_KEY = 'trendFollow.viewMode';
+const ACTIVE_TAB_KEY = 'trendFollow.activeTab';
+type PageTab = 'watch' | 'dailyBreakout';
 // 信号统计暂时隐藏（代码保留）。改回 true 即恢复「报警事后表现 / 扳机入场对比 / AI 置信度校准」那一块。
 const SHOW_SIGNAL_STATS = false;
 type ViewMode = 'merged' | 'byTf';
@@ -97,6 +100,16 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
     try { localStorage.setItem(VIEW_MODE_KEY, m); } catch { /* 忽略 */ }
   };
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
+
+  // 顶部 Tab：观察区 / 日线突破，记在浏览器里
+  const [activeTab, setActiveTab] = useState<PageTab>(() => {
+    try { return localStorage.getItem(ACTIVE_TAB_KEY) === 'dailyBreakout' ? 'dailyBreakout' : 'watch'; } catch { return 'watch'; }
+  });
+  const changeActiveTab = (t: PageTab) => {
+    setActiveTab(t);
+    try { localStorage.setItem(ACTIVE_TAB_KEY, t); } catch { /* 忽略 */ }
+  };
+  const [breakoutRefreshKey, setBreakoutRefreshKey] = useState(0);
 
   // tooltip 状态
   const [tooltipCtxId, setTooltipCtxId] = useState<number | null>(null);
@@ -340,6 +353,23 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
 
       <PageHeader title="趋势跟踪" subtitle="监控回调观察区状态，跟踪趋势续涨信号" icon="📈" />
 
+      <Tabs
+        activeKey={activeTab}
+        onChange={k => changeActiveTab(k as PageTab)}
+        items={[
+          { key: 'watch', label: '观察区' },
+          { key: 'dailyBreakout', label: '日线突破' },
+        ]}
+        tabBarExtraContent={activeTab === 'dailyBreakout' && (
+          <CoolRefreshButton onClick={() => setBreakoutRefreshKey(k => k + 1)} size="small" iconOnly />
+        )}
+      />
+
+      {activeTab === 'dailyBreakout' && (
+        <DailyBreakoutPanel refreshKey={breakoutRefreshKey} isSidebarCollapsed={isSidebarCollapsed} />
+      )}
+
+      {activeTab === 'watch' && (<>
       {/* 筛选器 */}
       <div className={styles.filterSection}>
         <div className={styles.filterRow}>
@@ -718,6 +748,7 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
 
       </>
       )}
+      </>)}
 
       {/* 报警级别 tooltip - fixed 定位避免撑开表格 */}
       {tooltipCtxId !== null && (() => {
