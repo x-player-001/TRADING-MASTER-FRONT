@@ -41,7 +41,7 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [currentPage, setCurrentPage] = useState('trend-follow');
+  const [currentPage, setCurrentPage] = useState('dashboard');
 
   useEffect(() => {
     // 检查本地存储中的主题设置
@@ -144,7 +144,7 @@ function App() {
       } else if (hash === 'task-management') {
         setCurrentPage('task-management');
       } else {
-        setCurrentPage('trend-follow');
+        setCurrentPage('dashboard');
       }
     };
 
@@ -190,8 +190,6 @@ function App() {
 
   const renderCurrentPage = () => {
     switch (currentPage) {
-      case 'dashboard':
-        return <Dashboard />;
       case 'oi-monitoring':
         return <OIMonitoring />;
       case 'breakout-signals':
@@ -225,6 +223,8 @@ function App() {
         return <PatternScan isSidebarCollapsed={isSidebarCollapsed} />;
       case 'ema20-push':
         return <Ema20Push isSidebarCollapsed={isSidebarCollapsed} />;
+      case 'trend-follow':
+        return <TrendFollow isSidebarCollapsed={isSidebarCollapsed} />;
       case 'trade-journal':
         return <TradeJournal isSidebarCollapsed={isSidebarCollapsed} />;
       case 'kline-replay':
@@ -253,7 +253,7 @@ function App() {
       case 'task-management':
         return <TaskManagement isSidebarCollapsed={isSidebarCollapsed} />;
       default:
-        return <TrendFollow isSidebarCollapsed={isSidebarCollapsed} />;
+        return <Dashboard isSidebarCollapsed={isSidebarCollapsed} />;
     }
   };
 

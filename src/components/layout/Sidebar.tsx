@@ -18,7 +18,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   // 获取当前页面
   const getCurrentPage = () => {
     const hash = window.location.hash.slice(1).split('?')[0];
-    return hash || 'trend-follow';
+    return hash || 'dashboard';
   };
 
   const [currentPage, setCurrentPage] = useState(getCurrentPage());
@@ -36,7 +36,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     {
       title: '加密货币',
       items: [
-        // { icon: '📊', label: '仪表板', href: '#dashboard', page: 'dashboard' },
         // { icon: '💹', label: 'K线图表', href: '#kline-chart', page: 'kline-chart' },
         // { icon: '📊', label: 'OI监控', href: '#oi-monitoring', page: 'oi-monitoring' },
         // { icon: '🔍', label: '形态扫描', href: '#pattern-scan', page: 'pattern-scan' },
@@ -44,7 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         // { icon: '📉', label: 'EMA20推送', href: '#ema20-push', page: 'ema20-push' },
         // { icon: '📒', label: '交易辅助', href: '#trade-journal', page: 'trade-journal' },
         { icon: '⏯️', label: 'K线回放', href: '#kline-replay', page: 'kline-replay' },
-        // { icon: '🧪', label: '策略交易', href: '#paper-trading', page: 'paper-trading' },
+        { icon: '🧪', label: '策略交易', href: '#paper-trading', page: 'paper-trading' },
       ]
     },
     {
