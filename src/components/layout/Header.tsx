@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styles from './Header.module.scss';
 
 interface HeaderProps {
@@ -15,14 +15,6 @@ const Header: React.FC<HeaderProps> = ({ isDark, onThemeToggle }) => {
           <div className={styles.logo}>TM</div>
           <span className={styles.title}>Trading Master</span>
         </a>
-
-        <div className={styles.centerInfo}>
-          <div className={styles.marketInfo}>
-            <span className={styles.marketLabel}>BTC/USDT</span>
-            <span className={styles.marketPrice}>$67,842.50</span>
-            <span className={styles.marketChange}>+1.87%</span>
-          </div>
-        </div>
 
         <div className={styles.rightSection}>
           <div className={styles.statusIndicator}>

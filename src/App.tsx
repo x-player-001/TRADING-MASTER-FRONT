@@ -41,7 +41,7 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  const [currentPage, setCurrentPage] = useState('trend-follow');
 
   useEffect(() => {
     // 检查本地存储中的主题设置
@@ -81,7 +81,9 @@ function App() {
       // 分离路由名称和查询参数（例如：token-analysis?symbol=BTC）
       const hash = fullHash.split('?')[0];
 
-      if (hash === 'oi-monitoring') {
+      if (hash === 'dashboard') {
+        setCurrentPage('dashboard');
+      } else if (hash === 'oi-monitoring') {
         setCurrentPage('oi-monitoring');
       } else if (hash === 'breakout-signals') {
         setCurrentPage('breakout-signals');
@@ -142,7 +144,7 @@ function App() {
       } else if (hash === 'task-management') {
         setCurrentPage('task-management');
       } else {
-        setCurrentPage('dashboard');
+        setCurrentPage('trend-follow');
       }
     };
 
@@ -188,6 +190,8 @@ function App() {
 
   const renderCurrentPage = () => {
     switch (currentPage) {
+      case 'dashboard':
+        return <Dashboard />;
       case 'oi-monitoring':
         return <OIMonitoring />;
       case 'breakout-signals':
@@ -219,8 +223,6 @@ function App() {
         return <VolumeMonitor isSidebarCollapsed={isSidebarCollapsed} />;
       case 'pattern-scan':
         return <PatternScan isSidebarCollapsed={isSidebarCollapsed} />;
-      case 'trend-follow':
-        return <TrendFollow isSidebarCollapsed={isSidebarCollapsed} />;
       case 'ema20-push':
         return <Ema20Push isSidebarCollapsed={isSidebarCollapsed} />;
       case 'trade-journal':
@@ -251,7 +253,7 @@ function App() {
       case 'task-management':
         return <TaskManagement isSidebarCollapsed={isSidebarCollapsed} />;
       default:
-        return <Dashboard />;
+        return <TrendFollow isSidebarCollapsed={isSidebarCollapsed} />;
     }
   };
 
