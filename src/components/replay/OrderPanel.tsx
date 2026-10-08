@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { InputNumber, Segmented, Select, Checkbox, Input, Button, message } from 'antd';
 import styles from './Replay.module.scss';
-import type { ReplaySide as OrderSide, ReplayOrderType as OrderType } from '../../services/replayAPI';
+import type { CmeContract, ReplaySide as OrderSide, ReplayOrderType as OrderType } from '../../services/replayAPI';
 import type { ReplayOrderInput } from '../../services/kline_replay/replay_account';
 import type { ReplayView } from './useReplaySession';
-import { fmtQty, fmtUsd } from './format';
+import { fmtSize, fmtUsd, quoteUnit, roundToTick } from './format';
 
 export type PickField = 'price' | 'stop_loss' | 'take_profit' | 'pos_sl' | 'pos_tp';
 
@@ -14,7 +14,8 @@ export interface PickRequest {
   nonce: number;
 }
 
-type SizeMode = 'risk' | 'notional' | 'qty';
+/** qty：币安按币数；lots：CME 期货按手 */
+type SizeMode = 'risk' | 'notional' | 'qty' | 'lots';
 
 interface OrderPanelProps {
   view: ReplayView;
@@ -24,12 +25,13 @@ interface OrderPanelProps {
   pickResult: PickRequest | null;
   /** 本地撮合下单；返回的 order.status='rejected' 表示被拒（原因走事件提示） */
   onSubmit: (input: ReplayOrderInput) => { order: { status: string } } | null;
+  /** CME 期货合约规格：数量按手取整（qty = 手数 × multiplier），价格按 tick_size 取整 */
+  contract?: CmeContract | null;
 }
 
-const SIZE_UNIT: Record<SizeMode, string> = { risk: '%', notional: 'U', qty: '' };
-const SIZE_DEFAULT: Record<SizeMode, number> = { risk: 1, notional: 1000, qty: 0.01 };
+const SIZE_DEFAULT: Record<SizeMode, number> = { risk: 1, notional: 1000, qty: 0.01, lots: 1 };
 
-const OrderPanel: React.FC<OrderPanelProps> = ({ view, disabled, picking, onPickStart, pickResult, onSubmit }) => {
+const OrderPanel: React.FC<OrderPanelProps> = ({ view, disabled, picking, onPickStart, pickResult, onSubmit, contract }) => {
   const [side, setSide] = useState<OrderSide>('buy');
   const [orderType, setOrderType] = useState<OrderType>('market');
   const [sizeMode, setSizeMode] = useState<SizeMode>('risk');
@@ -41,6 +43,20 @@ const OrderPanel: React.FC<OrderPanelProps> = ({ view, disabled, picking, onPick
   const [tags, setTags] = useState<string[]>([]);
   const [note, setNote] = useState('');
 
+  const unit = quoteUnit(contract);
+  const sizeUnit: Record<SizeMode, string> = { risk: '%', notional: unit, qty: '', lots: '手' };
+  const tick = contract?.tick_size;
+  const snap = (v: number | null) => (v !== null && tick ? roundToTick(v, tick) : v);
+
+  // 换会话时品种可能在币安和期货之间切换，数量模式跟着换
+  useEffect(() => {
+    const next: SizeMode = contract ? (sizeMode === 'qty' ? 'lots' : sizeMode) : sizeMode === 'lots' ? 'qty' : sizeMode;
+    if (next !== sizeMode) {
+      setSizeMode(next);
+      setSizeValue(SIZE_DEFAULT[next]);
+    }
+  }, [contract, sizeMode]);
+
   const last = view.current_bar.close;
   const { equity } = view;
   const { leverage } = view.session;
@@ -48,10 +64,11 @@ const OrderPanel: React.FC<OrderPanelProps> = ({ view, disabled, picking, onPick
   // 点图取价的结果落到对应输入框
   useEffect(() => {
     if (!pickResult) return;
-    if (pickResult.field === 'price') setPrice(pickResult.price);
-    if (pickResult.field === 'stop_loss') setStopLoss(pickResult.price);
-    if (pickResult.field === 'take_profit') setTakeProfit(pickResult.price);
-  }, [pickResult]);
+    const p = tick ? roundToTick(pickResult.price, tick) : pickResult.price;
+    if (pickResult.field === 'price') setPrice(p);
+    if (pickResult.field === 'stop_loss') setStopLoss(p);
+    if (pickResult.field === 'take_profit') setTakeProfit(p);
+  }, [pickResult, tick]);
 
   // 预估：数量 / 名义价值 / 保证金 / 止损风险
   const estimate = useMemo(() => {
@@ -59,9 +76,12 @@ const OrderPanel: React.FC<OrderPanelProps> = ({ view, disabled, picking, onPick
     if (!ref || !sizeValue) return null;
     let qty: number | null = null;
     if (sizeMode === 'qty') qty = sizeValue;
+    else if (sizeMode === 'lots') qty = contract ? Math.floor(sizeValue) * contract.multiplier : null;
     else if (sizeMode === 'notional') qty = sizeValue / ref;
     else if (stopLoss && Math.abs(ref - stopLoss) > 0) qty = (equity * sizeValue) / 100 / Math.abs(ref - stopLoss);
     if (qty === null) return null;
+    // 期货只能整手：按风险 / 金额算出的数量向下取整到 multiplier 的整数倍
+    if (contract) qty = Math.floor(qty / contract.multiplier + 1e-9) * contract.multiplier;
     const notional = qty * ref;
     return {
       qty,
@@ -69,7 +89,7 @@ const OrderPanel: React.FC<OrderPanelProps> = ({ view, disabled, picking, onPick
       margin: notional / leverage,
       risk: stopLoss ? qty * Math.abs(ref - stopLoss) : null,
     };
-  }, [orderType, last, price, sizeMode, sizeValue, stopLoss, equity, leverage]);
+  }, [orderType, last, price, sizeMode, sizeValue, stopLoss, equity, leverage, contract]);
 
   const handleSizeMode = (m: SizeMode) => {
     setSizeMode(m);
@@ -81,6 +101,9 @@ const OrderPanel: React.FC<OrderPanelProps> = ({ view, disabled, picking, onPick
     if (!sizeValue || sizeValue <= 0) return message.warning('请填写下单数量');
     if (orderType !== 'market' && !price) return message.warning(orderType === 'limit' ? '请填写限价' : '请填写触发价');
     if (sizeMode === 'risk' && !stopLoss) return message.warning('按风险%下单必须设置止损');
+    if (contract && estimate && estimate.qty === 0) {
+      return message.warning(`不足 1 手（1 手 = ${contract.multiplier} 单位），请加大仓位或放宽止损`);
+    }
     if (!estimate || !(estimate.qty > 0) || !Number.isFinite(estimate.qty)) {
       return message.warning('无法计算下单数量，请检查委托价和止损价');
     }
@@ -89,9 +112,9 @@ const OrderPanel: React.FC<OrderPanelProps> = ({ view, disabled, picking, onPick
       side,
       order_type: orderType,
       qty: estimate.qty,
-      price: orderType === 'market' ? null : price,
-      stop_loss: stopLoss ?? null,
-      take_profit: takeProfit ?? null,
+      price: orderType === 'market' ? null : snap(price),
+      stop_loss: snap(stopLoss ?? null),
+      take_profit: snap(takeProfit ?? null),
       reduce_only: reduceOnly,
       tags,
       note: note.trim() || null,
@@ -155,7 +178,7 @@ const OrderPanel: React.FC<OrderPanelProps> = ({ view, disabled, picking, onPick
       {orderType !== 'market' && (
         <div className={styles.field}>
           <span className={styles.fieldLabel}>{orderType === 'limit' ? '限价' : '触发价'}</span>
-          <InputNumber size="small" value={price} onChange={setPrice} min={0} style={{ flex: 1 }} disabled={disabled} />
+          <InputNumber size="small" value={price} onChange={setPrice} min={0} step={tick} style={{ flex: 1 }} disabled={disabled} />
           {pickBtn('price')}
         </div>
       )}
@@ -169,7 +192,7 @@ const OrderPanel: React.FC<OrderPanelProps> = ({ view, disabled, picking, onPick
           options={[
             { label: '风险%', value: 'risk' },
             { label: '金额', value: 'notional' },
-            { label: '数量', value: 'qty' },
+            contract ? { label: '手数', value: 'lots' } : { label: '数量', value: 'qty' },
           ]}
           disabled={disabled}
         />
@@ -181,20 +204,21 @@ const OrderPanel: React.FC<OrderPanelProps> = ({ view, disabled, picking, onPick
           value={sizeValue}
           onChange={setSizeValue}
           min={0}
+          precision={sizeMode === 'lots' ? 0 : undefined}
           style={{ flex: 1 }}
-          addonAfter={SIZE_UNIT[sizeMode] || undefined}
+          addonAfter={sizeUnit[sizeMode] || undefined}
           disabled={disabled}
         />
       </div>
 
       <div className={styles.field}>
         <span className={styles.fieldLabel}>止损</span>
-        <InputNumber size="small" value={stopLoss} onChange={setStopLoss} min={0} style={{ flex: 1 }} disabled={disabled} />
+        <InputNumber size="small" value={stopLoss} onChange={setStopLoss} min={0} step={tick} style={{ flex: 1 }} disabled={disabled} />
         {pickBtn('stop_loss')}
       </div>
       <div className={styles.field}>
         <span className={styles.fieldLabel}>止盈</span>
-        <InputNumber size="small" value={takeProfit} onChange={setTakeProfit} min={0} style={{ flex: 1 }} disabled={disabled} />
+        <InputNumber size="small" value={takeProfit} onChange={setTakeProfit} min={0} step={tick} style={{ flex: 1 }} disabled={disabled} />
         {pickBtn('take_profit')}
       </div>
 
@@ -224,10 +248,12 @@ const OrderPanel: React.FC<OrderPanelProps> = ({ view, disabled, picking, onPick
       <div className={styles.estimate}>
         {estimate ? (
           <>
-            <span>数量 {fmtQty(estimate.qty)}</span>
-            <span>名义 {fmtUsd(estimate.notional)}U</span>
-            <span>保证金 {fmtUsd(estimate.margin)}U</span>
-            {estimate.risk !== null && <span className={styles.neg}>止损风险 {fmtUsd(estimate.risk)}U</span>}
+            <span className={contract && estimate.qty === 0 ? styles.neg : undefined}>
+              数量 {contract && estimate.qty === 0 ? '不足 1 手' : fmtSize(estimate.qty, contract)}
+            </span>
+            <span>名义 {fmtUsd(estimate.notional)}{unit}</span>
+            <span>保证金 {fmtUsd(estimate.margin)}{unit}</span>
+            {estimate.risk !== null && <span className={styles.neg}>止损风险 {fmtUsd(estimate.risk)}{unit}</span>}
           </>
         ) : (
           <span className={styles.dim}>

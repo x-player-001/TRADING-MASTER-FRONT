@@ -67,11 +67,10 @@ const fmtDuration = (minutes: number) => {
 
 /**
  * 当前大周期K线的剩余时间（按回放时间）：
- * 桶起点 = floor(游标 / 周期) × 周期，剩余 = 桶终点 − 游标这根 5m 的收盘
+ * 剩余 = 桶终点（当前大周期K线的 close_time + 1，ES 已按收盘截断）− 游标这根 5m 的收盘
  */
-export const countdownText = (cursorTime: number, intervalMs: number, baseMs: number): string => {
+export const countdownText = (cursorTime: number, bucketEnd: number, intervalMs: number, baseMs: number): string => {
   if (intervalMs <= baseMs) return '';
-  const bucket = Math.floor(cursorTime / intervalMs) * intervalMs;
-  const remainingMs = Math.max(0, bucket + intervalMs - (cursorTime + baseMs));
+  const remainingMs = Math.max(0, bucketEnd - (cursorTime + baseMs));
   return remainingMs === 0 ? '收盘' : fmtDuration(Math.round(remainingMs / 60_000));
 };

@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { InputNumber, Button, message } from 'antd';
 import styles from './Replay.module.scss';
 import type { ReplayView } from './useReplaySession';
-import { fmtPrice, fmtQty, fmtUsd, fmtPct, fmtR, pnlSign } from './format';
+import { fmtPrice, fmtSize, fmtUsd, fmtPct, fmtR, pnlSign, quoteUnit, roundToTick } from './format';
 import type { PickField, PickRequest } from './OrderPanel';
+import type { CmeContract } from '../../services/replayAPI';
 
 interface AccountPanelProps {
   view: ReplayView;
@@ -15,6 +16,8 @@ interface AccountPanelProps {
   onSetProtection: (sl: number | null | undefined, tp: number | null | undefined) => string | null;
   onClosePosition: (qty?: number) => string | null;
   onCancelOrder: (clientId: string) => void;
+  /** CME 期货合约规格：数量按手显示，平一半按整手取整，价格按 tick_size 取整 */
+  contract?: CmeContract | null;
 }
 
 const ORDER_TYPE_LABEL: Record<string, string> = { market: '市价', limit: '限价', stop: '条件' };
@@ -28,6 +31,7 @@ const AccountPanel: React.FC<AccountPanelProps> = ({
   onSetProtection,
   onClosePosition,
   onCancelOrder,
+  contract,
 }) => {
   const { session, position, pending_orders: pending, equity, unrealized_pnl: upnl } = view;
   const [sl, setSl] = useState<number | null>(null);
@@ -41,9 +45,18 @@ const AccountPanel: React.FC<AccountPanelProps> = ({
 
   useEffect(() => {
     if (!pickResult) return;
-    if (pickResult.field === 'pos_sl') setSl(pickResult.price);
-    if (pickResult.field === 'pos_tp') setTp(pickResult.price);
-  }, [pickResult]);
+    const p = contract ? roundToTick(pickResult.price, contract.tick_size) : pickResult.price;
+    if (pickResult.field === 'pos_sl') setSl(p);
+    if (pickResult.field === 'pos_tp') setTp(p);
+  }, [pickResult, contract]);
+
+  const snap = (v: number | null) => (v !== null && contract ? roundToTick(v, contract.tick_size) : v);
+  // 期货只能整手平：一半向下取整到整手，不足 1 手时不能平一半
+  const halfQty = position
+    ? contract
+      ? Math.floor(position.qty / contract.multiplier / 2) * contract.multiplier
+      : position.qty / 2
+    : 0;
 
   const run = (fn: () => string | null) => {
     const error = fn();
@@ -114,7 +127,7 @@ const AccountPanel: React.FC<AccountPanelProps> = ({
             <div className={styles.kvGrid}>
               <div className={styles.kv}>
                 <span className={styles.kvLabel}>数量</span>
-                <span className={styles.kvValue}>{fmtQty(position.qty)}</span>
+                <span className={styles.kvValue}>{fmtSize(position.qty, contract)}</span>
               </div>
               <div className={styles.kv}>
                 <span className={styles.kvLabel}>均价</span>
@@ -132,7 +145,7 @@ const AccountPanel: React.FC<AccountPanelProps> = ({
               </div>
               <div className={styles.kv}>
                 <span className={styles.kvLabel}>计划风险</span>
-                <span className={styles.kvValue}>{position.risk_amount ? `${fmtUsd(position.risk_amount)}U` : '未设止损'}</span>
+                <span className={styles.kvValue}>{position.risk_amount ? `${fmtUsd(position.risk_amount)}${quoteUnit(contract)}` : '未设止损'}</span>
               </div>
               <div className={styles.kv}>
                 <span className={styles.kvLabel}>手续费</span>
@@ -142,12 +155,12 @@ const AccountPanel: React.FC<AccountPanelProps> = ({
 
             <div className={styles.field}>
               <span className={styles.fieldLabel}>止损</span>
-              <InputNumber size="small" value={sl} onChange={setSl} min={0} style={{ flex: 1 }} disabled={disabled} />
+              <InputNumber size="small" value={sl} onChange={setSl} min={0} step={contract?.tick_size} style={{ flex: 1 }} disabled={disabled} />
               {pickBtn('pos_sl')}
             </div>
             <div className={styles.field}>
               <span className={styles.fieldLabel}>止盈</span>
-              <InputNumber size="small" value={tp} onChange={setTp} min={0} style={{ flex: 1 }} disabled={disabled} />
+              <InputNumber size="small" value={tp} onChange={setTp} min={0} step={contract?.tick_size} style={{ flex: 1 }} disabled={disabled} />
               {pickBtn('pos_tp')}
             </div>
             {(slChanged || tpChanged) && (
@@ -155,14 +168,14 @@ const AccountPanel: React.FC<AccountPanelProps> = ({
                 size="small"
                 block
                 disabled={disabled}
-                onClick={() => run(() => onSetProtection(slChanged ? sl : undefined, tpChanged ? tp : undefined))}
+                onClick={() => run(() => onSetProtection(slChanged ? snap(sl) : undefined, tpChanged ? snap(tp) : undefined))}
               >
                 保存止损止盈{(sl === null && slChanged) || (tp === null && tpChanged) ? '（空值=清除）' : ''}
               </Button>
             )}
 
             <div className={styles.btnRow}>
-              <Button size="small" disabled={disabled} onClick={() => run(() => onClosePosition(position.qty / 2))}>
+              <Button size="small" disabled={disabled || halfQty <= 0} onClick={() => run(() => onClosePosition(halfQty))}>
                 平一半
               </Button>
               <Button size="small" danger disabled={disabled} onClick={() => run(() => onClosePosition())}>
@@ -185,7 +198,7 @@ const AccountPanel: React.FC<AccountPanelProps> = ({
                   {ORDER_TYPE_LABEL[o.order_type]}{o.side === 'buy' ? '买' : '卖'}
                 </span>
                 <span>{fmtPrice(o.price)}</span>
-                <span className={styles.dim}>× {fmtQty(o.qty)}</span>
+                <span className={styles.dim}>× {fmtSize(o.qty, contract)}</span>
                 {o.reduce_only && <span className={styles.miniTag}>只减</span>}
                 <button
                   type="button"

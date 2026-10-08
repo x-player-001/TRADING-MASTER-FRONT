@@ -40,8 +40,11 @@ export const INTERVAL_MS: Record<ReplayInterval, number> = {
   '4h': 4 * 60 * 60_000,
 };
 
-/** 图表用K线：5m 没有 is_closed；大周期最后一根可能未收盘 */
-export type ReplayBar = EngineBar & { is_closed?: boolean };
+/**
+ * 接口返回的K线：5m 没有 is_closed，大周期最后一根可能未收盘；
+ * CME 期货多一个 contract（如 ESZ6），相邻两根不同即为换月（不复权，换月那根有跳空）
+ */
+export type ReplayBar = EngineBar & { is_closed?: boolean; contract?: string };
 export type { ReplayIntervalBar };
 
 export interface DataCoverage {
@@ -50,20 +53,40 @@ export interface DataCoverage {
   days: number;
 }
 
+/** 可回放的 CME 期货。qty 按「单位」记账：qty = 手数 × multiplier，盈亏直接是美元 */
+export interface CmeContract {
+  symbol: string;            // 'ES' | 'GC'
+  name: string;
+  exchange: string;
+  multiplier: number;        // 1 手对应的单位数
+  tick_size: number;
+  default_fee_rate: number;
+  default_leverage: number;
+  default_balance: number;
+  first_time: number | null; // 5m 数据首尾 open_time
+  last_time: number | null;
+}
+
+/** GET /symbols：下拉框推荐品种。crypto = BTCUSDT + 近 30 天日均成交额前 10（实时排名） */
+export interface ReplaySymbols {
+  crypto: { symbol: string; avg_quote_volume_30d: number }[];
+  cme: CmeContract[];
+}
+
 /** 列表 / 状态里的会话一定有 id */
 export type ReplaySessionRow = ReplaySession & { id: number };
 
 /** GET /sessions/:id 与 POST /sessions 的返回：用于恢复 ReplayAccount */
 export interface ReplaySessionState {
   session: ReplaySessionRow;
-  cursor_bar: EngineBar;
+  cursor_bar: ReplayBar;
   positions: ReplayPosition[];
   orders: ReplayOrder[];
   fills: ReplayFill[];
 }
 
 export interface BarsChunk {
-  bars: EngineBar[];
+  bars: ReplayBar[];
   end_of_data: boolean;
 }
 
@@ -139,8 +162,27 @@ const BASE = '/api/replay';
 const syncUrl = (id: number) => `${API_BASE_URL}${BASE}/sessions/${id}/sync`;
 
 class ReplayAPIService {
-  getDataCoverage(): Promise<DataCoverage[]> {
-    return apiGet(`${BASE}/data-coverage`);
+  private cmeCache: Promise<CmeContract[]> | null = null;
+
+  /** 5m 数据连续段。不传 symbol 为币安数据（各币种共用）；ES / GC 返回该期货的首尾一段 */
+  getDataCoverage(symbol?: string): Promise<DataCoverage[]> {
+    return apiGet(`${BASE}/data-coverage`, { params: symbol ? { symbol } : undefined });
+  }
+
+  /** 推荐品种。不在列表里的币种只要有 5m 数据也能直接建会话 */
+  getSymbols(): Promise<ReplaySymbols> {
+    return apiGet(`${BASE}/symbols`);
+  }
+
+  /** 可回放的 CME 期货（合约乘数、最小变动价位、默认参数），很少变，缓存一份 */
+  getCmeContracts(): Promise<CmeContract[]> {
+    if (!this.cmeCache) {
+      this.cmeCache = apiGet<CmeContract[]>(`${BASE}/cme-contracts`).catch((err) => {
+        this.cmeCache = null;
+        throw err;
+      });
+    }
+    return this.cmeCache;
   }
 
   // ── 会话 ──

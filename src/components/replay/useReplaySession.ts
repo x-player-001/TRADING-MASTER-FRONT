@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ReplayAccount, ReplayOrderInput } from '../../services/kline_replay/replay_account';
 import { calc_unrealized_pnl } from '../../services/kline_replay/replay_matching_engine';
-import type { ReplayBar as EngineBar } from '../../services/kline_replay/replay_types';
 import {
   replayAPI,
   ReplayBar,
@@ -15,6 +14,7 @@ import {
   REPLAY_INTERVALS,
   INTERVAL_MS,
 } from '../../services/replayAPI';
+import { bucketOf, regularSessionOf } from './tradingSession';
 
 // ===== K线回放运行时 =====
 // 前端揭示K线并撮合（ReplayAccount），后端只下发数据和存储：
@@ -34,7 +34,7 @@ export interface OpenPosition extends ReplayPosition {
 /** 给页面和面板用的只读视图 */
 export interface ReplayView {
   session: ReplaySessionRow;
-  current_bar: EngineBar;
+  current_bar: ReplayBar;
   equity: number;
   unrealized_pnl: number;
   position: OpenPosition | null;
@@ -54,44 +54,68 @@ const SYNC_EVERY_MS = 5000;  // 纯推进时的同步间隔
 const trim = (arr: ReplayBar[]) => (arr.length > MAX_KEEP + TRIM_SLACK ? arr.slice(arr.length - MAX_KEEP) : arr);
 
 /**
- * 把新揭示的 5m 追加到各周期：5m 直接追加，大周期按桶聚合（桶起点 = floor(open_time / 周期) × 周期），
- * 更新或新开最后一根，桶内最后一根 5m 到了就标记收盘
+ * 把新揭示的 5m 追加到各周期：5m 直接追加，大周期按桶聚合（默认 UTC 整点分桶；ES 从开盘起算、收盘截断，
+ * 见 tradingSession.ts），更新或新开最后一根，桶内最后一根 5m 到了就标记收盘
  */
-const applyNewBars = (prev: BarsMap, newBars: EngineBar[]): BarsMap => {
+const aggregateInto = (arr: ReplayBar[], newBars: ReplayBar[], ms: number, symbol: string): ReplayBar[] => {
+  const session = regularSessionOf(symbol);
+  for (const b of newBars) {
+    const { start: bucket, end } = bucketOf(b.open_time, ms, session);
+    const closed = b.open_time + BASE_MS >= end;
+    const last = arr[arr.length - 1];
+    if (last && last.open_time === bucket) {
+      arr[arr.length - 1] = {
+        ...last,
+        high: Math.max(last.high, b.high),
+        low: Math.min(last.low, b.low),
+        close: b.close,
+        volume: last.volume + b.volume,
+        is_closed: closed,
+        contract: b.contract ?? last.contract,
+      };
+    } else {
+      if (last && last.is_closed === false) arr[arr.length - 1] = { ...last, is_closed: true };
+      arr.push({
+        open_time: bucket,
+        close_time: end - 1,
+        open: b.open,
+        high: b.high,
+        low: b.low,
+        close: b.close,
+        volume: b.volume,
+        is_closed: closed,
+        contract: b.contract,
+      });
+    }
+  }
+  return arr;
+};
+
+const applyNewBars = (prev: BarsMap, newBars: ReplayBar[], symbol: string): BarsMap => {
   if (newBars.length === 0) return prev;
   const next: BarsMap = { ...prev, '5m': trim([...prev['5m'], ...newBars]) };
   for (const iv of REPLAY_INTERVALS) {
     if (iv === '5m') continue;
+    next[iv] = trim(aggregateInto(prev[iv].slice(), newBars, INTERVAL_MS[iv], symbol));
+  }
+  return next;
+};
+
+/**
+ * 按交易时段分桶的品种（ES）：游标所在的那根未收盘大周期用本地 5m 重新聚合，
+ * 保证和之后推进时的本地聚合口径一致（接口返回的这根可能按 UTC 整点切）
+ */
+const rebuildCursorBucket = (map: BarsMap, cursorTime: number, symbol: string): BarsMap => {
+  const session = regularSessionOf(symbol);
+  if (!session) return map;
+  const next = { ...map };
+  for (const iv of REPLAY_INTERVALS) {
+    if (iv === '5m') continue;
     const ms = INTERVAL_MS[iv];
-    const arr = prev[iv].slice();
-    for (const b of newBars) {
-      const bucket = Math.floor(b.open_time / ms) * ms;
-      const closed = b.open_time + BASE_MS >= bucket + ms;
-      const last = arr[arr.length - 1];
-      if (last && last.open_time === bucket) {
-        arr[arr.length - 1] = {
-          ...last,
-          high: Math.max(last.high, b.high),
-          low: Math.min(last.low, b.low),
-          close: b.close,
-          volume: last.volume + b.volume,
-          is_closed: closed,
-        };
-      } else {
-        if (last && last.is_closed === false) arr[arr.length - 1] = { ...last, is_closed: true };
-        arr.push({
-          open_time: bucket,
-          close_time: bucket + ms - 1,
-          open: b.open,
-          high: b.high,
-          low: b.low,
-          close: b.close,
-          volume: b.volume,
-          is_closed: closed,
-        });
-      }
-    }
-    next[iv] = trim(arr);
+    const { start } = bucketOf(cursorTime, ms, session);
+    const kept = map[iv].filter((b) => b.open_time < start && b.is_closed !== false);
+    const tail = map['5m'].filter((b) => b.open_time >= start && b.open_time <= cursorTime);
+    next[iv] = aggregateInto(kept, tail, ms, symbol);
   }
   return next;
 };
@@ -106,8 +130,8 @@ interface Options {
 export function useReplaySession({ onEvents }: Options = {}) {
   const accountRef = useRef<ReplayAccount | null>(null);
   const sessionRef = useRef<ReplaySessionRow | null>(null);
-  const cursorRef = useRef<EngineBar | null>(null);
-  const bufferRef = useRef<EngineBar[]>([]);
+  const cursorRef = useRef<ReplayBar | null>(null);
+  const bufferRef = useRef<ReplayBar[]>([]);
   const eofRef = useRef(false);
   const fetchingRef = useRef<Promise<void> | null>(null);
   const busyRef = useRef(false);
@@ -284,7 +308,7 @@ export function useReplaySession({ onEvents }: Options = {}) {
       revisionRef.current = session.sync_revision ?? 0;
       const map = { ...EMPTY_BARS };
       REPLAY_INTERVALS.forEach((iv, i) => { map[iv] = klines[i]; });
-      setBars(map);
+      setBars(rebuildCursorBucket(map, cursor_bar.open_time, session.symbol));
       if (session.status === 'active') await fetchMore();
       bump();
       return session;
@@ -308,7 +332,7 @@ export function useReplaySession({ onEvents }: Options = {}) {
     busyRef.current = true;
     setStepping(true);
     const events: ReplayEvent[] = [];
-    const revealed: EngineBar[] = [];
+    const revealed: ReplayBar[] = [];
     try {
       for (let i = 0; i < n; i++) {
         if (bufferRef.current.length === 0) {
@@ -340,7 +364,7 @@ export function useReplaySession({ onEvents }: Options = {}) {
       session.cursor_time = cursor.open_time;
       session.last_price = cursor.close;
       session.balance = account.state.balance;
-      setBars((prev) => applyNewBars(prev, revealed));
+      setBars((prev) => applyNewBars(prev, revealed, session.symbol));
       progressDirtyRef.current = true;
       if (hasTradeEvent(events)) {
         tradesDirtyRef.current = true;

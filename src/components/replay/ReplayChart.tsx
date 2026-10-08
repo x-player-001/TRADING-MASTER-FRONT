@@ -63,6 +63,8 @@ interface ReplayChartProps {
   showEma?: boolean;
   /** 副图 MACD(12,26,9) */
   showMacd?: boolean;
+  /** 金额单位（止损止盈线标签用）：币安 U，CME 期货 $ */
+  quoteUnit?: string;
 }
 
 const EMA_PERIOD = 20;
@@ -77,10 +79,10 @@ const precisionFor = (price: number) => (price >= 1000 ? 2 : price >= 1 ? 4 : 6)
 type ProtectionKind = 'sl' | 'tp';
 
 /** 止损/止盈线的标签：按该价格平掉全部持仓的盈亏（未扣手续费） */
-const protectionTitle = (kind: ProtectionKind, price: number, position: OpenPosition) => {
+const protectionTitle = (kind: ProtectionKind, price: number, position: OpenPosition, unit: string) => {
   const sign = position.direction === 'long' ? 1 : -1;
   const pnl = (price - position.avg_entry_price) * position.qty * sign;
-  return `${kind === 'sl' ? '止损' : '止盈'} ${pnl >= 0 ? '+' : ''}${pnl.toFixed(1)}U`;
+  return `${kind === 'sl' ? '止损' : '止盈'} ${pnl >= 0 ? '+' : ''}${pnl.toFixed(1)}${unit}`;
 };
 
 const TOOLS: { tool: DrawingTool; icon: string; title: string }[] = [
@@ -148,7 +150,10 @@ const ReplayChart: React.FC<ReplayChartProps> = ({
   cursorTime,
   showEma = true,
   showMacd = true,
+  quoteUnit = 'U',
 }) => {
+  const unitRef = useRef(quoteUnit);
+  unitRef.current = quoteUnit;
   const containerRef = useRef<HTMLDivElement>(null);
   const drawingRef = useRef<DrawingPrimitive | null>(null);
   const countdownRef = useRef<CountdownPrimitive | null>(null);
@@ -354,7 +359,7 @@ const ReplayChart: React.FC<ReplayChartProps> = ({
     const last = bars[bars.length - 1];
     countdownRef.current?.setState({
       price: last ? last.close : null,
-      text: last && cursorTime ? countdownText(cursorTime, INTERVAL_MS[interval], INTERVAL_MS['5m']) : '',
+      text: last && cursorTime ? countdownText(cursorTime, last.close_time + 1, INTERVAL_MS[interval], INTERVAL_MS['5m']) : '',
       color: last && last.close < last.open ? DOWN : UP,
     });
   }, [bars, interval, cursorTime, isDark]);
@@ -392,7 +397,8 @@ const ReplayChart: React.FC<ReplayChartProps> = ({
     renderedRef.current = { interval, firstTime, length: bars.length };
   }, [bars, interval, isDark]);
 
-  // 成交打点：bar_time 是 5m 时间，按当前周期向下取整对齐到所在K线
+  // 成交打点：bar_time 是 5m 时间，按当前周期向下取整对齐到所在K线；
+  // CME 期货另标换月（相邻两根 contract 不同，连续合约不复权，那根会有跳空）
   useEffect(() => {
     const markers = markersRef.current;
     if (!markers) return;
@@ -413,6 +419,20 @@ const ReplayChart: React.FC<ReplayChartProps> = ({
           text: fillLabel(f),
         } as SeriesMarker<Time>;
       });
+    for (let i = 1; i < bars.length; i++) {
+      const prev = bars[i - 1].contract;
+      const cur = bars[i].contract;
+      if (prev && cur && prev !== cur) {
+        list.push({
+          time: toChartTime(bars[i].open_time),
+          position: 'aboveBar',
+          shape: 'square',
+          color: '#8b5cf6',
+          text: `换月 ${cur}`,
+        });
+      }
+    }
+    list.sort((a, b) => (a.time as number) - (b.time as number));
     markers.setMarkers(list);
   }, [fills, bars, interval, isDark]);
 
@@ -432,8 +452,8 @@ const ReplayChart: React.FC<ReplayChartProps> = ({
     if (position) {
       add(position.avg_entry_price, '#3b82f6', position.direction === 'long' ? '多 均价' : '空 均价', LineStyle.Solid);
       // 止损止盈线加粗一点，方便拖动
-      const sl = position.stop_loss === null ? null : add(position.stop_loss, DOWN, protectionTitle('sl', position.stop_loss, position), LineStyle.Dashed, 2);
-      const tp = position.take_profit === null ? null : add(position.take_profit, UP, protectionTitle('tp', position.take_profit, position), LineStyle.Dashed, 2);
+      const sl = position.stop_loss === null ? null : add(position.stop_loss, DOWN, protectionTitle('sl', position.stop_loss, position, quoteUnit), LineStyle.Dashed, 2);
+      const tp = position.take_profit === null ? null : add(position.take_profit, UP, protectionTitle('tp', position.take_profit, position, quoteUnit), LineStyle.Dashed, 2);
       if (sl) protectionLinesRef.current.sl = sl;
       if (tp) protectionLinesRef.current.tp = tp;
     }
@@ -441,7 +461,7 @@ const ReplayChart: React.FC<ReplayChartProps> = ({
       add(o.price, '#a855f7', `${ORDER_TYPE_LABEL[o.order_type] ?? ''}${o.side === 'buy' ? '买' : '卖'}`, LineStyle.Dotted);
     }
     priceLinesRef.current = lines;
-  }, [position, pendingOrders, isDark]);
+  }, [position, pendingOrders, isDark, quoteUnit]);
 
   // ════════════════ 画线 ════════════════
   const mapperRef = useRef<TimeMapper | null>(null);
@@ -671,7 +691,7 @@ const ReplayChart: React.FC<ReplayChartProps> = ({
         const price = candle?.coordinateToPrice(localPoint(e).y);
         if (candle && pos && line && price !== null && price !== undefined && price > 0) {
           pd.price = Number(fmtPrice(price));
-          line.applyOptions({ price: pd.price, title: protectionTitle(pd.kind, pd.price, pos) });
+          line.applyOptions({ price: pd.price, title: protectionTitle(pd.kind, pd.price, pos, unitRef.current) });
         }
         return;
       }
@@ -698,7 +718,7 @@ const ReplayChart: React.FC<ReplayChartProps> = ({
           message.error(error);
           const pos = positionRef.current;
           const line = protectionLinesRef.current[pd.kind];
-          if (pos && line) line.applyOptions({ price: pd.orig, title: protectionTitle(pd.kind, pd.orig, pos) });
+          if (pos && line) line.applyOptions({ price: pd.orig, title: protectionTitle(pd.kind, pd.orig, pos, unitRef.current) });
         }
         return;
       }

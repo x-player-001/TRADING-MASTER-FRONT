@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import type { CmeContract } from '../../services/replayAPI';
 
 // 价格精度按量级自适应：BTC 两位小数，山寨币多保留几位
 export const fmtPrice = (v: number | null | undefined): string => {
@@ -11,6 +12,22 @@ export const fmtPrice = (v: number | null | undefined): string => {
 export const fmtQty = (v: number | null | undefined): string => {
   if (v === null || v === undefined || !Number.isFinite(v)) return '—';
   return String(Number(v.toFixed(6)));
+};
+
+/** 数量显示：CME 期货按手（qty ÷ multiplier），币安按币数 */
+export const fmtSize = (v: number | null | undefined, contract?: CmeContract | null): string => {
+  if (!contract) return fmtQty(v);
+  if (v === null || v === undefined || !Number.isFinite(v)) return '—';
+  return `${Number((v / contract.multiplier).toFixed(4))}手`;
+};
+
+/** 金额单位：CME 期货是美元，币安是 USDT */
+export const quoteUnit = (contract?: CmeContract | null): string => (contract ? '$' : 'U');
+
+/** 按最小变动价位取整，并消掉浮点尾巴 */
+export const roundToTick = (v: number, tick: number): number => {
+  const decimals = (String(tick).split('.')[1] ?? '').length;
+  return Number((Math.round(v / tick) * tick).toFixed(decimals));
 };
 
 export const fmtUsd = (v: number | null | undefined, withSign = false): string => {

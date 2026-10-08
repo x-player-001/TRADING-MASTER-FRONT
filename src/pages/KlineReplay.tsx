@@ -10,11 +10,12 @@ import AccountPanel from '../components/replay/AccountPanel';
 import ReplayRecords from '../components/replay/ReplayRecords';
 import CreateSessionModal from '../components/replay/CreateSessionModal';
 import { useReplaySession } from '../components/replay/useReplaySession';
-import { fmtPrice, fmtTime, fmtUsd, fmtPct, fmtR, pnlSign } from '../components/replay/format';
+import { fmtPrice, fmtSize, fmtTime, fmtUsd, fmtPct, fmtR, pnlSign, quoteUnit, roundToTick } from '../components/replay/format';
 import rstyles from '../components/replay/Replay.module.scss';
 import { saveDrawings } from '../components/replay/drawings';
 import {
   replayAPI,
+  CmeContract,
   ReplayEvent,
   ReplayInterval,
   ReplaySessionRow,
@@ -35,6 +36,8 @@ const SPEEDS = [
 const LAST_SESSION_KEY = 'replay.lastSessionId';
 const INDICATORS_KEY = 'replay.indicators';
 const GAP_NOTIFY_BARS = 12; // 缺口不足 1 小时（零星缺几根）不提示
+// CME 期货每天约 1 小时休市、周末休市约 49 小时（遇假日更长），这些是正常跳过，超过 4 天才提示
+const CME_GAP_NOTIFY_BARS = 4 * 24 * 12;
 
 const sideText = (side: string, action: string) => {
   const isBuy = side === 'buy';
@@ -51,15 +54,15 @@ const gapText = (missingBars: number) => {
 };
 
 // 撮合事件 → 提示
-const notifyEvents = (events: ReplayEvent[]) => {
+const notifyEvents = (events: ReplayEvent[], contract: CmeContract | null) => {
   for (const e of events) {
     switch (e.type) {
       case 'fill':
-        message.info(`成交：${sideText(e.fill.side, e.fill.action)} ${Number(e.fill.qty.toFixed(6))} @ ${fmtPrice(e.fill.price)}`);
+        message.info(`成交：${sideText(e.fill.side, e.fill.action)} ${fmtSize(e.fill.qty, contract)} @ ${fmtPrice(e.fill.price)}`);
         break;
       case 'position_closed': {
         const p = e.position;
-        const txt = `平仓（${EXIT_REASON_LABELS[p.exit_reason ?? ''] ?? p.exit_reason ?? ''}）净盈亏 ${fmtUsd(p.net_pnl, true)}U${p.r_multiple !== null ? ` · ${fmtR(p.r_multiple)}` : ''}`;
+        const txt = `平仓（${EXIT_REASON_LABELS[p.exit_reason ?? ''] ?? p.exit_reason ?? ''}）净盈亏 ${fmtUsd(p.net_pnl, true)}${quoteUnit(contract)}${p.r_multiple !== null ? ` · ${fmtR(p.r_multiple)}` : ''}`;
         if (p.net_pnl >= 0) message.success(txt, 4); else message.warning(txt, 4);
         break;
       }
@@ -70,7 +73,7 @@ const notifyEvents = (events: ReplayEvent[]) => {
         message.info(`已撤单：${e.reason ?? ''}`);
         break;
       case 'gap':
-        if (e.missing_bars >= GAP_NOTIFY_BARS) {
+        if (e.missing_bars >= (contract ? CME_GAP_NOTIFY_BARS : GAP_NOTIFY_BARS)) {
           message.warning(`数据缺口：${fmtTime(e.from_time)} → ${fmtTime(e.to_time)}，跳过了 ${gapText(e.missing_bars)}`, 4);
         }
         break;
@@ -93,8 +96,19 @@ const useIsDark = () => {
 
 const KlineReplay: React.FC<KlineReplayProps> = () => {
   const isDark = useIsDark();
-  const rs = useReplaySession({ onEvents: notifyEvents });
+
+  // CME 期货规格（乘数、tick），按会话品种匹配；币安品种为 null
+  const [cmeContracts, setCmeContracts] = useState<CmeContract[]>([]);
+  useEffect(() => {
+    replayAPI.getCmeContracts().then(setCmeContracts).catch(() => setCmeContracts([]));
+  }, []);
+  const [contractSymbol, setContractSymbol] = useState<string | null>(null);
+  const contract = cmeContracts.find((c) => c.symbol === contractSymbol) ?? null;
+
+  const rs = useReplaySession({ onEvents: (events) => notifyEvents(events, contract) });
   const { view, bars, fills, positions, endOfData } = rs;
+  const viewSymbol = view?.session.symbol ?? null;
+  useEffect(() => { setContractSymbol(viewSymbol); }, [viewSymbol]);
 
   // ── 会话列表 ──
   const [sessions, setSessions] = useState<ReplaySessionRow[]>([]);
@@ -222,9 +236,10 @@ const KlineReplay: React.FC<KlineReplayProps> = () => {
 
   const handlePriceClick = useCallback((price: number) => {
     if (!picking) return;
-    setPickResult({ field: picking, price: Number(fmtPrice(price)), nonce: Date.now() });
+    const p = contract ? roundToTick(price, contract.tick_size) : Number(fmtPrice(price));
+    setPickResult({ field: picking, price: p, nonce: Date.now() });
     setPicking(null);
-  }, [picking]);
+  }, [picking, contract]);
 
   const finishSession = () => {
     Modal.confirm({
@@ -263,7 +278,7 @@ const KlineReplay: React.FC<KlineReplayProps> = () => {
         </a>
       ),
     },
-    { title: '币种', dataIndex: 'symbol', width: 110 },
+    { title: '品种', dataIndex: 'symbol', width: 110 },
     { title: '起点', dataIndex: 'start_time', width: 150, render: (t) => fmtTime(t) },
     { title: '回放到', dataIndex: 'cursor_time', width: 150, render: (t) => fmtTime(t) },
     { title: '步数', dataIndex: 'bars_stepped', width: 80 },
@@ -355,6 +370,11 @@ const KlineReplay: React.FC<KlineReplayProps> = () => {
           {/* 工具栏：周期 / 游标 / 步进 / 播放 */}
           <div className={styles.toolbar}>
             <span className={styles.symbol}>{session.symbol}</span>
+            {view.current_bar.contract && (
+              <Tooltip title={`${contract?.name ?? ''}连续合约当前月份（不复权，换月处有跳空，图上已标出）`}>
+                <Tag color="purple">{view.current_bar.contract}</Tag>
+              </Tooltip>
+            )}
             <span className={styles.sessionTitle}>{session.name || `回放 #${session.id}`}</span>
             {finished && <Tag>已结束 · 只读</Tag>}
 
@@ -438,10 +458,14 @@ const KlineReplay: React.FC<KlineReplayProps> = () => {
                 cursorTime={view.current_bar.open_time}
                 showEma={indicators.ema}
                 showMacd={indicators.macd}
+                quoteUnit={quoteUnit(contract)}
                 onProtectionDrag={
                   finished
                     ? undefined
-                    : (kind, price) => rs.setProtection(kind === 'sl' ? price : undefined, kind === 'tp' ? price : undefined)
+                    : (kind, raw) => {
+                        const price = contract ? roundToTick(raw, contract.tick_size) : raw;
+                        return rs.setProtection(kind === 'sl' ? price : undefined, kind === 'tp' ? price : undefined);
+                      }
                 }
               />
             </div>
@@ -456,6 +480,7 @@ const KlineReplay: React.FC<KlineReplayProps> = () => {
                 onSetProtection={rs.setProtection}
                 onClosePosition={rs.closePosition}
                 onCancelOrder={rs.cancelOrder}
+                contract={contract}
               />
               <OrderPanel
                 view={view}
@@ -464,6 +489,7 @@ const KlineReplay: React.FC<KlineReplayProps> = () => {
                 onPickStart={setPicking}
                 pickResult={pickResult}
                 onSubmit={rs.submitOrder}
+                contract={contract}
               />
             </div>
           </div>
@@ -474,6 +500,7 @@ const KlineReplay: React.FC<KlineReplayProps> = () => {
             fills={fills}
             statsKey={rs.statsKey}
             onSaveReview={rs.updateJournal}
+            contract={contract}
           />
         </>
       )}

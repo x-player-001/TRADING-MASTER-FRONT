@@ -11,7 +11,8 @@ import {
   StatsResult,
   EXIT_REASON_LABELS,
 } from '../../services/replayAPI';
-import { fmtPrice, fmtQty, fmtUsd, fmtPct, fmtR, fmtTime, pnlSign } from './format';
+import { fmtPrice, fmtSize, fmtUsd, fmtPct, fmtR, fmtTime, pnlSign, quoteUnit } from './format';
+import type { CmeContract } from '../../services/replayAPI';
 
 interface ReplayRecordsProps {
   sessionId: number;
@@ -22,6 +23,8 @@ interface ReplayRecordsProps {
   statsKey: number;
   /** 改复盘标签 / 笔记（本地改完会同步到后端，会话结束后也能改） */
   onSaveReview: (positionClientId: string, patch: { tags?: string[]; note?: string | null }) => void;
+  /** CME 期货合约规格：数量按手显示、金额单位为美元 */
+  contract?: CmeContract | null;
 }
 
 type SaveReview = ReplayRecordsProps['onSaveReview'];
@@ -45,7 +48,9 @@ const TRIGGER_LABEL: Record<string, string> = {
 };
 
 // ── 仓位回合：标签/笔记可编辑，会话结束后也能改 ──
-const PositionsTable: React.FC<{ rows: ReplayPosition[]; onSaveReview: SaveReview }> = ({ rows, onSaveReview }) => {
+type Contract = { contract?: CmeContract | null };
+
+const PositionsTable: React.FC<{ rows: ReplayPosition[]; onSaveReview: SaveReview } & Contract> = ({ rows, onSaveReview, contract }) => {
   const saveReview = (p: ReplayPosition, data: { tags?: string[]; note?: string | null }) => onSaveReview(p.client_id, data);
 
   const columns: ColumnsType<ReplayPosition> = [
@@ -66,7 +71,7 @@ const PositionsTable: React.FC<{ rows: ReplayPosition[]; onSaveReview: SaveRevie
       width: 150,
       render: (_, p) => `${fmtPrice(p.avg_entry_price)} / ${fmtPrice(p.avg_exit_price)}`,
     },
-    { title: '最大数量', dataIndex: 'max_qty', width: 90, render: fmtQty },
+    { title: '最大数量', dataIndex: 'max_qty', width: 90, render: (v: number) => fmtSize(v, contract) },
     {
       title: '净盈亏',
       dataIndex: 'net_pnl',
@@ -146,7 +151,7 @@ const PositionsTable: React.FC<{ rows: ReplayPosition[]; onSaveReview: SaveRevie
 };
 
 // ── 成交明细 ──
-const FillsTable: React.FC<{ fills: ReplayFill[] }> = ({ fills }) => {
+const FillsTable: React.FC<{ fills: ReplayFill[] } & Contract> = ({ fills, contract }) => {
   const columns: ColumnsType<ReplayFill> = [
     { title: '时间', dataIndex: 'bar_time', width: 130, render: (t) => fmtTime(t) },
     {
@@ -158,7 +163,7 @@ const FillsTable: React.FC<{ fills: ReplayFill[] }> = ({ fills }) => {
     { title: '动作', dataIndex: 'action', width: 70, render: (a) => ACTION_LABEL[a] ?? a },
     { title: '触发', dataIndex: 'trigger_type', width: 80, render: (t) => TRIGGER_LABEL[t] ?? t },
     { title: '价格', dataIndex: 'price', width: 110, render: fmtPrice },
-    { title: '数量', dataIndex: 'qty', width: 100, render: fmtQty },
+    { title: '数量', dataIndex: 'qty', width: 100, render: (v: number) => fmtSize(v, contract) },
     {
       title: '已实现',
       dataIndex: 'realized_pnl',
@@ -208,7 +213,7 @@ const groupColumns: ColumnsType<GroupRow> = [
   { title: '利润因子', dataIndex: 'profit_factor', width: 80, render: (v) => fmtNum(v) },
 ];
 
-const StatsView: React.FC<{ sessionId: number; statsKey: number }> = ({ sessionId, statsKey }) => {
+const StatsView: React.FC<{ sessionId: number; statsKey: number } & Contract> = ({ sessionId, statsKey, contract }) => {
   const [stats, setStats] = useState<StatsResult | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -289,7 +294,7 @@ const StatsView: React.FC<{ sessionId: number; statsKey: number }> = ({ sessionI
               <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" width={56} />
               <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="4 4" />
               <Tooltip
-                formatter={(v: number) => [`${v > 0 ? '+' : ''}${v} U`, '累计净盈亏']}
+                formatter={(v: number) => [`${v > 0 ? '+' : ''}${v} ${quoteUnit(contract)}`, '累计净盈亏']}
                 labelFormatter={(idx: number) => (idx === 0 ? '起点' : `第 ${idx} 笔 · ${curve[idx]?.time ?? ''}`)}
               />
               <Line type="monotone" dataKey="pnl" stroke="#3b82f6" strokeWidth={2} dot={{ r: 2 }} />
@@ -305,15 +310,15 @@ const StatsView: React.FC<{ sessionId: number; statsKey: number }> = ({ sessionI
   );
 };
 
-const ReplayRecords: React.FC<ReplayRecordsProps> = ({ sessionId, positions, fills, statsKey, onSaveReview }) => (
+const ReplayRecords: React.FC<ReplayRecordsProps> = ({ sessionId, positions, fills, statsKey, onSaveReview, contract }) => (
   <div className={styles.card}>
     <Tabs
       size="small"
       destroyOnHidden
       items={[
-        { key: 'positions', label: `仓位回合 ${positions.length || ''}`, children: <PositionsTable rows={positions} onSaveReview={onSaveReview} /> },
-        { key: 'fills', label: `成交明细 ${fills.length || ''}`, children: <FillsTable fills={fills} /> },
-        { key: 'stats', label: '统计', children: <StatsView sessionId={sessionId} statsKey={statsKey} /> },
+        { key: 'positions', label: `仓位回合 ${positions.length || ''}`, children: <PositionsTable rows={positions} onSaveReview={onSaveReview} contract={contract} /> },
+        { key: 'fills', label: `成交明细 ${fills.length || ''}`, children: <FillsTable fills={fills} contract={contract} /> },
+        { key: 'stats', label: '统计', children: <StatsView sessionId={sessionId} statsKey={statsKey} contract={contract} /> },
       ]}
     />
   </div>
