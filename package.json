@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:app": "vite build",
+    "serve": "vite build && pm2 startOrRestart ecosystem.config.cjs",
+    "serve:stop": "pm2 delete trading-front"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.2",
