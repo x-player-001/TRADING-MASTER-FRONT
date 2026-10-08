@@ -1,0 +1,389 @@
+$up: #16a34a;
+$down: #dc2626;
+$primary: #3b82f6;
+
+.page {
+  position: relative;
+  padding: 2rem;
+  min-height: 100%;
+  background: #f9fafb;
+  :global(.dark) & { background: #111827; }
+
+  @media (max-width: 1024px) { padding: 1rem; }
+  @media (max-width: 640px) { padding: 0.75rem; }
+}
+
+.dim {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.pos { color: $up; }
+.neg { color: $down; }
+.zero { color: inherit; }
+
+.symbol {
+  font-weight: 700;
+  color: #111827;
+  :global(.dark) & { color: #f9fafb; }
+}
+
+.panel {
+  padding: 0.875rem 1rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  :global(.dark) & { background: #1f2937; border-color: #374151; }
+}
+
+.sectionGap {
+  margin-top: 1rem;
+}
+
+// ── 顶部状态条 ────────────────────────────────────────
+.statusBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem 1rem;
+  margin-bottom: 1rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.8125rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  color: #374151;
+  :global(.dark) & { background: #1f2937; border-color: #374151; color: #d1d5db; }
+}
+
+.phase {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+}
+
+.dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.phaseGreen { color: $up; }
+.phaseYellow { color: #d97706; }
+.phaseRed { color: $down; }
+.phaseGreen .dot { box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18); animation: pulse 2s infinite; }
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.35); }
+  50% { box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.08); }
+}
+
+.statusItem {
+  display: inline-flex;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+
+.statusRight {
+  margin-left: auto;
+}
+
+// ── 汇总指标 ──────────────────────────────────────────
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.75rem 0.875rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  :global(.dark) & { background: #1f2937; border-color: #374151; }
+}
+
+.metricLabel {
+  font-size: 0.75rem;
+  color: #6b7280;
+  :global(.dark) & { color: #9ca3af; }
+}
+
+.metricValue {
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #111827;
+  :global(.dark) & { color: #f9fafb; }
+}
+
+.metricSub {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+// ── 策略卡片 ──────────────────────────────────────────
+.strategyGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.strategyCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 0.875rem;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:hover { border-color: rgba($primary, 0.5); }
+  &:focus-visible { outline: 2px solid $primary; outline-offset: 2px; }
+
+  :global(.dark) & { background: #1f2937; border-color: #374151; }
+}
+
+.strategyActive {
+  border-color: $primary !important;
+  box-shadow: 0 0 0 2px rgba($primary, 0.18);
+}
+
+.strategyHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #111827;
+  :global(.dark) & { color: #f9fafb; }
+}
+
+.strategyStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.25rem 0.5rem;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: #111827;
+  :global(.dark) & { color: #e5e7eb; }
+}
+
+.statCell {
+  display: flex;
+  flex-direction: column;
+}
+
+.counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.625rem;
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
+// ── 图表 ──────────────────────────────────────────────
+.chartRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+
+  @media (max-width: 1024px) { grid-template-columns: 1fr; }
+}
+
+.chartTitle {
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+  :global(.dark) & { color: #f9fafb; }
+}
+
+.chartEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 240px;
+  font-size: 0.8125rem;
+  color: #94a3b8;
+}
+
+// ── 表格筛选 ──────────────────────────────────────────
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.clickRow {
+  cursor: pointer;
+}
+
+// ── 详情弹窗 ──────────────────────────────────────────
+.modalTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.375rem 1rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.kLabel {
+  display: inline-block;
+  min-width: 4.5rem;
+  margin-right: 0.375rem;
+  color: #94a3b8;
+}
+
+.modalChart {
+  position: relative;
+  height: 440px;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  :global(.dark) & { border-color: #374151; }
+
+  @media (max-width: 640px) { height: 320px; }
+}
+
+.chartHint {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 1rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: 0.75rem;
+}
+
+.featureTag {
+  padding: 0.15rem 0.5rem;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  background: #f3f4f6;
+  border-radius: 0.375rem;
+  :global(.dark) & { background: #374151; }
+}
+
+// ── 页面 Tab ──────────────────────────────────────────
+.tabs {
+  :global(.ant-tabs-nav) { margin-bottom: 1rem; }
+}
+
+// ── 策略回测 ──────────────────────────────────────────
+.sectionCollapse {
+  background: #ffffff;
+  border-color: #e5e7eb;
+  :global(.dark) & { background: #1f2937; border-color: #374151; }
+}
+
+.description {
+  margin: 0 0 0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.paramGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.changedParam {
+  font-weight: 700;
+  color: #d97706;
+}
+
+.navBtns {
+  display: inline-flex;
+  gap: 0.375rem;
+  margin-left: auto;
+  margin-right: 2rem;
+}
+
+.chartToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+// ── 实盘 ──────────────────────────────────────────────
+.eventList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-height: 260px;
+  overflow-y: auto;
+  font-size: 0.75rem;
+}
+
+.eventRow {
+  display: grid;
+  grid-template-columns: 9.5rem 7rem minmax(0, 1fr);
+  gap: 0.5rem;
+  align-items: baseline;
+
+  @media (max-width: 640px) { grid-template-columns: 1fr; }
+}
+
+.eventPayload {
+  overflow-wrap: anywhere;
+  font-size: 0.7rem;
+  color: #6b7280;
+  :global(.dark) & { color: #9ca3af; }
+}
+
+.modeBadge {
+  padding: 0.05rem 0.45rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 0.25rem;
+}
+
+.modeLive { color: #fff; background: #dc2626; }
+.modeShadow { color: #fff; background: #7c3aed; }
+
+.reasonList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+}
