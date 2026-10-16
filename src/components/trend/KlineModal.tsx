@@ -3,6 +3,9 @@ import { createChart, CandlestickSeries, LineSeries } from 'lightweight-charts';
 import { trendFollowAPI, WatchContext } from '../../services/trendFollowAPI';
 import styles from './KlineModal.module.scss';
 
+// 后端 /klines 只支持这四个周期（1d 会报「不支持的周期」）
+const INTERVALS = ['5m', '15m', '1h', '4h'];
+
 interface KlineModalProps {
   /** 只用到 id / symbol / timeframe，合并观察列表的明细也能直接传 */
   ctx: Pick<WatchContext, 'id' | 'symbol' | 'timeframe'>;
@@ -17,6 +20,12 @@ const KlineModal: React.FC<KlineModalProps> = ({ ctx, onClose, onDelete, isDark 
   const chartRef = useRef<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // 默认显示观察区自身周期，可切换查看其他周期
+  const [activeTf, setActiveTf] = useState(ctx.timeframe);
+
+  useEffect(() => {
+    setActiveTf(ctx.timeframe);
+  }, [ctx.id, ctx.timeframe]);
 
   useEffect(() => {
     const container = chartContainerRef.current;
@@ -25,6 +34,9 @@ const KlineModal: React.FC<KlineModalProps> = ({ ctx, onClose, onDelete, isDark 
     const bg = isDark ? '#1e1e1e' : '#ffffff';
     const textColor = isDark ? '#d1d4dc' : '#191919';
     const gridColor = isDark ? '#2b2b43' : '#e1e3eb';
+
+    setLoading(true);
+    setError(null);
 
     const chart = createChart(container, {
       width: container.clientWidth,
@@ -54,8 +66,10 @@ const KlineModal: React.FC<KlineModalProps> = ({ ctx, onClose, onDelete, isDark 
       crosshairMarkerVisible: false,
     });
 
-    trendFollowAPI.getLatestKlines(ctx.symbol, ctx.timeframe, 150)
+    let cancelled = false;
+    trendFollowAPI.getLatestKlines(ctx.symbol, activeTf, 150)
       .then(klines => {
+        if (cancelled) return;
         const data = klines.map(k => ({
           time: Math.floor(k.open_time / 1000) + 8 * 3600,
           open: k.open,
@@ -85,6 +99,7 @@ const KlineModal: React.FC<KlineModalProps> = ({ ctx, onClose, onDelete, isDark 
         setLoading(false);
       })
       .catch(() => {
+        if (cancelled) return;
         setError('加载K线失败');
         setLoading(false);
       });
@@ -95,10 +110,11 @@ const KlineModal: React.FC<KlineModalProps> = ({ ctx, onClose, onDelete, isDark 
     observer.observe(container);
 
     return () => {
+      cancelled = true;
       observer.disconnect();
       chart.remove();
     };
-  }, [ctx.symbol, ctx.timeframe, isDark]);
+  }, [ctx.symbol, activeTf, isDark]);
 
   // 点击遮罩关闭
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -118,7 +134,18 @@ const KlineModal: React.FC<KlineModalProps> = ({ ctx, onClose, onDelete, isDark 
         <div className={styles.header}>
           <div className={styles.title}>
             <span className={styles.symbol}>{stripUsdt(ctx.symbol)}</span>
-            <span className={styles.timeframe}>{ctx.timeframe}</span>
+            <span className={styles.timeframe}>观察区 {ctx.timeframe}</span>
+            <div className={styles.intervalTabs}>
+              {INTERVALS.map(iv => (
+                <button
+                  key={iv}
+                  className={`${styles.intervalTab} ${iv === activeTf ? styles.intervalTabActive : ''}`}
+                  onClick={() => setActiveTf(iv)}
+                >
+                  {iv}
+                </button>
+              ))}
+            </div>
             <span className={styles.subtitle}>最近150根K线</span>
           </div>
           <button className={styles.closeBtn} onClick={onClose}>✕</button>
