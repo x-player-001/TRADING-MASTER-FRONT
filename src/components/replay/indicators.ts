@@ -36,3 +36,15 @@ export const calcMACD = (closes: number[], fast = 12, slow = 26, signal = 9): Ma
   const hist = dif.map((v, i) => (v !== null && dea[i] !== null ? v - dea[i]! : null));
   return { dif, dea, hist };
 };
+
+/** SMA：前 n-1 根为 null；滑动窗口求和 */
+export const calcSMA = (values: number[], n: number): (number | null)[] => {
+  const out: (number | null)[] = new Array(values.length).fill(null);
+  let sum = 0;
+  for (let i = 0; i < values.length; i++) {
+    sum += values[i];
+    if (i >= n) sum -= values[i - n];
+    if (i >= n - 1) out[i] = sum / n;
+  }
+  return out;
+};
