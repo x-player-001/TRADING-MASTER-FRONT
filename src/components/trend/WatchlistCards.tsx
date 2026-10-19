@@ -1,6 +1,7 @@
 import React from 'react';
 import { Tooltip } from 'antd';
 import styles from './WatchlistCards.module.scss';
+import LeaderBadge, { LeaderRanks } from './LeaderBadge';
 import {
   WatchlistItem,
   WatchlistDetail,
@@ -19,6 +20,8 @@ export interface KlineTarget {
 interface WatchlistCardsProps {
   items: WatchlistItem[];
   onOpenKline: (target: KlineTarget) => void;
+  /** 在龙头榜上的币打标签 */
+  leaderRanks?: LeaderRanks;
 }
 
 const STAGE_CLASS: Record<WatchStage, string> = {
@@ -110,7 +113,7 @@ const DetailChip: React.FC<{ symbol: string; d: WatchlistDetail; onOpenKline: Wa
   </Tooltip>
 );
 
-const Card: React.FC<{ it: WatchlistItem; onOpenKline: WatchlistCardsProps['onOpenKline'] }> = ({ it, onOpenKline }) => {
+const Card: React.FC<{ it: WatchlistItem; onOpenKline: WatchlistCardsProps['onOpenKline']; leaderRanks?: LeaderRanks }> = ({ it, onOpenKline, leaderRanks }) => {
   const primary = it.details.find((d) => d.timeframe === it.primary_timeframe) ?? it.details[0];
   const tfs = [...it.timeframes].sort((a, b) => TF_ORDER.indexOf(a) - TF_ORDER.indexOf(b));
   const details = [...it.details].sort((a, b) => TF_ORDER.indexOf(b.timeframe) - TF_ORDER.indexOf(a.timeframe));
@@ -130,6 +133,7 @@ const Card: React.FC<{ it: WatchlistItem; onOpenKline: WatchlistCardsProps['onOp
         >
           {stripUsdt(it.symbol)}
         </span>
+        {leaderRanks && <LeaderBadge ranks={leaderRanks} symbol={it.symbol} />}
         <span className={styles.tfs}>
           {tfs.map((tf) => (
             <span
@@ -200,9 +204,9 @@ const Card: React.FC<{ it: WatchlistItem; onOpenKline: WatchlistCardsProps['onOp
 };
 
 /** 合并观察列表：一个币一张卡片，按后端 score 从高到低（保持接口顺序） */
-const WatchlistCards: React.FC<WatchlistCardsProps> = ({ items, onOpenKline }) => (
+const WatchlistCards: React.FC<WatchlistCardsProps> = ({ items, onOpenKline, leaderRanks }) => (
   <div className={styles.grid}>
-    {items.map((it) => <Card key={it.symbol} it={it} onOpenKline={onOpenKline} />)}
+    {items.map((it) => <Card key={it.symbol} it={it} onOpenKline={onOpenKline} leaderRanks={leaderRanks} />)}
   </div>
 );
 

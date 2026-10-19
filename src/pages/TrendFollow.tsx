@@ -4,6 +4,8 @@ import KlineModal from '../components/trend/KlineModal';
 import WatchlistCards, { KlineTarget } from '../components/trend/WatchlistCards';
 import SignalStats from '../components/trend/SignalStats';
 import DailyBreakoutPanel from '../components/trend/DailyBreakoutPanel';
+import LeaderBoardPanel from '../components/trend/LeaderBoardPanel';
+import LeaderBadge, { LeaderRanks } from '../components/trend/LeaderBadge';
 import styles from './TrendFollow.module.scss';
 import PageHeader from '../components/ui/PageHeader';
 import { TopProgressBar, DataSection, CoolRefreshButton } from '../components/ui';
@@ -123,6 +125,9 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
 
   // K线弹窗
   const [klineModalCtx, setKlineModalCtx] = useState<KlineTarget | null>(null);
+  // 龙头榜打开的K线（不是观察区，不能删）
+  const [leaderKlineSymbol, setLeaderKlineSymbol] = useState<string | null>(null);
+  const [leaderRanks, setLeaderRanks] = useState<LeaderRanks>(() => new Map());
 
   // 备注展开行
   const [remarkOpenId, setRemarkOpenId] = useState<number | null>(null);
@@ -353,6 +358,8 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
 
       <PageHeader title="趋势跟踪" subtitle="监控回调观察区状态，跟踪趋势续涨信号" icon="📈" />
 
+      <LeaderBoardPanel onOpenKline={setLeaderKlineSymbol} onRanksChange={setLeaderRanks} />
+
       <Tabs
         activeKey={activeTab}
         onChange={k => changeActiveTab(k as PageTab)}
@@ -548,7 +555,7 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
           emptyText="暂无观察币种"
           compact
         >
-          <WatchlistCards items={filteredWatchlist} onOpenKline={setKlineModalCtx} />
+          <WatchlistCards items={filteredWatchlist} onOpenKline={setKlineModalCtx} leaderRanks={leaderRanks} />
         </DataSection>
       ) : (
       <>
@@ -618,6 +625,7 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
                       >
                         {stripUsdt(ctx.symbol)}
                       </span>
+                      {isLead && <LeaderBadge ranks={leaderRanks} symbol={ctx.symbol} />}
                       {isLead && hasMore && !isExpanded && (
                         <span className={styles.groupCountBadge}>{groupCount}</span>
                       )}
@@ -776,6 +784,16 @@ const TrendFollow: React.FC<TrendFollowProps> = ({ isSidebarCollapsed = false })
           </div>
         );
       })()}
+
+      {leaderKlineSymbol && (
+        <KlineModal
+          ctx={{ id: 0, symbol: leaderKlineSymbol, timeframe: '1h' }}
+          label="龙头榜"
+          onClose={() => setLeaderKlineSymbol(null)}
+          isDark={document.documentElement.classList.contains('dark')}
+          sidebarCollapsed={isSidebarCollapsed}
+        />
+      )}
 
       {klineModalCtx && (
         <KlineModal

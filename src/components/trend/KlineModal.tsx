@@ -10,12 +10,15 @@ interface KlineModalProps {
   /** 只用到 id / symbol / timeframe，合并观察列表的明细也能直接传 */
   ctx: Pick<WatchContext, 'id' | 'symbol' | 'timeframe'>;
   onClose: () => void;
-  onDelete: (id: number) => void;
+  /** 不传则不显示「删除该观察区」（如从龙头榜打开） */
+  onDelete?: (id: number) => void;
+  /** 标题旁的说明，默认「观察区 {timeframe}」 */
+  label?: string;
   isDark?: boolean;
   sidebarCollapsed?: boolean;
 }
 
-const KlineModal: React.FC<KlineModalProps> = ({ ctx, onClose, onDelete, isDark = false, sidebarCollapsed = false }) => {
+const KlineModal: React.FC<KlineModalProps> = ({ ctx, onClose, onDelete, label, isDark = false, sidebarCollapsed = false }) => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<any>(null);
   const [loading, setLoading] = useState(true);
@@ -134,7 +137,7 @@ const KlineModal: React.FC<KlineModalProps> = ({ ctx, onClose, onDelete, isDark 
         <div className={styles.header}>
           <div className={styles.title}>
             <span className={styles.symbol}>{stripUsdt(ctx.symbol)}</span>
-            <span className={styles.timeframe}>观察区 {ctx.timeframe}</span>
+            <span className={styles.timeframe}>{label ?? `观察区 ${ctx.timeframe}`}</span>
             <div className={styles.intervalTabs}>
               {INTERVALS.map(iv => (
                 <button
@@ -156,14 +159,16 @@ const KlineModal: React.FC<KlineModalProps> = ({ ctx, onClose, onDelete, isDark 
           {error && <div className={styles.errorMsg}>{error}</div>}
         </div>
 
-        <div className={styles.footer}>
-          <button
-            className={styles.deleteBtn}
-            onClick={() => { onDelete(ctx.id); onClose(); }}
-          >
-            删除该观察区
-          </button>
-        </div>
+        {onDelete && (
+          <div className={styles.footer}>
+            <button
+              className={styles.deleteBtn}
+              onClick={() => { onDelete(ctx.id); onClose(); }}
+            >
+              删除该观察区
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
