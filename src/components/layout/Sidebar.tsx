@@ -43,6 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         // { icon: '📉', label: 'EMA20推送', href: '#ema20-push', page: 'ema20-push' },
         // { icon: '📒', label: '交易辅助', href: '#trade-journal', page: 'trade-journal' },
         { icon: '⏯️', label: 'K线回放', href: '#kline-replay', page: 'kline-replay' },
+        { icon: '☯️', label: '缠论分析', href: '#chan-analysis', page: 'chan-analysis' },
         { icon: '🧪', label: '策略交易', href: '#paper-trading', page: 'paper-trading' },
       ]
     },
