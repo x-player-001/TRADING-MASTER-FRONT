@@ -24,6 +24,7 @@ import Ema20Push from './pages/Ema20Push';
 import TradeJournal from './pages/TradeJournal';
 import KlineReplay from './pages/KlineReplay';
 import ChanAnalysis from './pages/ChanAnalysis';
+import LiveMarket from './pages/LiveMarket';
 import PaperTrading from './pages/PaperTrading';
 import AStockPicks from './pages/AStockPicks';
 import WatchPool from './pages/WatchPool';
@@ -124,6 +125,8 @@ function App() {
         setCurrentPage('kline-replay');
       } else if (hash === 'chan-analysis') {
         setCurrentPage('chan-analysis');
+      } else if (hash === 'live-market') {
+        setCurrentPage('live-market');
       } else if (hash === 'paper-trading') {
         setCurrentPage('paper-trading');
       } else if (hash === 'astock-picks') {
@@ -234,6 +237,8 @@ function App() {
         return <KlineReplay isSidebarCollapsed={isSidebarCollapsed} />;
       case 'chan-analysis':
         return <ChanAnalysis isSidebarCollapsed={isSidebarCollapsed} />;
+      case 'live-market':
+        return <LiveMarket isSidebarCollapsed={isSidebarCollapsed} />;
       case 'paper-trading':
         return <PaperTrading isSidebarCollapsed={isSidebarCollapsed} />;
       case 'astock-picks':

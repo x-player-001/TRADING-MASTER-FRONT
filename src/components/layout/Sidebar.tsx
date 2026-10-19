@@ -39,6 +39,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         // { icon: '💹', label: 'K线图表', href: '#kline-chart', page: 'kline-chart' },
         // { icon: '📊', label: 'OI监控', href: '#oi-monitoring', page: 'oi-monitoring' },
         // { icon: '🔍', label: '形态扫描', href: '#pattern-scan', page: 'pattern-scan' },
+        { icon: '📺', label: '实时看盘', href: '#live-market', page: 'live-market' },
         { icon: '📈', label: '趋势跟踪', href: '#trend-follow', page: 'trend-follow' },
         // { icon: '📉', label: 'EMA20推送', href: '#ema20-push', page: 'ema20-push' },
         // { icon: '📒', label: '交易辅助', href: '#trade-journal', page: 'trade-journal' },
