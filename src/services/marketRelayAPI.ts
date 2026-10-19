@@ -77,12 +77,42 @@ export async function fetchRelayKlines(q: KlineQuery, retries = 2): Promise<Rela
   return body.data.klines as RelayKline[];
 }
 
+/** 全市场行情（WS subscribe_tickers 推送）。涨跌幅是百分数（3.25 = +3.25%），窗口数据不足时为 null */
+export interface LiveTicker {
+  symbol: string;
+  last_price: number;
+  change_1h: number | null;
+  change_4h: number | null;
+  change_24h: number | null;
+  quote_volume_24h: number | null;
+}
+
+export interface TickersMessage {
+  /** true：全量，替换本地整张表；false：增量，按 symbol 覆盖 */
+  full: boolean;
+  rows: LiveTicker[];
+  /** 下架 / 停牌，从本地表删除 */
+  removed: string[];
+}
+
+/** 推送每行是按 fields 顺序排列的数组，还原成对象 */
+const parseTickers = (msg: any): TickersMessage => {
+  const fields: string[] = msg.fields ?? [];
+  const rows = (msg.data ?? []).map((arr: unknown[]) => {
+    const row: Record<string, unknown> = {};
+    fields.forEach((f, i) => { row[f] = arr[i] ?? null; });
+    return row as unknown as LiveTicker;
+  });
+  return { full: Boolean(msg.full), rows, removed: msg.removed ?? [] };
+};
+
 // ── WebSocket ──
 
 export type RelayStatus = 'connecting' | 'open' | 'closed';
 
 export interface RelayListener {
   onKline?: (k: RelayKline) => void;
+  onTickers?: (msg: TickersMessage) => void;
   /** 这些流可能漏了 K 线，需要用 REST 补拉（服务器上游重连，或本地 WS 重连） */
   onResync?: (streams: { symbol: string; interval: string }[]) => void;
   onStatus?: (status: RelayStatus) => void;
@@ -114,6 +144,8 @@ class MarketRelaySocket {
   private ws: WebSocket | null = null;
   private status: RelayStatus = 'closed';
   private readonly refs = new Map<string, number>();
+  /** 全市场行情订阅的引用计数（不占 K 线流名额） */
+  private tickerRefs = 0;
   private readonly listeners = new Set<RelayListener>();
   private attempt = 0;
   private hasOpened = false;
@@ -151,10 +183,36 @@ class MarketRelaySocket {
       }
       this.refs.delete(key);
       this.send({ op: 'unsubscribe', streams: [keyToRef(key)] });
-      if (this.refs.size === 0) {
-        this.idleTimer = window.setTimeout(() => this.close(), IDLE_CLOSE_MS);
-      }
+      this.closeIfIdle();
     };
+  }
+
+  /** 订阅全市场行情（先推全量，之后每 2 秒推增量），返回退订函数 */
+  subscribeTickers(): () => void {
+    this.tickerRefs++;
+    window.clearTimeout(this.idleTimer);
+    if (this.tickerRefs === 1) this.send({ op: 'subscribe_tickers' });
+    this.ensureConnected();
+
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      this.tickerRefs--;
+      if (this.tickerRefs > 0) return;
+      this.send({ op: 'unsubscribe_tickers' });
+      this.closeIfIdle();
+    };
+  }
+
+  private hasSubscriptions() {
+    return this.refs.size > 0 || this.tickerRefs > 0;
+  }
+
+  private closeIfIdle() {
+    if (!this.hasSubscriptions()) {
+      this.idleTimer = window.setTimeout(() => this.close(), IDLE_CLOSE_MS);
+    }
   }
 
   private ensureConnected() {
@@ -174,6 +232,8 @@ class MarketRelaySocket {
       this.setStatus('open');
       const streams = [...this.refs.keys()].map(keyToRef);
       if (streams.length) ws.send(JSON.stringify({ op: 'subscribe', streams }));
+      // 重连后重新订阅全市场行情，服务器会再推一次全量
+      if (this.tickerRefs > 0) ws.send(JSON.stringify({ op: 'subscribe_tickers' }));
       // 重连：断线期间的 K 线需要补拉
       if (this.hasOpened && streams.length) this.emit((l) => l.onResync?.(streams));
       this.hasOpened = true;
@@ -192,6 +252,12 @@ class MarketRelaySocket {
         case 'kline':
           this.emit((l) => l.onKline?.(msg.data));
           break;
+        case 'tickers':
+          {
+            const parsed = parseTickers(msg);
+            this.emit((l) => l.onTickers?.(parsed));
+          }
+          break;
         case 'resync':
           this.emit((l) => l.onResync?.(msg.streams ?? []));
           break;
@@ -207,7 +273,7 @@ class MarketRelaySocket {
     ws.onclose = () => {
       if (this.ws !== ws) return;
       this.dropSocket();
-      if (this.refs.size === 0) {
+      if (!this.hasSubscriptions()) {
         this.setStatus('closed');
         return;
       }

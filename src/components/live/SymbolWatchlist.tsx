@@ -6,6 +6,8 @@ export interface SymbolRow {
   symbol: string;
   /** 币种下方的一行附加信息（阶段、排名等） */
   meta?: React.ReactNode;
+  /** 自带报价（如行情排行接口给的）：直接显示，不订阅实时流 */
+  quote?: { price: number; pct: number };
 }
 
 export interface SymbolGroup {
@@ -21,6 +23,8 @@ interface SymbolWatchlistProps {
   /** 不传则不显示移除按钮 */
   onRemove?: (symbol: string) => void;
   emptyText?: React.ReactNode;
+  /** 涨跌列表头，默认「日涨跌」 */
+  pctLabel?: string;
 }
 
 interface Quote {
@@ -38,7 +42,7 @@ const formatPrice = (v: number) => (v >= 1000 ? v.toFixed(2) : String(v));
  * 币种列表：每个币种订阅一条 1d 流，拿最新价和当日涨跌
  * （日线开盘 = UTC 0 点 = 北京时间 8 点，和币安 App 的 24h 涨跌口径不同）
  */
-const SymbolWatchlist: React.FC<SymbolWatchlistProps> = ({ groups, current, onSelect, onRemove, emptyText }) => {
+const SymbolWatchlist: React.FC<SymbolWatchlistProps> = ({ groups, current, onSelect, onRemove, emptyText, pctLabel }) => {
   const [quotes, setQuotes] = useState<Record<string, Quote>>({});
   const pendingRef = useRef<Record<string, Quote>>({});
   const subsRef = useRef(new Map<string, () => void>());
@@ -65,8 +69,9 @@ const SymbolWatchlist: React.FC<SymbolWatchlistProps> = ({ groups, current, onSe
     };
   }, []);
 
-  // 按差异增减订阅，增删一个币种不影响其他流
-  const symbolsKey = [...new Set(groups.flatMap((g) => g.rows.map((r) => r.symbol)))].join(',');
+  // 按差异增减订阅，增删一个币种不影响其他流；自带报价的行不订阅
+  const rows = groups.flatMap((g) => g.rows);
+  const symbolsKey = [...new Set(rows.filter((r) => !r.quote).map((r) => r.symbol))].join(',');
   useEffect(() => {
     const subs = subsRef.current;
     const wanted = new Set(symbolsKey ? symbolsKey.split(',') : []);
@@ -86,16 +91,21 @@ const SymbolWatchlist: React.FC<SymbolWatchlistProps> = ({ groups, current, onSe
       <div className={`${styles.row} ${styles.head}`}>
         <span>币种</span>
         <span className={styles.num}>最新价</span>
-        <span className={styles.num} title="相对今日开盘（北京时间 8:00）">日涨跌</span>
+        {pctLabel ? (
+          <span className={styles.num}>{pctLabel}</span>
+        ) : (
+          <span className={styles.num} title="相对今日开盘（北京时间 8:00）">日涨跌</span>
+        )}
       </div>
       <div className={styles.list}>
-        {!symbolsKey && emptyText && <div className={styles.empty}>{emptyText}</div>}
+        {rows.length === 0 && emptyText && <div className={styles.empty}>{emptyText}</div>}
         {groups.map((g, gi) => (
           <React.Fragment key={g.title ?? gi}>
             {g.title && <div className={styles.groupTitle}>{g.title}</div>}
-            {g.rows.map(({ symbol: s, meta }) => {
+            {g.rows.map(({ symbol: s, meta, quote }) => {
               const q = quotes[s];
-              const pct = q && q.open ? ((q.close - q.open) / q.open) * 100 : null;
+              const price = quote ? quote.price : q ? q.close : null;
+              const pct = quote ? quote.pct : q && q.open ? ((q.close - q.open) / q.open) * 100 : null;
               const tone = pct === null ? '' : pct >= 0 ? styles.up : styles.down;
               return (
                 <div
@@ -112,7 +122,7 @@ const SymbolWatchlist: React.FC<SymbolWatchlistProps> = ({ groups, current, onSe
                     <span className={styles.symbol}>{s.replace(/USDT$/, '')}<i>{s.endsWith('USDT') ? '/USDT' : ''}</i></span>
                     {meta && <span className={styles.meta}>{meta}</span>}
                   </span>
-                  <span className={`${styles.num} ${tone}`}>{q ? formatPrice(q.close) : '—'}</span>
+                  <span className={`${styles.num} ${tone}`}>{price === null ? '—' : formatPrice(price)}</span>
                   <span className={`${styles.num} ${tone}`}>
                     {pct === null ? '—' : `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`}
                   </span>
