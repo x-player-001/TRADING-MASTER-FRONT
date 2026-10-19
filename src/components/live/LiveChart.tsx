@@ -17,6 +17,7 @@ import {
   RelayKline,
 } from '../../services/marketRelayAPI';
 import { calcMACD, calcSMA, MacdResult } from '../replay/indicators';
+import { CountdownPrimitive } from '../replay/CountdownPrimitive';
 import styles from './LiveChart.module.scss';
 
 interface LiveChartProps {
@@ -151,6 +152,7 @@ const LiveChart: React.FC<LiveChartProps> = ({ symbol, interval, isDark, onLastB
   const chartRef = useRef<IChartApi | null>(null);
   const candleRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
   const volumeRef = useRef<ISeriesApi<'Histogram'> | null>(null);
+  const countdownRef = useRef<CountdownPrimitive | null>(null);
   const maRef = useRef<ISeriesApi<'Line'>[]>([]);
   const macdRef = useRef<{ hist: ISeriesApi<'Histogram'>; dif: ISeriesApi<'Line'>; dea: ISeriesApi<'Line'> } | null>(null);
   /** 指标值，下标与 barsRef 对齐 */
@@ -194,6 +196,8 @@ const LiveChart: React.FC<LiveChartProps> = ({ symbol, interval, isDark, onLastB
       wickDownColor: DOWN,
     });
     candleRef.current.priceScale().applyOptions({ scaleMargins: { top: 0.08, bottom: 0.22 } });
+    countdownRef.current = new CountdownPrimitive();
+    candleRef.current.attachPrimitive(countdownRef.current);
 
     volumeRef.current = chart.addSeries(HistogramSeries, {
       priceScaleId: 'vol',
@@ -233,6 +237,7 @@ const LiveChart: React.FC<LiveChartProps> = ({ symbol, interval, isDark, onLastB
       chart.remove();
       chartRef.current = null;
       candleRef.current = null;
+      countdownRef.current = null;
       volumeRef.current = null;
       maRef.current = [];
       macdRef.current = null;
@@ -336,6 +341,15 @@ const LiveChart: React.FC<LiveChartProps> = ({ symbol, interval, isDark, onLastB
     const t = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(t);
   }, []);
+
+  // 价格轴：最新价标签下方显示本根K线剩余时间
+  useEffect(() => {
+    countdownRef.current?.setState({
+      price: lastBar ? lastBar.close : null,
+      text: lastBar ? formatCountdown(lastBar.close_time + 1 - now) : '',
+      color: lastBar && lastBar.close < lastBar.open ? DOWN : UP,
+    });
+  }, [lastBar, now]);
 
   // 数据：先订阅（推送先缓冲），再拉最新一页，然后回放缓冲区；之后推送直接 update
   useEffect(() => {
@@ -518,7 +532,6 @@ const LiveChart: React.FC<LiveChartProps> = ({ symbol, interval, isDark, onLastB
   const change = shown ? shown.close - shown.open : 0;
   const changePct = shown && shown.open ? (change / shown.open) * 100 : 0;
   const tone = change >= 0 ? styles.up : styles.down;
-  const remain = lastBar ? lastBar.close_time + 1 - now : 0;
   // 指标数值跟随十字光标（没有悬停时取最新一根）
   const shownIdx = shown ? indexOfTime(barsRef.current, shown.open_time) : -1;
   const { ma: maVals, macd: macdVals } = indRef.current;
@@ -532,9 +545,6 @@ const LiveChart: React.FC<LiveChartProps> = ({ symbol, interval, isDark, onLastB
         <div className={styles.legendTitle}>
           <span className={styles.symbol}>{symbol}</span>
           <span className={styles.dim}>{interval} · 币安永续</span>
-          {lastBar && !hoverBar && (
-            <span className={styles.dim}>收盘倒计时 <span className={styles.mono}>{formatCountdown(remain)}</span></span>
-          )}
         </div>
         {shown && (
           <div className={`${styles.ohlc} ${styles.mono}`}>
