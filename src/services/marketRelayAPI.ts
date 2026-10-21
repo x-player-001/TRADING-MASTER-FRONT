@@ -57,7 +57,17 @@ export interface KlineQuery {
   end_time?: number;
 }
 
-/** 直接用 fetch：需要拿到 429 的 Retry-After，apiClient 会把状态码吞掉 */
+export class RelayHttpError extends Error {
+  readonly status: number;
+  readonly retryAfterMs: number;
+  constructor(message: string, status: number, retryAfterMs: number) {
+    super(message);
+    this.status = status;
+    this.retryAfterMs = retryAfterMs;
+  }
+}
+
+/** 直接用 fetch：需要拿到 429 的 Retry-After，apiClient 会把状态码吞掉。retries=0 时 429 抛 RelayHttpError 交给调用方 */
 export async function fetchRelayKlines(q: KlineQuery, retries = 2): Promise<RelayKline[]> {
   const params = new URLSearchParams({ symbol: q.symbol, interval: q.interval, limit: String(q.limit ?? 500) });
   if (q.start_time !== undefined) params.set('start_time', String(q.start_time));
@@ -65,14 +75,14 @@ export async function fetchRelayKlines(q: KlineQuery, retries = 2): Promise<Rela
   if (TOKEN) params.set('token', TOKEN);
 
   const res = await fetch(`${API_BASE_URL}/api/market/klines?${params}`);
+  const wait = Number(res.headers.get('Retry-After') || 10) * 1000;
   if (res.status === 429 && retries > 0) {
-    const wait = Number(res.headers.get('Retry-After') || 10) * 1000;
     await new Promise((r) => setTimeout(r, wait));
     return fetchRelayKlines(q, retries - 1);
   }
   const body = await res.json().catch(() => null);
   if (!res.ok || !body?.success) {
-    throw new Error(body?.error || `行情请求失败 (HTTP ${res.status})`);
+    throw new RelayHttpError(body?.error || `行情请求失败 (HTTP ${res.status})`, res.status, wait);
   }
   return body.data.klines as RelayKline[];
 }

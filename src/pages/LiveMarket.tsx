@@ -3,6 +3,7 @@ import { AutoComplete, Button, Checkbox, Segmented, Tooltip } from 'antd';
 import PageHeader from '../components/ui/PageHeader';
 import LiveChart from '../components/live/LiveChart';
 import MarketSidebar from '../components/live/MarketSidebar';
+import { setPrefetchTargets, stopPrefetch } from '../components/live/klineCache';
 import { replayAPI } from '../services/replayAPI';
 import {
   isRelayInterval,
@@ -32,7 +33,7 @@ interface Settings {
 const DEFAULT_SETTINGS: Settings = { symbol: 'BTCUSDT', interval: '15m', showMa: true, showMacd: true, logScale: true };
 
 /** 页面提供的周期（行情中转支持的更多，这里只放常用的） */
-const INTERVALS: RelayInterval[] = ['5m', '15m', '30m', '1h', '4h', '12h', '1d', '1w'];
+const INTERVALS: RelayInterval[] = ['5m', '15m', '1h', '4h', '1d', '1w'];
 const isPageInterval = (v: string): v is RelayInterval => isRelayInterval(v) && INTERVALS.includes(v);
 
 /** 自选上限：WS 单连接最多 30 条流，留几条给图表 */
@@ -89,6 +90,7 @@ const LiveMarket: React.FC<LiveMarketProps> = () => {
   const [symbolOptions, setSymbolOptions] = useState<{ value: string }[]>([]);
   const [status, setStatus] = useState<RelayStatus>(marketRelaySocket.getStatus());
   const [watchlist, setWatchlist] = useState<string[] | null>(readWatchlist);
+  const [sidebarSymbols, setSidebarSymbols] = useState<string[]>([]);
 
   const update = useCallback((patch: Partial<Settings>) => {
     setSettings((prev) => {
@@ -99,6 +101,12 @@ const LiveMarket: React.FC<LiveMarketProps> = () => {
   }, []);
 
   useEffect(() => marketRelaySocket.addListener({ onStatus: setStatus }), []);
+
+  // 后台预拉侧栏全部币的 K 线（已缓存的跳过），点开不用等
+  useEffect(() => {
+    setPrefetchTargets(sidebarSymbols, { symbol, interval });
+  }, [sidebarSymbols, symbol, interval]);
+  useEffect(() => stopPrefetch, []);
 
   const saveWatchlist = useCallback((updater: (prev: string[]) => string[]) => {
     setWatchlist((prev) => {
@@ -214,6 +222,7 @@ const LiveMarket: React.FC<LiveMarketProps> = () => {
             favorites={watched}
             current={symbol}
             maxRows={MAX_WATCHLIST}
+            onSymbolsChange={setSidebarSymbols}
             onSelect={(s) => {
               setSymbolInput(s);
               if (s !== symbol) update({ symbol: s });

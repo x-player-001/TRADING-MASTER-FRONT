@@ -16,6 +16,7 @@ import {
   RelayInterval,
   RelayKline,
 } from '../../services/marketRelayAPI';
+import { cacheGet, cacheKeyOf, cacheSet, PAGE_SIZE } from './klineCache';
 import { calcMACD, calcSMA, MacdResult } from '../replay/indicators';
 import { CountdownPrimitive } from '../replay/CountdownPrimitive';
 import styles from './LiveChart.module.scss';
@@ -36,7 +37,6 @@ interface LiveChartProps {
 
 const UP = '#26a69a';
 const DOWN = '#ef5350';
-const PAGE_SIZE = 500;
 /** 可见范围左端离第一根不足多少根时加载更早数据 */
 const LOAD_MORE_THRESHOLD = 30;
 /** 首次加载默认显示最近多少根 */
@@ -55,33 +55,6 @@ const histColor = (v: number, prev: number | null) => {
   const weakening = prev !== null && Math.abs(v) < Math.abs(prev);
   if (v >= 0) return weakening ? 'rgba(38,166,154,0.45)' : UP;
   return weakening ? 'rgba(239,83,80,0.45)' : DOWN;
-};
-
-/**
- * 切换币种 / 周期时的内存缓存（模块级，跨页面切换也保留）。
- * 切回来先画缓存，再用 start_time=最后一根 补拉中间缺的 K 线
- */
-const CACHE_MAX_ENTRIES = 20;
-/** 缓存落后超过这么多根就不补拉了，直接重新拉最新一页 */
-const CACHE_MAX_GAP_BARS = 1000;
-const barCache = new Map<string, { bars: RelayKline[]; exhausted: boolean }>();
-
-const cacheGet = (key: string, interval: RelayInterval) => {
-  const hit = barCache.get(key);
-  if (!hit) return null;
-  const last = hit.bars[hit.bars.length - 1];
-  if (!last || Date.now() - last.open_time > INTERVAL_MS[interval] * CACHE_MAX_GAP_BARS) {
-    barCache.delete(key);
-    return null;
-  }
-  return hit;
-};
-
-const cacheSet = (key: string, bars: RelayKline[], exhausted: boolean) => {
-  if (bars.length === 0) return;
-  barCache.delete(key); // 重新插入，Map 的顺序即最近使用顺序
-  barCache.set(key, { bars, exhausted });
-  while (barCache.size > CACHE_MAX_ENTRIES) barCache.delete(barCache.keys().next().value!);
 };
 
 /** 按 open_time 二分查找下标，找不到返回 -1 */
@@ -372,6 +345,8 @@ const LiveChart: React.FC<LiveChartProps> = ({ symbol, interval, isDark, onLastB
     setLastBar(null);
     setHoverBar(null);
     setError(null);
+    // 上一个周期还在加载时切走，它的 finally 因 disposed 不会清 loading；命中缓存时这里不清会一直挂着
+    setLoading(false);
     onLastBarRef.current?.(null);
     renderIndicators(true);
 
@@ -409,7 +384,9 @@ const LiveChart: React.FC<LiveChartProps> = ({ symbol, interval, isDark, onLastB
       backfilling = true;
       ready = false;
       try {
-        const page = await fetchRelayKlines({ symbol, interval, start_time: last.open_time, limit: 1500 });
+        // limit 按缺口算：通常只缺几根，<100 根只算 1 权重
+        const gap = Math.ceil((Date.now() - last.open_time) / INTERVAL_MS[interval]) + 2;
+        const page = await fetchRelayKlines({ symbol, interval, start_time: last.open_time, limit: Math.min(1500, gap) });
         if (disposed) return;
         page.forEach(applyBar);
       } catch (err) {
@@ -446,7 +423,7 @@ const LiveChart: React.FC<LiveChartProps> = ({ symbol, interval, isDark, onLastB
     });
     const unsubscribe = marketRelaySocket.subscribe(symbol, interval);
 
-    const cacheKey = `${symbol}|${interval}`;
+    const cacheKey = cacheKeyOf(symbol, interval);
     const showInitial = (bars: RelayKline[]) => {
       barsRef.current = bars;
       const p = inferPrecision(bars);

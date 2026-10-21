@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Segmented } from 'antd';
 import SymbolWatchlist, { SymbolGroup } from './SymbolWatchlist';
 import { trendFollowAPI, WatchlistItem, WATCH_STAGE_LABELS } from '../../services/trendFollowAPI';
@@ -15,6 +15,8 @@ interface MarketSidebarProps {
   onRemoveFavorite: (symbol: string) => void;
   /** 每个列表最多订阅多少个币的实时价（WS 单连接最多 30 条流） */
   maxRows: number;
+  /** 全部列表里的币（去重，用于后台预拉 K 线） */
+  onSymbolsChange?: (symbols: string[]) => void;
 }
 
 const TAB_KEY = 'liveMarket.sidebarTab';
@@ -22,7 +24,9 @@ const TAB_KEY = 'liveMarket.sidebarTab';
 const WATCH_POLL_MS = 30_000;
 const LEADER_POLL_MS = 120_000;
 /** 涨幅榜：WS 推送全市场行情（只占一个订阅，不计入 K 线流上限），本地排序后取前 N */
-const GAINERS_TOP = 10;
+const GAINERS_TOP = 5;
+/** 观察列表数量不固定，只预拉评分最高的这么多个 */
+const WATCH_PREFETCH_MAX = 20;
 /** 服务器每 2 秒推一次增量，攒一批再重排 */
 const GAINERS_RANK_MS = 1_000;
 /** 24h 成交额下限，过滤冷门币（与龙头榜门槛一致） */
@@ -72,8 +76,8 @@ const gainerMeta = (t: LiveTicker) => {
   return <span title={full}>额 {fmtAmount(t.quote_volume_24h ?? 0)}</span>;
 };
 
-/** 切到哪个页签才拉哪个列表、订阅哪些币，其余页签不占 WS 流 */
-const MarketSidebar: React.FC<MarketSidebarProps> = ({ favorites, current, onSelect, onRemoveFavorite, maxRows }) => {
+/** 四个列表打开页面就加载（给预拉用）；但只订阅当前页签里币的实时价，其余页签不占 WS K 线流 */
+const MarketSidebar: React.FC<MarketSidebarProps> = ({ favorites, current, onSelect, onRemoveFavorite, maxRows, onSymbolsChange }) => {
   const [tab, setTab] = useState<Tab>(readTab);
   const [watch, setWatch] = useState<WatchlistItem[] | null>(null);
   const [boards, setBoards] = useState<LeaderBoard[] | null>(null);
@@ -86,8 +90,6 @@ const MarketSidebar: React.FC<MarketSidebarProps> = ({ favorites, current, onSel
   };
 
   useEffect(() => {
-    if (tab !== 'gainers') return;
-    setError(null);
     const table = new Map<string, LiveTicker>();
     let dirty = false;
     const remove = marketRelaySocket.addListener({
@@ -109,27 +111,42 @@ const MarketSidebar: React.FC<MarketSidebarProps> = ({ favorites, current, onSel
       unsubscribe();
       remove();
     };
-  }, [tab]);
+  }, []);
 
   useEffect(() => {
-    if (tab !== 'watch' && tab !== 'leader') return;
     let disposed = false;
-    const load = () => {
-      const task =
-        tab === 'watch'
-          ? trendFollowAPI.getWatchlist().then((rows) => { if (!disposed) setWatch(rows); })
-          : Promise.all([leaderAPI.getBoard('24h'), leaderAPI.getBoard('4h')]).then((b) => { if (!disposed) setBoards(b); });
-      task
+    const poll = (load: () => Promise<void>, ms: number) => {
+      const run = () => load()
         .then(() => { if (!disposed) setError(null); })
         .catch((err: Error) => { if (!disposed) setError(err.message || '加载失败'); });
+      run();
+      return window.setInterval(run, ms);
     };
-    load();
-    const timer = window.setInterval(load, tab === 'watch' ? WATCH_POLL_MS : LEADER_POLL_MS);
+    const timers = [
+      poll(() => trendFollowAPI.getWatchlist().then((rows) => { if (!disposed) setWatch(rows); }), WATCH_POLL_MS),
+      poll(
+        () => Promise.all([leaderAPI.getBoard('24h'), leaderAPI.getBoard('4h')]).then((b) => { if (!disposed) setBoards(b); }),
+        LEADER_POLL_MS,
+      ),
+    ];
     return () => {
       disposed = true;
-      window.clearInterval(timer);
+      timers.forEach((t) => window.clearInterval(t));
     };
-  }, [tab]);
+  }, []);
+
+  // 涨幅榜每秒重排，成员没变就不通知
+  const onSymbolsChangeRef = useRef(onSymbolsChange);
+  onSymbolsChangeRef.current = onSymbolsChange;
+  const allSymbolsKey = [...new Set([
+    ...favorites,
+    ...(watch ?? []).slice(0, WATCH_PREFETCH_MAX).map((w) => w.symbol),
+    ...(boards ?? []).flatMap((b) => b.items.map((it) => it.symbol)),
+    ...(gainers ? GAINER_WINDOWS.flatMap((w) => gainers[w].map((t) => t.symbol)) : []),
+  ])].join(',');
+  useEffect(() => {
+    onSymbolsChangeRef.current?.(allSymbolsKey ? allSymbolsKey.split(',') : []);
+  }, [allSymbolsKey]);
 
   let groups: SymbolGroup[] = [];
   let emptyText: React.ReactNode = null;
