@@ -19,6 +19,7 @@ import {
 import { cacheGet, cacheKeyOf, cacheSet, PAGE_SIZE } from './klineCache';
 import { calcMACD, calcSMA, MacdResult } from '../replay/indicators';
 import { CountdownPrimitive } from '../replay/CountdownPrimitive';
+import { MeasurePoint, MeasurePrimitive } from './MeasurePrimitive';
 import styles from './LiveChart.module.scss';
 
 interface LiveChartProps {
@@ -113,6 +114,17 @@ const formatCountdown = (ms: number) => {
   return `${pad(m)}:${pad(s % 60)}`;
 };
 
+/** 测量框的时长：「45分钟」「3小时20分」「2天5小时」 */
+const formatSpan = (ms: number) => {
+  const m = Math.round(ms / 60_000);
+  const d = Math.floor(m / 1440);
+  const h = Math.floor((m % 1440) / 60);
+  const min = m % 60;
+  if (d > 0) return h ? `${d}天${h}小时` : `${d}天`;
+  if (h > 0) return min ? `${h}小时${min}分` : `${h}小时`;
+  return `${min}分钟`;
+};
+
 const formatBarTime = (ms: number, interval: RelayInterval) => {
   const d = new Date(ms);
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -126,6 +138,9 @@ const LiveChart: React.FC<LiveChartProps> = ({ symbol, interval, isDark, onLastB
   const candleRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
   const volumeRef = useRef<ISeriesApi<'Histogram'> | null>(null);
   const countdownRef = useRef<CountdownPrimitive | null>(null);
+  const measureRef = useRef<MeasurePrimitive | null>(null);
+  /** Shift 拖动测量的起止点，null 表示没有测量 */
+  const measurePtsRef = useRef<{ from: MeasurePoint; to: MeasurePoint } | null>(null);
   const maRef = useRef<ISeriesApi<'Line'>[]>([]);
   const macdRef = useRef<{ hist: ISeriesApi<'Histogram'>; dif: ISeriesApi<'Line'>; dea: ISeriesApi<'Line'> } | null>(null);
   /** 指标值，下标与 barsRef 对齐 */
@@ -138,6 +153,36 @@ const LiveChart: React.FC<LiveChartProps> = ({ symbol, interval, isDark, onLastB
   const barsRef = useRef<RelayKline[]>([]);
   const onLastBarRef = useRef(onLastBar);
   onLastBarRef.current = onLastBar;
+  const intervalRef = useRef(interval);
+  intervalRef.current = interval;
+
+  /** 按起止点算标签（涨跌、根数、时长、区间成交量）并重画测量框 */
+  const drawMeasure = useCallback(() => {
+    const pts = measurePtsRef.current;
+    if (!pts) {
+      measureRef.current?.setState(null);
+      return;
+    }
+    const { from, to } = pts;
+    const diff = to.price - from.price;
+    const pct = from.price ? (diff / from.price) * 100 : 0;
+    const sign = diff >= 0 ? '+' : '';
+    const n = Math.abs(to.logical - from.logical);
+    const bars = barsRef.current;
+    const lo = Math.max(0, Math.min(from.logical, to.logical));
+    const hi = Math.min(bars.length - 1, Math.max(from.logical, to.logical));
+    let vol = 0;
+    for (let i = lo; i <= hi; i++) vol += bars[i].volume;
+    measureRef.current?.setState({
+      from,
+      to,
+      lines: [
+        `${sign}${diff.toFixed(precisionRef.current)} (${sign}${pct.toFixed(2)}%)`,
+        `${n} 根 · ${formatSpan(n * INTERVAL_MS[intervalRef.current])}`,
+        `量 ${formatVolume(vol)}`,
+      ],
+    });
+  }, []);
 
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -171,6 +216,8 @@ const LiveChart: React.FC<LiveChartProps> = ({ symbol, interval, isDark, onLastB
     candleRef.current.priceScale().applyOptions({ scaleMargins: { top: 0.08, bottom: 0.22 } });
     countdownRef.current = new CountdownPrimitive();
     candleRef.current.attachPrimitive(countdownRef.current);
+    measureRef.current = new MeasurePrimitive();
+    candleRef.current.attachPrimitive(measureRef.current);
 
     volumeRef.current = chart.addSeries(HistogramSeries, {
       priceScaleId: 'vol',
@@ -205,17 +252,109 @@ const LiveChart: React.FC<LiveChartProps> = ({ symbol, interval, isDark, onLastB
     });
     observer.observe(container);
 
+    // 测量（同 TradingView）：Shift + 点一下开始，终点跟着鼠标走，再点一下固定；也可以 Shift + 按住拖动、松开固定。
+    // 不按 Shift 点一下或 Esc 清除。拦截在捕获阶段做，图表就不会跟着平移
+    /** 终点正在跟随鼠标 */
+    let following = false;
+    /** 开始那一下的按下位置：松开时挪动过就算拖动测量，直接固定 */
+    let downAt: { x: number; y: number } | null = null;
+    /** pointerdown 已处理，紧跟着的 mousedown 也要拦下 */
+    let swallowMouseDown = false;
+    const pointAt = (e: MouseEvent): MeasurePoint | null => {
+      const rect = container.getBoundingClientRect();
+      const logical = chart.timeScale().coordinateToLogical(e.clientX - rect.left);
+      const price = candleRef.current?.coordinateToPrice(e.clientY - rect.top) ?? null;
+      return logical === null || price === null ? null : { logical: Math.round(logical), price };
+    };
+    const clearMeasure = () => {
+      following = false;
+      downAt = null;
+      if (!measurePtsRef.current) return;
+      measurePtsRef.current = null;
+      drawMeasure();
+    };
+    // 只在主图里测量（不含价格轴、时间轴、MACD 副图）
+    const inMainPane = (e: MouseEvent) => {
+      const rect = container.getBoundingClientRect();
+      const pane = chart.paneSize(0);
+      return e.clientX - rect.left <= pane.width && e.clientY - rect.top <= pane.height;
+    };
+    const swallow = (e: Event) => {
+      e.stopPropagation();
+      e.preventDefault();
+    };
+    const onMouseDown = (e: MouseEvent) => {
+      if (!swallowMouseDown) return;
+      swallowMouseDown = false;
+      swallow(e);
+    };
+    const onPointerDown = (e: PointerEvent) => {
+      swallowMouseDown = false;
+      if (e.button !== 0) return;
+      // 切换币种 / 周期时测量被清掉了
+      if (!measurePtsRef.current) following = false;
+      if (following) {
+        if (!inMainPane(e)) return;
+        swallow(e);
+        swallowMouseDown = true;
+        const pt = pointAt(e);
+        if (pt) measurePtsRef.current = { ...measurePtsRef.current!, to: pt };
+        following = false;
+        drawMeasure();
+        return;
+      }
+      if (!e.shiftKey) {
+        clearMeasure();
+        return;
+      }
+      if (!inMainPane(e)) return;
+      swallow(e);
+      swallowMouseDown = true;
+      const pt = pointAt(e);
+      if (!pt) return;
+      following = true;
+      downAt = { x: e.clientX, y: e.clientY };
+      measurePtsRef.current = { from: pt, to: pt };
+      drawMeasure();
+    };
+    const onMove = (e: MouseEvent) => {
+      if (!following || !measurePtsRef.current) return;
+      const pt = pointAt(e);
+      if (!pt) return;
+      measurePtsRef.current = { ...measurePtsRef.current, to: pt };
+      drawMeasure();
+    };
+    const onUp = (e: PointerEvent) => {
+      if (!downAt) return;
+      if (Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 4) following = false;
+      downAt = null;
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') clearMeasure();
+    };
+    container.addEventListener('pointerdown', onPointerDown, true);
+    container.addEventListener('mousedown', onMouseDown, true);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('keydown', onKey);
+
     return () => {
+      container.removeEventListener('pointerdown', onPointerDown, true);
+      container.removeEventListener('mousedown', onMouseDown, true);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('keydown', onKey);
       observer.disconnect();
       chart.remove();
       chartRef.current = null;
       candleRef.current = null;
       countdownRef.current = null;
+      measureRef.current = null;
       volumeRef.current = null;
       maRef.current = [];
       macdRef.current = null;
     };
-  }, []);
+  }, [drawMeasure]);
 
   /**
    * 重算指标。full=true 时整段 setData（加载、补拉、翻页、开关指标）；
@@ -345,6 +484,8 @@ const LiveChart: React.FC<LiveChartProps> = ({ symbol, interval, isDark, onLastB
     setLastBar(null);
     setHoverBar(null);
     setError(null);
+    measurePtsRef.current = null;
+    drawMeasure();
     // 上一个周期还在加载时切走，它的 finally 因 disposed 不会清 loading；命中缓存时这里不清会一直挂着
     setLoading(false);
     onLastBarRef.current?.(null);
@@ -480,6 +621,15 @@ const LiveChart: React.FC<LiveChartProps> = ({ symbol, interval, isDark, onLastB
           if (older.length === 0) return;
           const visible = chart.timeScale().getVisibleLogicalRange();
           barsRef.current = [...older, ...barsRef.current];
+          // 前面插了 older.length 根，测量框的逻辑序号一起右移
+          const pts = measurePtsRef.current;
+          if (pts) {
+            measurePtsRef.current = {
+              from: { ...pts.from, logical: pts.from.logical + older.length },
+              to: { ...pts.to, logical: pts.to.logical + older.length },
+            };
+            drawMeasure();
+          }
           candle.setData(barsRef.current.map(toCandle));
           volume.setData(barsRef.current.map(toVolume));
           renderIndicators(true);
@@ -503,7 +653,7 @@ const LiveChart: React.FC<LiveChartProps> = ({ symbol, interval, isDark, onLastB
       removeListener();
       unsubscribe();
     };
-  }, [symbol, interval, renderIndicators]);
+  }, [symbol, interval, renderIndicators, drawMeasure]);
 
   const shown = hoverBar ?? lastBar;
   const change = shown ? shown.close - shown.open : 0;
